@@ -1,0 +1,94 @@
+import { Link, useRouterState } from "@tanstack/react-router";
+import {
+  LayoutDashboard,
+  MapPin,
+  Users,
+  ClipboardCheck,
+  FileText,
+  MessageSquare,
+  CheckSquare,
+  ShoppingCart,
+  LifeBuoy,
+  TrendingUp,
+  RefreshCw,
+  ChevronDown,
+  Sprout,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+type NavItem = { title: string; to: string; icon: LucideIcon };
+
+const navItems: NavItem[] = [
+  { title: "Dashboard", to: "/", icon: LayoutDashboard },
+  { title: "My Visits", to: "/my-visits", icon: MapPin },
+  { title: "Farmers", to: "/farmers", icon: Users },
+  { title: "Farm Visits", to: "/farm-visits", icon: ClipboardCheck },
+  { title: "Reports", to: "/reports", icon: FileText },
+  { title: "Messages", to: "/messages", icon: MessageSquare },
+  { title: "Tasks", to: "/tasks", icon: CheckSquare },
+  { title: "Feed Orders", to: "/feed-orders", icon: ShoppingCart },
+  { title: "Support", to: "/support", icon: LifeBuoy },
+  { title: "My Performance", to: "/performance", icon: TrendingUp },
+  { title: "Offline Sync", to: "/offline-sync", icon: RefreshCw },
+];
+
+export function AppSidebar() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  return (
+    <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-[280px] flex-col bg-sidebar text-sidebar-foreground">
+      <div className="px-6 pt-7 pb-6 border-b border-sidebar-border">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-primary/30">
+            <Sprout className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex items-baseline">
+            <span className="text-lg font-semibold text-white tracking-tight">IntelliFeed</span>
+            <span className="text-lg font-semibold text-primary tracking-tight">360</span>
+          </div>
+        </div>
+        <p className="mt-3 text-[11px] leading-relaxed text-sidebar-foreground/60">
+          Smart Feed. Healthy Farms. Better Profits.
+        </p>
+        <p className="mt-1 text-[10px] uppercase tracking-widest text-sidebar-foreground/40">
+          by Agrovestors
+        </p>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+        {navItems.map((item) => {
+          const active = pathname === item.to;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={[
+                "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200",
+                active
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-white",
+              ].join(" ")}
+            >
+              <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+              <span>{item.title}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="border-t border-sidebar-border p-4">
+        <button className="w-full flex items-center gap-3 rounded-xl p-2 hover:bg-sidebar-accent transition-colors">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-info flex items-center justify-center text-sm font-semibold text-white ring-2 ring-sidebar-border">
+            JF
+          </div>
+          <div className="flex-1 text-left min-w-0">
+            <p className="text-sm font-medium text-white truncate">John Field</p>
+            <p className="text-xs text-sidebar-foreground/60 truncate">Field Agent</p>
+          </div>
+          <ChevronDown className="h-4 w-4 text-sidebar-foreground/60" />
+        </button>
+      </div>
+    </aside>
+  );
+}
