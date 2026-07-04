@@ -22,6 +22,18 @@ import { Route as FarmVisitsRouteImport } from './routes/farm-visits'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminSystemLogsRouteImport } from './routes/admin.system-logs'
+import { Route as AdminSupportTicketsRouteImport } from './routes/admin.support-tickets'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminRolesRouteImport } from './routes/admin.roles'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminFeedopsRouteImport } from './routes/admin.feedops'
+import { Route as AdminFarmersRouteImport } from './routes/admin.farmers'
+import { Route as AdminConfigurationsRouteImport } from './routes/admin.configurations'
+import { Route as AdminBillingRouteImport } from './routes/admin.billing'
+import { Route as AdminAuditTrailRouteImport } from './routes/admin.audit-trail'
+import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
@@ -88,6 +100,66 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSystemLogsRoute = AdminSystemLogsRouteImport.update({
+  id: '/system-logs',
+  path: '/system-logs',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSupportTicketsRoute = AdminSupportTicketsRouteImport.update({
+  id: '/support-tickets',
+  path: '/support-tickets',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRolesRoute = AdminRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFeedopsRoute = AdminFeedopsRouteImport.update({
+  id: '/feedops',
+  path: '/feedops',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFarmersRoute = AdminFarmersRouteImport.update({
+  id: '/farmers',
+  path: '/farmers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminConfigurationsRoute = AdminConfigurationsRouteImport.update({
+  id: '/configurations',
+  path: '/configurations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBillingRoute = AdminBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditTrailRoute = AdminAuditTrailRouteImport.update({
+  id: '/audit-trail',
+  path: '/audit-trail',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAgentsRoute = AdminAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -102,6 +174,18 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/admin/agents': typeof AdminAgentsRoute
+  '/admin/audit-trail': typeof AdminAuditTrailRoute
+  '/admin/billing': typeof AdminBillingRoute
+  '/admin/configurations': typeof AdminConfigurationsRoute
+  '/admin/farmers': typeof AdminFarmersRoute
+  '/admin/feedops': typeof AdminFeedopsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/roles': typeof AdminRolesRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/support-tickets': typeof AdminSupportTicketsRoute
+  '/admin/system-logs': typeof AdminSystemLogsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -116,6 +200,18 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/admin/agents': typeof AdminAgentsRoute
+  '/admin/audit-trail': typeof AdminAuditTrailRoute
+  '/admin/billing': typeof AdminBillingRoute
+  '/admin/configurations': typeof AdminConfigurationsRoute
+  '/admin/farmers': typeof AdminFarmersRoute
+  '/admin/feedops': typeof AdminFeedopsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/roles': typeof AdminRolesRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/support-tickets': typeof AdminSupportTicketsRoute
+  '/admin/system-logs': typeof AdminSystemLogsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -132,6 +228,18 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/admin/agents': typeof AdminAgentsRoute
+  '/admin/audit-trail': typeof AdminAuditTrailRoute
+  '/admin/billing': typeof AdminBillingRoute
+  '/admin/configurations': typeof AdminConfigurationsRoute
+  '/admin/farmers': typeof AdminFarmersRoute
+  '/admin/feedops': typeof AdminFeedopsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/roles': typeof AdminRolesRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/support-tickets': typeof AdminSupportTicketsRoute
+  '/admin/system-logs': typeof AdminSystemLogsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -149,6 +257,18 @@ export interface FileRouteTypes {
     | '/reports'
     | '/support'
     | '/tasks'
+    | '/admin/agents'
+    | '/admin/audit-trail'
+    | '/admin/billing'
+    | '/admin/configurations'
+    | '/admin/farmers'
+    | '/admin/feedops'
+    | '/admin/reports'
+    | '/admin/roles'
+    | '/admin/settings'
+    | '/admin/support-tickets'
+    | '/admin/system-logs'
+    | '/admin/users'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -163,6 +283,18 @@ export interface FileRouteTypes {
     | '/reports'
     | '/support'
     | '/tasks'
+    | '/admin/agents'
+    | '/admin/audit-trail'
+    | '/admin/billing'
+    | '/admin/configurations'
+    | '/admin/farmers'
+    | '/admin/feedops'
+    | '/admin/reports'
+    | '/admin/roles'
+    | '/admin/settings'
+    | '/admin/support-tickets'
+    | '/admin/system-logs'
+    | '/admin/users'
     | '/admin'
   id:
     | '__root__'
@@ -178,6 +310,18 @@ export interface FileRouteTypes {
     | '/reports'
     | '/support'
     | '/tasks'
+    | '/admin/agents'
+    | '/admin/audit-trail'
+    | '/admin/billing'
+    | '/admin/configurations'
+    | '/admin/farmers'
+    | '/admin/feedops'
+    | '/admin/reports'
+    | '/admin/roles'
+    | '/admin/settings'
+    | '/admin/support-tickets'
+    | '/admin/system-logs'
+    | '/admin/users'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -289,14 +433,122 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/system-logs': {
+      id: '/admin/system-logs'
+      path: '/system-logs'
+      fullPath: '/admin/system-logs'
+      preLoaderRoute: typeof AdminSystemLogsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/support-tickets': {
+      id: '/admin/support-tickets'
+      path: '/support-tickets'
+      fullPath: '/admin/support-tickets'
+      preLoaderRoute: typeof AdminSupportTicketsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/roles': {
+      id: '/admin/roles'
+      path: '/roles'
+      fullPath: '/admin/roles'
+      preLoaderRoute: typeof AdminRolesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/feedops': {
+      id: '/admin/feedops'
+      path: '/feedops'
+      fullPath: '/admin/feedops'
+      preLoaderRoute: typeof AdminFeedopsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/farmers': {
+      id: '/admin/farmers'
+      path: '/farmers'
+      fullPath: '/admin/farmers'
+      preLoaderRoute: typeof AdminFarmersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/configurations': {
+      id: '/admin/configurations'
+      path: '/configurations'
+      fullPath: '/admin/configurations'
+      preLoaderRoute: typeof AdminConfigurationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/billing': {
+      id: '/admin/billing'
+      path: '/billing'
+      fullPath: '/admin/billing'
+      preLoaderRoute: typeof AdminBillingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit-trail': {
+      id: '/admin/audit-trail'
+      path: '/audit-trail'
+      fullPath: '/admin/audit-trail'
+      preLoaderRoute: typeof AdminAuditTrailRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/agents': {
+      id: '/admin/agents'
+      path: '/agents'
+      fullPath: '/admin/agents'
+      preLoaderRoute: typeof AdminAgentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAgentsRoute: typeof AdminAgentsRoute
+  AdminAuditTrailRoute: typeof AdminAuditTrailRoute
+  AdminBillingRoute: typeof AdminBillingRoute
+  AdminConfigurationsRoute: typeof AdminConfigurationsRoute
+  AdminFarmersRoute: typeof AdminFarmersRoute
+  AdminFeedopsRoute: typeof AdminFeedopsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminRolesRoute: typeof AdminRolesRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSupportTicketsRoute: typeof AdminSupportTicketsRoute
+  AdminSystemLogsRoute: typeof AdminSystemLogsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAgentsRoute: AdminAgentsRoute,
+  AdminAuditTrailRoute: AdminAuditTrailRoute,
+  AdminBillingRoute: AdminBillingRoute,
+  AdminConfigurationsRoute: AdminConfigurationsRoute,
+  AdminFarmersRoute: AdminFarmersRoute,
+  AdminFeedopsRoute: AdminFeedopsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminRolesRoute: AdminRolesRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminSupportTicketsRoute: AdminSupportTicketsRoute,
+  AdminSystemLogsRoute: AdminSystemLogsRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -12,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSidebar } from "@/components/dashboard/AppSidebar";
+import { AdminSidebar } from "@/components/dashboard/AdminSidebar";
 
 function NotFoundComponent() {
   return (
@@ -119,11 +121,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
 
   return (
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-background text-foreground">
-        <AppSidebar />
+        {isAdmin ? <AdminSidebar /> : <AppSidebar />}
         <div className="lg:pl-[280px]">
           <div className="mx-auto max-w-[1400px] px-6 lg:px-8 py-8">
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
