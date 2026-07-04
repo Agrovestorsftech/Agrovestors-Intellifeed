@@ -19,7 +19,9 @@ import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as FeedOrdersRouteImport } from './routes/feed-orders'
 import { Route as FarmersRouteImport } from './routes/farmers'
 import { Route as FarmVisitsRouteImport } from './routes/farm-visits'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
@@ -71,14 +73,25 @@ const FarmVisitsRoute = FarmVisitsRouteImport.update({
   path: '/farm-visits',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
@@ -89,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,10 +116,12 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
@@ -116,11 +132,13 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
@@ -131,6 +149,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/support'
     | '/tasks'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,9 +163,11 @@ export interface FileRouteTypes {
     | '/reports'
     | '/support'
     | '/tasks'
+    | '/admin'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
@@ -157,10 +178,12 @@ export interface FileRouteTypes {
     | '/reports'
     | '/support'
     | '/tasks'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   FarmVisitsRoute: typeof FarmVisitsRoute
   FarmersRoute: typeof FarmersRoute
   FeedOrdersRoute: typeof FeedOrdersRoute
@@ -245,6 +268,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FarmVisitsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -252,11 +282,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   FarmVisitsRoute: FarmVisitsRoute,
   FarmersRoute: FarmersRoute,
   FeedOrdersRoute: FeedOrdersRoute,
