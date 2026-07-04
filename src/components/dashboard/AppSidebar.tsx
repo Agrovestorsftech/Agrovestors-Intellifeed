@@ -50,9 +50,6 @@ export function AppSidebar() {
         <p className="mt-3 text-[11px] leading-relaxed text-sidebar-foreground/60">
           Smart Feed. Healthy Farms. Better Profits.
         </p>
-        <p className="mt-1 text-[10px] uppercase tracking-widest text-sidebar-foreground/40">
-          by Agrovestors
-        </p>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
