@@ -1,4 +1,4 @@
-import { Bell, Calendar, Plus } from "lucide-react";
+import { Bell, Calendar } from "lucide-react";
 
 type Props = {
   title: string;
@@ -16,21 +16,16 @@ export function DashboardHeader({ title, subtitle }: Props) {
       </div>
 
       <div className="flex items-center gap-3">
-        <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+        <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-sm">
+          <span>May 21, 2025</span>
           <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span>May 1 – May 21, 2025</span>
         </button>
 
-        <button className="relative h-10 w-10 grid place-items-center rounded-full border border-border bg-card hover:bg-muted transition-colors">
+        <button className="relative h-11 w-11 grid place-items-center rounded-xl border border-border bg-card hover:bg-muted transition-colors shadow-sm">
           <Bell className="h-[18px] w-[18px] text-foreground" />
-          <span className="absolute -top-0.5 -right-0.5 h-5 w-5 rounded-full bg-destructive text-[10px] font-semibold text-destructive-foreground grid place-items-center ring-2 ring-background">
-            4
+          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-[10px] font-semibold text-destructive-foreground grid place-items-center ring-2 ring-background">
+            2
           </span>
-        </button>
-
-        <button className="inline-flex items-center gap-2 rounded-xl bg-info px-4 py-2 text-sm font-medium text-info-foreground hover:opacity-90 transition-opacity shadow-sm shadow-info/30">
-          <Plus className="h-4 w-4" />
-          <span>Add New</span>
         </button>
       </div>
     </header>
