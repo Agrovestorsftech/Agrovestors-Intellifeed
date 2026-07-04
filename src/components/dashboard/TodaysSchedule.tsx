@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2, Clock, CalendarClock } from "lucide-react";
+import { CheckCircle2, Clock, CalendarClock } from "lucide-react";
 
 type Status = "Completed" | "Pending" | "Upcoming";
 
@@ -17,60 +17,42 @@ const visits: Visit[] = [
   { time: "04:00 PM", farm: "Riverbend Farm", category: "Catfish", status: "Upcoming" },
 ];
 
-const statusMeta: Record<Status, { label: string; className: string; Icon: typeof Clock; dot: string }> = {
+const statusMeta: Record<Status, { label: string; className: string; Icon: typeof Clock }> = {
   Completed: {
     label: "Completed",
     className: "bg-success-soft text-success",
     Icon: CheckCircle2,
-    dot: "bg-success",
   },
   Pending: {
     label: "Pending",
     className: "bg-warning-soft text-warning-foreground",
     Icon: Clock,
-    dot: "bg-warning",
   },
   Upcoming: {
     label: "Upcoming",
     className: "bg-info-soft text-info",
     Icon: CalendarClock,
-    dot: "bg-info",
   },
 };
 
 export function TodaysSchedule() {
   return (
-    <section className="rounded-2xl bg-card border border-border p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Today's Schedule</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Farm visits assigned for today</p>
-        </div>
-        <span className="text-xs text-muted-foreground">{visits.length} visits</span>
-      </div>
+    <section className="rounded-2xl bg-card border border-border p-6 shadow-sm flex flex-col">
+      <h2 className="text-base font-semibold text-foreground mb-5">Today's Schedule</h2>
 
-      <ol className="relative space-y-4">
-        <span
-          aria-hidden
-          className="absolute left-[15px] top-2 bottom-2 w-px bg-border"
-        />
+      <ol className="flex-1 space-y-5">
         {visits.map((v) => {
           const meta = statusMeta[v.status];
-          const StatusIcon = meta.Icon;
           return (
-            <li key={v.time} className="relative flex items-center gap-4 pl-9">
-              <span
-                className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full ${meta.dot} ring-4 ring-card`}
-              />
-              <div className="w-20 shrink-0 text-sm font-medium text-muted-foreground">{v.time}</div>
+            <li key={v.time} className="flex items-center gap-4">
+              <div className="w-[70px] shrink-0 text-sm font-medium text-muted-foreground">{v.time}</div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{v.farm}</p>
-                <p className="text-xs text-muted-foreground">{v.category}</p>
+                <p className="text-sm font-semibold text-foreground truncate">{v.farm}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{v.category}</p>
               </div>
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${meta.className}`}
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${meta.className}`}
               >
-                <StatusIcon className="h-3.5 w-3.5" />
                 {meta.label}
               </span>
             </li>
@@ -78,9 +60,8 @@ export function TodaysSchedule() {
         })}
       </ol>
 
-      <button className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:gap-2.5 transition-all">
+      <button className="mt-6 w-full rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors">
         View Full Schedule
-        <ArrowRight className="h-4 w-4" />
       </button>
     </section>
   );
