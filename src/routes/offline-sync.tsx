@@ -5,7 +5,7 @@ export const Route = createFileRoute("/offline-sync")({
   component: () => (
     <PlaceholderPage
       title={'Offline Sync'}
-      subtitle={'Sync your field data when you'\''re back online.'}
+      subtitle={"Sync your field data when you're back online."}
       sections={["Pending uploads", "Last sync", "Sync status"]}
     />
   ),

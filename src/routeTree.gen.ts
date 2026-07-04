@@ -9,8 +9,68 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as PerformanceRouteImport } from './routes/performance'
+import { Route as OfflineSyncRouteImport } from './routes/offline-sync'
+import { Route as MyVisitsRouteImport } from './routes/my-visits'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as FeedOrdersRouteImport } from './routes/feed-orders'
+import { Route as FarmersRouteImport } from './routes/farmers'
+import { Route as FarmVisitsRouteImport } from './routes/farm-visits'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TasksRoute = TasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerformanceRoute = PerformanceRouteImport.update({
+  id: '/performance',
+  path: '/performance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfflineSyncRoute = OfflineSyncRouteImport.update({
+  id: '/offline-sync',
+  path: '/offline-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyVisitsRoute = MyVisitsRouteImport.update({
+  id: '/my-visits',
+  path: '/my-visits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedOrdersRoute = FeedOrdersRouteImport.update({
+  id: '/feed-orders',
+  path: '/feed-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FarmersRoute = FarmersRouteImport.update({
+  id: '/farmers',
+  path: '/farmers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FarmVisitsRoute = FarmVisitsRouteImport.update({
+  id: '/farm-visits',
+  path: '/farm-visits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +79,172 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/farm-visits': typeof FarmVisitsRoute
+  '/farmers': typeof FarmersRoute
+  '/feed-orders': typeof FeedOrdersRoute
+  '/messages': typeof MessagesRoute
+  '/my-visits': typeof MyVisitsRoute
+  '/offline-sync': typeof OfflineSyncRoute
+  '/performance': typeof PerformanceRoute
+  '/reports': typeof ReportsRoute
+  '/support': typeof SupportRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/farm-visits': typeof FarmVisitsRoute
+  '/farmers': typeof FarmersRoute
+  '/feed-orders': typeof FeedOrdersRoute
+  '/messages': typeof MessagesRoute
+  '/my-visits': typeof MyVisitsRoute
+  '/offline-sync': typeof OfflineSyncRoute
+  '/performance': typeof PerformanceRoute
+  '/reports': typeof ReportsRoute
+  '/support': typeof SupportRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/farm-visits': typeof FarmVisitsRoute
+  '/farmers': typeof FarmersRoute
+  '/feed-orders': typeof FeedOrdersRoute
+  '/messages': typeof MessagesRoute
+  '/my-visits': typeof MyVisitsRoute
+  '/offline-sync': typeof OfflineSyncRoute
+  '/performance': typeof PerformanceRoute
+  '/reports': typeof ReportsRoute
+  '/support': typeof SupportRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/farm-visits'
+    | '/farmers'
+    | '/feed-orders'
+    | '/messages'
+    | '/my-visits'
+    | '/offline-sync'
+    | '/performance'
+    | '/reports'
+    | '/support'
+    | '/tasks'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/farm-visits'
+    | '/farmers'
+    | '/feed-orders'
+    | '/messages'
+    | '/my-visits'
+    | '/offline-sync'
+    | '/performance'
+    | '/reports'
+    | '/support'
+    | '/tasks'
+  id:
+    | '__root__'
+    | '/'
+    | '/farm-visits'
+    | '/farmers'
+    | '/feed-orders'
+    | '/messages'
+    | '/my-visits'
+    | '/offline-sync'
+    | '/performance'
+    | '/reports'
+    | '/support'
+    | '/tasks'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FarmVisitsRoute: typeof FarmVisitsRoute
+  FarmersRoute: typeof FarmersRoute
+  FeedOrdersRoute: typeof FeedOrdersRoute
+  MessagesRoute: typeof MessagesRoute
+  MyVisitsRoute: typeof MyVisitsRoute
+  OfflineSyncRoute: typeof OfflineSyncRoute
+  PerformanceRoute: typeof PerformanceRoute
+  ReportsRoute: typeof ReportsRoute
+  SupportRoute: typeof SupportRoute
+  TasksRoute: typeof TasksRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tasks': {
+      id: '/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/performance': {
+      id: '/performance'
+      path: '/performance'
+      fullPath: '/performance'
+      preLoaderRoute: typeof PerformanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offline-sync': {
+      id: '/offline-sync'
+      path: '/offline-sync'
+      fullPath: '/offline-sync'
+      preLoaderRoute: typeof OfflineSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-visits': {
+      id: '/my-visits'
+      path: '/my-visits'
+      fullPath: '/my-visits'
+      preLoaderRoute: typeof MyVisitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed-orders': {
+      id: '/feed-orders'
+      path: '/feed-orders'
+      fullPath: '/feed-orders'
+      preLoaderRoute: typeof FeedOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/farmers': {
+      id: '/farmers'
+      path: '/farmers'
+      fullPath: '/farmers'
+      preLoaderRoute: typeof FarmersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/farm-visits': {
+      id: '/farm-visits'
+      path: '/farm-visits'
+      fullPath: '/farm-visits'
+      preLoaderRoute: typeof FarmVisitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +257,16 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FarmVisitsRoute: FarmVisitsRoute,
+  FarmersRoute: FarmersRoute,
+  FeedOrdersRoute: FeedOrdersRoute,
+  MessagesRoute: MessagesRoute,
+  MyVisitsRoute: MyVisitsRoute,
+  OfflineSyncRoute: OfflineSyncRoute,
+  PerformanceRoute: PerformanceRoute,
+  ReportsRoute: ReportsRoute,
+  SupportRoute: SupportRoute,
+  TasksRoute: TasksRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
