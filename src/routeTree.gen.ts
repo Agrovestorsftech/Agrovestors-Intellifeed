@@ -16,12 +16,23 @@ import { Route as PerformanceRouteImport } from './routes/performance'
 import { Route as OfflineSyncRouteImport } from './routes/offline-sync'
 import { Route as MyVisitsRouteImport } from './routes/my-visits'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as FeedopsRouteImport } from './routes/feedops'
 import { Route as FeedOrdersRouteImport } from './routes/feed-orders'
 import { Route as FarmersRouteImport } from './routes/farmers'
 import { Route as FarmVisitsRouteImport } from './routes/farm-visits'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FeedopsIndexRouteImport } from './routes/feedops.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as FeedopsSuppliersRouteImport } from './routes/feedops.suppliers'
+import { Route as FeedopsStockTransfersRouteImport } from './routes/feedops.stock-transfers'
+import { Route as FeedopsSettingsRouteImport } from './routes/feedops.settings'
+import { Route as FeedopsReportsRouteImport } from './routes/feedops.reports'
+import { Route as FeedopsQualityControlRouteImport } from './routes/feedops.quality-control'
+import { Route as FeedopsProductionRouteImport } from './routes/feedops.production'
+import { Route as FeedopsOrdersRouteImport } from './routes/feedops.orders'
+import { Route as FeedopsInventoryRouteImport } from './routes/feedops.inventory'
+import { Route as FeedopsDeliveriesRouteImport } from './routes/feedops.deliveries'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSystemLogsRouteImport } from './routes/admin.system-logs'
 import { Route as AdminSupportTicketsRouteImport } from './routes/admin.support-tickets'
@@ -70,6 +81,11 @@ const MessagesRoute = MessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeedopsRoute = FeedopsRouteImport.update({
+  id: '/feedops',
+  path: '/feedops',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FeedOrdersRoute = FeedOrdersRouteImport.update({
   id: '/feed-orders',
   path: '/feed-orders',
@@ -95,10 +111,60 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeedopsIndexRoute = FeedopsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FeedopsRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const FeedopsSuppliersRoute = FeedopsSuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsStockTransfersRoute = FeedopsStockTransfersRouteImport.update({
+  id: '/stock-transfers',
+  path: '/stock-transfers',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsSettingsRoute = FeedopsSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsReportsRoute = FeedopsReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsQualityControlRoute = FeedopsQualityControlRouteImport.update({
+  id: '/quality-control',
+  path: '/quality-control',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsProductionRoute = FeedopsProductionRouteImport.update({
+  id: '/production',
+  path: '/production',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsOrdersRoute = FeedopsOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsInventoryRoute = FeedopsInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsDeliveriesRoute = FeedopsDeliveriesRouteImport.update({
+  id: '/deliveries',
+  path: '/deliveries',
+  getParentRoute: () => FeedopsRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -167,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
+  '/feedops': typeof FeedopsRouteWithChildren
   '/messages': typeof MessagesRoute
   '/my-visits': typeof MyVisitsRoute
   '/offline-sync': typeof OfflineSyncRoute
@@ -186,7 +253,17 @@ export interface FileRoutesByFullPath {
   '/admin/support-tickets': typeof AdminSupportTicketsRoute
   '/admin/system-logs': typeof AdminSystemLogsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/feedops/deliveries': typeof FeedopsDeliveriesRoute
+  '/feedops/inventory': typeof FeedopsInventoryRoute
+  '/feedops/orders': typeof FeedopsOrdersRoute
+  '/feedops/production': typeof FeedopsProductionRoute
+  '/feedops/quality-control': typeof FeedopsQualityControlRoute
+  '/feedops/reports': typeof FeedopsReportsRoute
+  '/feedops/settings': typeof FeedopsSettingsRoute
+  '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
+  '/feedops/suppliers': typeof FeedopsSuppliersRoute
   '/admin/': typeof AdminIndexRoute
+  '/feedops/': typeof FeedopsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -212,7 +289,17 @@ export interface FileRoutesByTo {
   '/admin/support-tickets': typeof AdminSupportTicketsRoute
   '/admin/system-logs': typeof AdminSystemLogsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/feedops/deliveries': typeof FeedopsDeliveriesRoute
+  '/feedops/inventory': typeof FeedopsInventoryRoute
+  '/feedops/orders': typeof FeedopsOrdersRoute
+  '/feedops/production': typeof FeedopsProductionRoute
+  '/feedops/quality-control': typeof FeedopsQualityControlRoute
+  '/feedops/reports': typeof FeedopsReportsRoute
+  '/feedops/settings': typeof FeedopsSettingsRoute
+  '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
+  '/feedops/suppliers': typeof FeedopsSuppliersRoute
   '/admin': typeof AdminIndexRoute
+  '/feedops': typeof FeedopsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -221,6 +308,7 @@ export interface FileRoutesById {
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
+  '/feedops': typeof FeedopsRouteWithChildren
   '/messages': typeof MessagesRoute
   '/my-visits': typeof MyVisitsRoute
   '/offline-sync': typeof OfflineSyncRoute
@@ -240,7 +328,17 @@ export interface FileRoutesById {
   '/admin/support-tickets': typeof AdminSupportTicketsRoute
   '/admin/system-logs': typeof AdminSystemLogsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/feedops/deliveries': typeof FeedopsDeliveriesRoute
+  '/feedops/inventory': typeof FeedopsInventoryRoute
+  '/feedops/orders': typeof FeedopsOrdersRoute
+  '/feedops/production': typeof FeedopsProductionRoute
+  '/feedops/quality-control': typeof FeedopsQualityControlRoute
+  '/feedops/reports': typeof FeedopsReportsRoute
+  '/feedops/settings': typeof FeedopsSettingsRoute
+  '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
+  '/feedops/suppliers': typeof FeedopsSuppliersRoute
   '/admin/': typeof AdminIndexRoute
+  '/feedops/': typeof FeedopsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -250,6 +348,7 @@ export interface FileRouteTypes {
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
+    | '/feedops'
     | '/messages'
     | '/my-visits'
     | '/offline-sync'
@@ -269,7 +368,17 @@ export interface FileRouteTypes {
     | '/admin/support-tickets'
     | '/admin/system-logs'
     | '/admin/users'
+    | '/feedops/deliveries'
+    | '/feedops/inventory'
+    | '/feedops/orders'
+    | '/feedops/production'
+    | '/feedops/quality-control'
+    | '/feedops/reports'
+    | '/feedops/settings'
+    | '/feedops/stock-transfers'
+    | '/feedops/suppliers'
     | '/admin/'
+    | '/feedops/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -295,7 +404,17 @@ export interface FileRouteTypes {
     | '/admin/support-tickets'
     | '/admin/system-logs'
     | '/admin/users'
+    | '/feedops/deliveries'
+    | '/feedops/inventory'
+    | '/feedops/orders'
+    | '/feedops/production'
+    | '/feedops/quality-control'
+    | '/feedops/reports'
+    | '/feedops/settings'
+    | '/feedops/stock-transfers'
+    | '/feedops/suppliers'
     | '/admin'
+    | '/feedops'
   id:
     | '__root__'
     | '/'
@@ -303,6 +422,7 @@ export interface FileRouteTypes {
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
+    | '/feedops'
     | '/messages'
     | '/my-visits'
     | '/offline-sync'
@@ -322,7 +442,17 @@ export interface FileRouteTypes {
     | '/admin/support-tickets'
     | '/admin/system-logs'
     | '/admin/users'
+    | '/feedops/deliveries'
+    | '/feedops/inventory'
+    | '/feedops/orders'
+    | '/feedops/production'
+    | '/feedops/quality-control'
+    | '/feedops/reports'
+    | '/feedops/settings'
+    | '/feedops/stock-transfers'
+    | '/feedops/suppliers'
     | '/admin/'
+    | '/feedops/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -331,6 +461,7 @@ export interface RootRouteChildren {
   FarmVisitsRoute: typeof FarmVisitsRoute
   FarmersRoute: typeof FarmersRoute
   FeedOrdersRoute: typeof FeedOrdersRoute
+  FeedopsRoute: typeof FeedopsRouteWithChildren
   MessagesRoute: typeof MessagesRoute
   MyVisitsRoute: typeof MyVisitsRoute
   OfflineSyncRoute: typeof OfflineSyncRoute
@@ -391,6 +522,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/feedops': {
+      id: '/feedops'
+      path: '/feedops'
+      fullPath: '/feedops'
+      preLoaderRoute: typeof FeedopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/feed-orders': {
       id: '/feed-orders'
       path: '/feed-orders'
@@ -426,12 +564,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/feedops/': {
+      id: '/feedops/'
+      path: '/'
+      fullPath: '/feedops/'
+      preLoaderRoute: typeof FeedopsIndexRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/feedops/suppliers': {
+      id: '/feedops/suppliers'
+      path: '/suppliers'
+      fullPath: '/feedops/suppliers'
+      preLoaderRoute: typeof FeedopsSuppliersRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/stock-transfers': {
+      id: '/feedops/stock-transfers'
+      path: '/stock-transfers'
+      fullPath: '/feedops/stock-transfers'
+      preLoaderRoute: typeof FeedopsStockTransfersRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/settings': {
+      id: '/feedops/settings'
+      path: '/settings'
+      fullPath: '/feedops/settings'
+      preLoaderRoute: typeof FeedopsSettingsRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/reports': {
+      id: '/feedops/reports'
+      path: '/reports'
+      fullPath: '/feedops/reports'
+      preLoaderRoute: typeof FeedopsReportsRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/quality-control': {
+      id: '/feedops/quality-control'
+      path: '/quality-control'
+      fullPath: '/feedops/quality-control'
+      preLoaderRoute: typeof FeedopsQualityControlRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/production': {
+      id: '/feedops/production'
+      path: '/production'
+      fullPath: '/feedops/production'
+      preLoaderRoute: typeof FeedopsProductionRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/orders': {
+      id: '/feedops/orders'
+      path: '/orders'
+      fullPath: '/feedops/orders'
+      preLoaderRoute: typeof FeedopsOrdersRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/inventory': {
+      id: '/feedops/inventory'
+      path: '/inventory'
+      fullPath: '/feedops/inventory'
+      preLoaderRoute: typeof FeedopsInventoryRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/deliveries': {
+      id: '/feedops/deliveries'
+      path: '/deliveries'
+      fullPath: '/feedops/deliveries'
+      preLoaderRoute: typeof FeedopsDeliveriesRouteImport
+      parentRoute: typeof FeedopsRoute
     }
     '/admin/users': {
       id: '/admin/users'
@@ -554,12 +762,42 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface FeedopsRouteChildren {
+  FeedopsDeliveriesRoute: typeof FeedopsDeliveriesRoute
+  FeedopsInventoryRoute: typeof FeedopsInventoryRoute
+  FeedopsOrdersRoute: typeof FeedopsOrdersRoute
+  FeedopsProductionRoute: typeof FeedopsProductionRoute
+  FeedopsQualityControlRoute: typeof FeedopsQualityControlRoute
+  FeedopsReportsRoute: typeof FeedopsReportsRoute
+  FeedopsSettingsRoute: typeof FeedopsSettingsRoute
+  FeedopsStockTransfersRoute: typeof FeedopsStockTransfersRoute
+  FeedopsSuppliersRoute: typeof FeedopsSuppliersRoute
+  FeedopsIndexRoute: typeof FeedopsIndexRoute
+}
+
+const FeedopsRouteChildren: FeedopsRouteChildren = {
+  FeedopsDeliveriesRoute: FeedopsDeliveriesRoute,
+  FeedopsInventoryRoute: FeedopsInventoryRoute,
+  FeedopsOrdersRoute: FeedopsOrdersRoute,
+  FeedopsProductionRoute: FeedopsProductionRoute,
+  FeedopsQualityControlRoute: FeedopsQualityControlRoute,
+  FeedopsReportsRoute: FeedopsReportsRoute,
+  FeedopsSettingsRoute: FeedopsSettingsRoute,
+  FeedopsStockTransfersRoute: FeedopsStockTransfersRoute,
+  FeedopsSuppliersRoute: FeedopsSuppliersRoute,
+  FeedopsIndexRoute: FeedopsIndexRoute,
+}
+
+const FeedopsRouteWithChildren =
+  FeedopsRoute._addFileChildren(FeedopsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   FarmVisitsRoute: FarmVisitsRoute,
   FarmersRoute: FarmersRoute,
   FeedOrdersRoute: FeedOrdersRoute,
+  FeedopsRoute: FeedopsRouteWithChildren,
   MessagesRoute: MessagesRoute,
   MyVisitsRoute: MyVisitsRoute,
   OfflineSyncRoute: OfflineSyncRoute,
