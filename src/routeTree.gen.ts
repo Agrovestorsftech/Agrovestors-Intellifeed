@@ -16,11 +16,13 @@ import { Route as PerformanceRouteImport } from './routes/performance'
 import { Route as OfflineSyncRouteImport } from './routes/offline-sync'
 import { Route as MyVisitsRouteImport } from './routes/my-visits'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as FeedopsRouteImport } from './routes/feedops'
 import { Route as FeedOrdersRouteImport } from './routes/feed-orders'
 import { Route as FarmersRouteImport } from './routes/farmers'
 import { Route as FarmVisitsRouteImport } from './routes/farm-visits'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FeedopsIndexRouteImport } from './routes/feedops.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSystemLogsRouteImport } from './routes/admin.system-logs'
@@ -70,6 +72,11 @@ const MessagesRoute = MessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeedopsRoute = FeedopsRouteImport.update({
+  id: '/feedops',
+  path: '/feedops',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FeedOrdersRoute = FeedOrdersRouteImport.update({
   id: '/feed-orders',
   path: '/feed-orders',
@@ -94,6 +101,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const FeedopsIndexRoute = FeedopsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FeedopsRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -167,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
+  '/feedops': typeof FeedopsRouteWithChildren
   '/messages': typeof MessagesRoute
   '/my-visits': typeof MyVisitsRoute
   '/offline-sync': typeof OfflineSyncRoute
@@ -187,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/admin/system-logs': typeof AdminSystemLogsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
+  '/feedops/': typeof FeedopsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -213,6 +227,7 @@ export interface FileRoutesByTo {
   '/admin/system-logs': typeof AdminSystemLogsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin': typeof AdminIndexRoute
+  '/feedops': typeof FeedopsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -221,6 +236,7 @@ export interface FileRoutesById {
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
+  '/feedops': typeof FeedopsRouteWithChildren
   '/messages': typeof MessagesRoute
   '/my-visits': typeof MyVisitsRoute
   '/offline-sync': typeof OfflineSyncRoute
@@ -241,6 +257,7 @@ export interface FileRoutesById {
   '/admin/system-logs': typeof AdminSystemLogsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
+  '/feedops/': typeof FeedopsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -250,6 +267,7 @@ export interface FileRouteTypes {
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
+    | '/feedops'
     | '/messages'
     | '/my-visits'
     | '/offline-sync'
@@ -270,6 +288,7 @@ export interface FileRouteTypes {
     | '/admin/system-logs'
     | '/admin/users'
     | '/admin/'
+    | '/feedops/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -296,6 +315,7 @@ export interface FileRouteTypes {
     | '/admin/system-logs'
     | '/admin/users'
     | '/admin'
+    | '/feedops'
   id:
     | '__root__'
     | '/'
@@ -303,6 +323,7 @@ export interface FileRouteTypes {
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
+    | '/feedops'
     | '/messages'
     | '/my-visits'
     | '/offline-sync'
@@ -323,6 +344,7 @@ export interface FileRouteTypes {
     | '/admin/system-logs'
     | '/admin/users'
     | '/admin/'
+    | '/feedops/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -331,6 +353,7 @@ export interface RootRouteChildren {
   FarmVisitsRoute: typeof FarmVisitsRoute
   FarmersRoute: typeof FarmersRoute
   FeedOrdersRoute: typeof FeedOrdersRoute
+  FeedopsRoute: typeof FeedopsRouteWithChildren
   MessagesRoute: typeof MessagesRoute
   MyVisitsRoute: typeof MyVisitsRoute
   OfflineSyncRoute: typeof OfflineSyncRoute
@@ -391,6 +414,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/feedops': {
+      id: '/feedops'
+      path: '/feedops'
+      fullPath: '/feedops'
+      preLoaderRoute: typeof FeedopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/feed-orders': {
       id: '/feed-orders'
       path: '/feed-orders'
@@ -425,6 +455,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/feedops/': {
+      id: '/feedops/'
+      path: '/'
+      fullPath: '/feedops/'
+      preLoaderRoute: typeof FeedopsIndexRouteImport
+      parentRoute: typeof FeedopsRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -554,12 +591,24 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface FeedopsRouteChildren {
+  FeedopsIndexRoute: typeof FeedopsIndexRoute
+}
+
+const FeedopsRouteChildren: FeedopsRouteChildren = {
+  FeedopsIndexRoute: FeedopsIndexRoute,
+}
+
+const FeedopsRouteWithChildren =
+  FeedopsRoute._addFileChildren(FeedopsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   FarmVisitsRoute: FarmVisitsRoute,
   FarmersRoute: FarmersRoute,
   FeedOrdersRoute: FeedOrdersRoute,
+  FeedopsRoute: FeedopsRouteWithChildren,
   MessagesRoute: MessagesRoute,
   MyVisitsRoute: MyVisitsRoute,
   OfflineSyncRoute: OfflineSyncRoute,

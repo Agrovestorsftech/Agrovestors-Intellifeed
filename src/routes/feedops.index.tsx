@@ -7,7 +7,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { FeedOpsHeader } from "@/components/dashboard/FeedOpsHeader";
-import { KpiCard } from "@/components/dashboard/KpiCard";
+import { FeedOpsKpiCard } from "@/components/dashboard/FeedOpsKpiCard";
 import { InventorySummary } from "@/components/dashboard/InventorySummary";
 import { ProductionOverview } from "@/components/dashboard/ProductionOverview";
 import { RecentOrders } from "@/components/dashboard/RecentOrders";
@@ -41,11 +41,11 @@ function FeedOpsDashboardPage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
-        <KpiCard title="Total Inventory" value="12.6 MT" growth="8.3%" icon={Boxes} tone="primary" />
-        <KpiCard title="Production Today" value="4.2 MT" growth="12.6%" icon={Factory} tone="accent" />
-        <KpiCard title="Orders to Fulfill" value="42" growth="Pending fulfillment" icon={ClipboardList} tone="info" />
-        <KpiCard title="Deliveries Today" value="18" growth="Out for delivery" icon={Truck} tone="warning" />
-        <KpiCard title="Low Stock Alerts" value="5" growth="Needs attention" icon={AlertTriangle} tone="destructive" />
+        <FeedOpsKpiCard title="Total Inventory" value="12.6 MT" trend={{ direction: "up", value: "8.3%", label: "from last week" }} icon={Boxes} tone="primary" />
+        <FeedOpsKpiCard title="Production Today" value="4.2 MT" trend={{ direction: "up", value: "12.6%", label: "from yesterday" }} icon={Factory} tone="accent" />
+        <FeedOpsKpiCard title="Orders to Fulfill" value="42" description="Pending fulfillment" icon={ClipboardList} tone="info" />
+        <FeedOpsKpiCard title="Deliveries Today" value="18" description="Out for delivery" icon={Truck} tone="warning" />
+        <FeedOpsKpiCard title="Low Stock Alerts" value="5" description="Needs attention" icon={AlertTriangle} tone="destructive" />
       </div>
 
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
