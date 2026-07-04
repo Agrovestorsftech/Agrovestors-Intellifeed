@@ -1,8 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
