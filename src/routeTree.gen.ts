@@ -20,9 +20,11 @@ import { Route as FeedopsRouteImport } from './routes/feedops'
 import { Route as FeedOrdersRouteImport } from './routes/feed-orders'
 import { Route as FarmersRouteImport } from './routes/farmers'
 import { Route as FarmVisitsRouteImport } from './routes/farm-visits'
+import { Route as AgentRouteImport } from './routes/agent'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FeedopsIndexRouteImport } from './routes/feedops.index'
+import { Route as AgentIndexRouteImport } from './routes/agent.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as FeedopsSuppliersRouteImport } from './routes/feedops.suppliers'
 import { Route as FeedopsStockTransfersRouteImport } from './routes/feedops.stock-transfers'
@@ -33,6 +35,16 @@ import { Route as FeedopsProductionRouteImport } from './routes/feedops.producti
 import { Route as FeedopsOrdersRouteImport } from './routes/feedops.orders'
 import { Route as FeedopsInventoryRouteImport } from './routes/feedops.inventory'
 import { Route as FeedopsDeliveriesRouteImport } from './routes/feedops.deliveries'
+import { Route as AgentSupportRouteImport } from './routes/agent.support'
+import { Route as AgentResearchInsightsRouteImport } from './routes/agent.research-insights'
+import { Route as AgentRescuePlansRouteImport } from './routes/agent.rescue-plans'
+import { Route as AgentReportsReviewRouteImport } from './routes/agent.reports-review'
+import { Route as AgentNutritionPlansRouteImport } from './routes/agent.nutrition-plans'
+import { Route as AgentMessagesRouteImport } from './routes/agent.messages'
+import { Route as AgentKnowledgeBaseRouteImport } from './routes/agent.knowledge-base'
+import { Route as AgentHealthAssessmentsRouteImport } from './routes/agent.health-assessments'
+import { Route as AgentFarmerReviewsRouteImport } from './routes/agent.farmer-reviews'
+import { Route as AgentAnalyticsRouteImport } from './routes/agent.analytics'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSystemLogsRouteImport } from './routes/admin.system-logs'
 import { Route as AdminSupportTicketsRouteImport } from './routes/admin.support-tickets'
@@ -101,6 +113,11 @@ const FarmVisitsRoute = FarmVisitsRouteImport.update({
   path: '/farm-visits',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentRoute = AgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -115,6 +132,11 @@ const FeedopsIndexRoute = FeedopsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => FeedopsRoute,
+} as any)
+const AgentIndexRoute = AgentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AgentRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -165,6 +187,56 @@ const FeedopsDeliveriesRoute = FeedopsDeliveriesRouteImport.update({
   id: '/deliveries',
   path: '/deliveries',
   getParentRoute: () => FeedopsRoute,
+} as any)
+const AgentSupportRoute = AgentSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentResearchInsightsRoute = AgentResearchInsightsRouteImport.update({
+  id: '/research-insights',
+  path: '/research-insights',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentRescuePlansRoute = AgentRescuePlansRouteImport.update({
+  id: '/rescue-plans',
+  path: '/rescue-plans',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentReportsReviewRoute = AgentReportsReviewRouteImport.update({
+  id: '/reports-review',
+  path: '/reports-review',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentNutritionPlansRoute = AgentNutritionPlansRouteImport.update({
+  id: '/nutrition-plans',
+  path: '/nutrition-plans',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentMessagesRoute = AgentMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentKnowledgeBaseRoute = AgentKnowledgeBaseRouteImport.update({
+  id: '/knowledge-base',
+  path: '/knowledge-base',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentHealthAssessmentsRoute = AgentHealthAssessmentsRouteImport.update({
+  id: '/health-assessments',
+  path: '/health-assessments',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentFarmerReviewsRoute = AgentFarmerReviewsRouteImport.update({
+  id: '/farmer-reviews',
+  path: '/farmer-reviews',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentAnalyticsRoute = AgentAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AgentRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -230,6 +302,7 @@ const AdminAgentsRoute = AdminAgentsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/agent': typeof AgentRouteWithChildren
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
@@ -253,6 +326,16 @@ export interface FileRoutesByFullPath {
   '/admin/support-tickets': typeof AdminSupportTicketsRoute
   '/admin/system-logs': typeof AdminSystemLogsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/agent/analytics': typeof AgentAnalyticsRoute
+  '/agent/farmer-reviews': typeof AgentFarmerReviewsRoute
+  '/agent/health-assessments': typeof AgentHealthAssessmentsRoute
+  '/agent/knowledge-base': typeof AgentKnowledgeBaseRoute
+  '/agent/messages': typeof AgentMessagesRoute
+  '/agent/nutrition-plans': typeof AgentNutritionPlansRoute
+  '/agent/reports-review': typeof AgentReportsReviewRoute
+  '/agent/rescue-plans': typeof AgentRescuePlansRoute
+  '/agent/research-insights': typeof AgentResearchInsightsRoute
+  '/agent/support': typeof AgentSupportRoute
   '/feedops/deliveries': typeof FeedopsDeliveriesRoute
   '/feedops/inventory': typeof FeedopsInventoryRoute
   '/feedops/orders': typeof FeedopsOrdersRoute
@@ -263,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
   '/feedops/suppliers': typeof FeedopsSuppliersRoute
   '/admin/': typeof AdminIndexRoute
+  '/agent/': typeof AgentIndexRoute
   '/feedops/': typeof FeedopsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -289,6 +373,16 @@ export interface FileRoutesByTo {
   '/admin/support-tickets': typeof AdminSupportTicketsRoute
   '/admin/system-logs': typeof AdminSystemLogsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/agent/analytics': typeof AgentAnalyticsRoute
+  '/agent/farmer-reviews': typeof AgentFarmerReviewsRoute
+  '/agent/health-assessments': typeof AgentHealthAssessmentsRoute
+  '/agent/knowledge-base': typeof AgentKnowledgeBaseRoute
+  '/agent/messages': typeof AgentMessagesRoute
+  '/agent/nutrition-plans': typeof AgentNutritionPlansRoute
+  '/agent/reports-review': typeof AgentReportsReviewRoute
+  '/agent/rescue-plans': typeof AgentRescuePlansRoute
+  '/agent/research-insights': typeof AgentResearchInsightsRoute
+  '/agent/support': typeof AgentSupportRoute
   '/feedops/deliveries': typeof FeedopsDeliveriesRoute
   '/feedops/inventory': typeof FeedopsInventoryRoute
   '/feedops/orders': typeof FeedopsOrdersRoute
@@ -299,12 +393,14 @@ export interface FileRoutesByTo {
   '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
   '/feedops/suppliers': typeof FeedopsSuppliersRoute
   '/admin': typeof AdminIndexRoute
+  '/agent': typeof AgentIndexRoute
   '/feedops': typeof FeedopsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/agent': typeof AgentRouteWithChildren
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
@@ -328,6 +424,16 @@ export interface FileRoutesById {
   '/admin/support-tickets': typeof AdminSupportTicketsRoute
   '/admin/system-logs': typeof AdminSystemLogsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/agent/analytics': typeof AgentAnalyticsRoute
+  '/agent/farmer-reviews': typeof AgentFarmerReviewsRoute
+  '/agent/health-assessments': typeof AgentHealthAssessmentsRoute
+  '/agent/knowledge-base': typeof AgentKnowledgeBaseRoute
+  '/agent/messages': typeof AgentMessagesRoute
+  '/agent/nutrition-plans': typeof AgentNutritionPlansRoute
+  '/agent/reports-review': typeof AgentReportsReviewRoute
+  '/agent/rescue-plans': typeof AgentRescuePlansRoute
+  '/agent/research-insights': typeof AgentResearchInsightsRoute
+  '/agent/support': typeof AgentSupportRoute
   '/feedops/deliveries': typeof FeedopsDeliveriesRoute
   '/feedops/inventory': typeof FeedopsInventoryRoute
   '/feedops/orders': typeof FeedopsOrdersRoute
@@ -338,6 +444,7 @@ export interface FileRoutesById {
   '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
   '/feedops/suppliers': typeof FeedopsSuppliersRoute
   '/admin/': typeof AdminIndexRoute
+  '/agent/': typeof AgentIndexRoute
   '/feedops/': typeof FeedopsIndexRoute
 }
 export interface FileRouteTypes {
@@ -345,6 +452,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/agent'
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
@@ -368,6 +476,16 @@ export interface FileRouteTypes {
     | '/admin/support-tickets'
     | '/admin/system-logs'
     | '/admin/users'
+    | '/agent/analytics'
+    | '/agent/farmer-reviews'
+    | '/agent/health-assessments'
+    | '/agent/knowledge-base'
+    | '/agent/messages'
+    | '/agent/nutrition-plans'
+    | '/agent/reports-review'
+    | '/agent/rescue-plans'
+    | '/agent/research-insights'
+    | '/agent/support'
     | '/feedops/deliveries'
     | '/feedops/inventory'
     | '/feedops/orders'
@@ -378,6 +496,7 @@ export interface FileRouteTypes {
     | '/feedops/stock-transfers'
     | '/feedops/suppliers'
     | '/admin/'
+    | '/agent/'
     | '/feedops/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -404,6 +523,16 @@ export interface FileRouteTypes {
     | '/admin/support-tickets'
     | '/admin/system-logs'
     | '/admin/users'
+    | '/agent/analytics'
+    | '/agent/farmer-reviews'
+    | '/agent/health-assessments'
+    | '/agent/knowledge-base'
+    | '/agent/messages'
+    | '/agent/nutrition-plans'
+    | '/agent/reports-review'
+    | '/agent/rescue-plans'
+    | '/agent/research-insights'
+    | '/agent/support'
     | '/feedops/deliveries'
     | '/feedops/inventory'
     | '/feedops/orders'
@@ -414,11 +543,13 @@ export interface FileRouteTypes {
     | '/feedops/stock-transfers'
     | '/feedops/suppliers'
     | '/admin'
+    | '/agent'
     | '/feedops'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/agent'
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
@@ -442,6 +573,16 @@ export interface FileRouteTypes {
     | '/admin/support-tickets'
     | '/admin/system-logs'
     | '/admin/users'
+    | '/agent/analytics'
+    | '/agent/farmer-reviews'
+    | '/agent/health-assessments'
+    | '/agent/knowledge-base'
+    | '/agent/messages'
+    | '/agent/nutrition-plans'
+    | '/agent/reports-review'
+    | '/agent/rescue-plans'
+    | '/agent/research-insights'
+    | '/agent/support'
     | '/feedops/deliveries'
     | '/feedops/inventory'
     | '/feedops/orders'
@@ -452,12 +593,14 @@ export interface FileRouteTypes {
     | '/feedops/stock-transfers'
     | '/feedops/suppliers'
     | '/admin/'
+    | '/agent/'
     | '/feedops/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AgentRoute: typeof AgentRouteWithChildren
   FarmVisitsRoute: typeof FarmVisitsRoute
   FarmersRoute: typeof FarmersRoute
   FeedOrdersRoute: typeof FeedOrdersRoute
@@ -550,6 +693,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FarmVisitsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agent': {
+      id: '/agent'
+      path: '/agent'
+      fullPath: '/agent'
+      preLoaderRoute: typeof AgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -570,6 +720,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/feedops/'
       preLoaderRoute: typeof FeedopsIndexRouteImport
       parentRoute: typeof FeedopsRoute
+    }
+    '/agent/': {
+      id: '/agent/'
+      path: '/'
+      fullPath: '/agent/'
+      preLoaderRoute: typeof AgentIndexRouteImport
+      parentRoute: typeof AgentRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -640,6 +797,76 @@ declare module '@tanstack/react-router' {
       fullPath: '/feedops/deliveries'
       preLoaderRoute: typeof FeedopsDeliveriesRouteImport
       parentRoute: typeof FeedopsRoute
+    }
+    '/agent/support': {
+      id: '/agent/support'
+      path: '/support'
+      fullPath: '/agent/support'
+      preLoaderRoute: typeof AgentSupportRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/research-insights': {
+      id: '/agent/research-insights'
+      path: '/research-insights'
+      fullPath: '/agent/research-insights'
+      preLoaderRoute: typeof AgentResearchInsightsRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/rescue-plans': {
+      id: '/agent/rescue-plans'
+      path: '/rescue-plans'
+      fullPath: '/agent/rescue-plans'
+      preLoaderRoute: typeof AgentRescuePlansRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/reports-review': {
+      id: '/agent/reports-review'
+      path: '/reports-review'
+      fullPath: '/agent/reports-review'
+      preLoaderRoute: typeof AgentReportsReviewRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/nutrition-plans': {
+      id: '/agent/nutrition-plans'
+      path: '/nutrition-plans'
+      fullPath: '/agent/nutrition-plans'
+      preLoaderRoute: typeof AgentNutritionPlansRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/messages': {
+      id: '/agent/messages'
+      path: '/messages'
+      fullPath: '/agent/messages'
+      preLoaderRoute: typeof AgentMessagesRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/knowledge-base': {
+      id: '/agent/knowledge-base'
+      path: '/knowledge-base'
+      fullPath: '/agent/knowledge-base'
+      preLoaderRoute: typeof AgentKnowledgeBaseRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/health-assessments': {
+      id: '/agent/health-assessments'
+      path: '/health-assessments'
+      fullPath: '/agent/health-assessments'
+      preLoaderRoute: typeof AgentHealthAssessmentsRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/farmer-reviews': {
+      id: '/agent/farmer-reviews'
+      path: '/farmer-reviews'
+      fullPath: '/agent/farmer-reviews'
+      preLoaderRoute: typeof AgentFarmerReviewsRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/analytics': {
+      id: '/agent/analytics'
+      path: '/analytics'
+      fullPath: '/agent/analytics'
+      preLoaderRoute: typeof AgentAnalyticsRouteImport
+      parentRoute: typeof AgentRoute
     }
     '/admin/users': {
       id: '/admin/users'
@@ -762,6 +989,36 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface AgentRouteChildren {
+  AgentAnalyticsRoute: typeof AgentAnalyticsRoute
+  AgentFarmerReviewsRoute: typeof AgentFarmerReviewsRoute
+  AgentHealthAssessmentsRoute: typeof AgentHealthAssessmentsRoute
+  AgentKnowledgeBaseRoute: typeof AgentKnowledgeBaseRoute
+  AgentMessagesRoute: typeof AgentMessagesRoute
+  AgentNutritionPlansRoute: typeof AgentNutritionPlansRoute
+  AgentReportsReviewRoute: typeof AgentReportsReviewRoute
+  AgentRescuePlansRoute: typeof AgentRescuePlansRoute
+  AgentResearchInsightsRoute: typeof AgentResearchInsightsRoute
+  AgentSupportRoute: typeof AgentSupportRoute
+  AgentIndexRoute: typeof AgentIndexRoute
+}
+
+const AgentRouteChildren: AgentRouteChildren = {
+  AgentAnalyticsRoute: AgentAnalyticsRoute,
+  AgentFarmerReviewsRoute: AgentFarmerReviewsRoute,
+  AgentHealthAssessmentsRoute: AgentHealthAssessmentsRoute,
+  AgentKnowledgeBaseRoute: AgentKnowledgeBaseRoute,
+  AgentMessagesRoute: AgentMessagesRoute,
+  AgentNutritionPlansRoute: AgentNutritionPlansRoute,
+  AgentReportsReviewRoute: AgentReportsReviewRoute,
+  AgentRescuePlansRoute: AgentRescuePlansRoute,
+  AgentResearchInsightsRoute: AgentResearchInsightsRoute,
+  AgentSupportRoute: AgentSupportRoute,
+  AgentIndexRoute: AgentIndexRoute,
+}
+
+const AgentRouteWithChildren = AgentRoute._addFileChildren(AgentRouteChildren)
+
 interface FeedopsRouteChildren {
   FeedopsDeliveriesRoute: typeof FeedopsDeliveriesRoute
   FeedopsInventoryRoute: typeof FeedopsInventoryRoute
@@ -794,6 +1051,7 @@ const FeedopsRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  AgentRoute: AgentRouteWithChildren,
   FarmVisitsRoute: FarmVisitsRoute,
   FarmersRoute: FarmersRoute,
   FeedOrdersRoute: FeedOrdersRoute,
