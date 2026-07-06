@@ -20,9 +20,11 @@ import { Route as FeedopsRouteImport } from './routes/feedops'
 import { Route as FeedOrdersRouteImport } from './routes/feed-orders'
 import { Route as FarmersRouteImport } from './routes/farmers'
 import { Route as FarmVisitsRouteImport } from './routes/farm-visits'
+import { Route as AgentRouteImport } from './routes/agent'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FeedopsIndexRouteImport } from './routes/feedops.index'
+import { Route as AgentIndexRouteImport } from './routes/agent.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as FeedopsSuppliersRouteImport } from './routes/feedops.suppliers'
 import { Route as FeedopsStockTransfersRouteImport } from './routes/feedops.stock-transfers'
@@ -101,6 +103,11 @@ const FarmVisitsRoute = FarmVisitsRouteImport.update({
   path: '/farm-visits',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentRoute = AgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -115,6 +122,11 @@ const FeedopsIndexRoute = FeedopsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => FeedopsRoute,
+} as any)
+const AgentIndexRoute = AgentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AgentRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -230,6 +242,7 @@ const AdminAgentsRoute = AdminAgentsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/agent': typeof AgentRouteWithChildren
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
@@ -263,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
   '/feedops/suppliers': typeof FeedopsSuppliersRoute
   '/admin/': typeof AdminIndexRoute
+  '/agent/': typeof AgentIndexRoute
   '/feedops/': typeof FeedopsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -299,12 +313,14 @@ export interface FileRoutesByTo {
   '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
   '/feedops/suppliers': typeof FeedopsSuppliersRoute
   '/admin': typeof AdminIndexRoute
+  '/agent': typeof AgentIndexRoute
   '/feedops': typeof FeedopsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/agent': typeof AgentRouteWithChildren
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
@@ -338,6 +354,7 @@ export interface FileRoutesById {
   '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
   '/feedops/suppliers': typeof FeedopsSuppliersRoute
   '/admin/': typeof AdminIndexRoute
+  '/agent/': typeof AgentIndexRoute
   '/feedops/': typeof FeedopsIndexRoute
 }
 export interface FileRouteTypes {
@@ -345,6 +362,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/agent'
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
@@ -378,6 +396,7 @@ export interface FileRouteTypes {
     | '/feedops/stock-transfers'
     | '/feedops/suppliers'
     | '/admin/'
+    | '/agent/'
     | '/feedops/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -414,11 +433,13 @@ export interface FileRouteTypes {
     | '/feedops/stock-transfers'
     | '/feedops/suppliers'
     | '/admin'
+    | '/agent'
     | '/feedops'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/agent'
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
@@ -452,12 +473,14 @@ export interface FileRouteTypes {
     | '/feedops/stock-transfers'
     | '/feedops/suppliers'
     | '/admin/'
+    | '/agent/'
     | '/feedops/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AgentRoute: typeof AgentRouteWithChildren
   FarmVisitsRoute: typeof FarmVisitsRoute
   FarmersRoute: typeof FarmersRoute
   FeedOrdersRoute: typeof FeedOrdersRoute
@@ -550,6 +573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FarmVisitsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agent': {
+      id: '/agent'
+      path: '/agent'
+      fullPath: '/agent'
+      preLoaderRoute: typeof AgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -570,6 +600,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/feedops/'
       preLoaderRoute: typeof FeedopsIndexRouteImport
       parentRoute: typeof FeedopsRoute
+    }
+    '/agent/': {
+      id: '/agent/'
+      path: '/'
+      fullPath: '/agent/'
+      preLoaderRoute: typeof AgentIndexRouteImport
+      parentRoute: typeof AgentRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -762,6 +799,16 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface AgentRouteChildren {
+  AgentIndexRoute: typeof AgentIndexRoute
+}
+
+const AgentRouteChildren: AgentRouteChildren = {
+  AgentIndexRoute: AgentIndexRoute,
+}
+
+const AgentRouteWithChildren = AgentRoute._addFileChildren(AgentRouteChildren)
+
 interface FeedopsRouteChildren {
   FeedopsDeliveriesRoute: typeof FeedopsDeliveriesRoute
   FeedopsInventoryRoute: typeof FeedopsInventoryRoute
@@ -794,6 +841,7 @@ const FeedopsRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  AgentRoute: AgentRouteWithChildren,
   FarmVisitsRoute: FarmVisitsRoute,
   FarmersRoute: FarmersRoute,
   FeedOrdersRoute: FeedOrdersRoute,

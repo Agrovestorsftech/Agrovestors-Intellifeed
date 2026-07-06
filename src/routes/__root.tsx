@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSidebar } from "@/components/dashboard/AppSidebar";
 import { AdminSidebar } from "@/components/dashboard/AdminSidebar";
 import { FeedOpsSidebar } from "@/components/dashboard/FeedOpsSidebar";
+import { AgentSidebar } from "@/components/dashboard/AgentSidebar";
 
 function NotFoundComponent() {
   return (
@@ -125,11 +126,20 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const isFeedOps = pathname === "/feedops" || pathname.startsWith("/feedops/");
+  const isAgent = pathname === "/agent" || pathname.startsWith("/agent/");
 
   return (
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-background text-foreground">
-        {isFeedOps ? <FeedOpsSidebar /> : isAdmin ? <AdminSidebar /> : <AppSidebar />}
+        {isAgent ? (
+          <AgentSidebar />
+        ) : isFeedOps ? (
+          <FeedOpsSidebar />
+        ) : isAdmin ? (
+          <AdminSidebar />
+        ) : (
+          <AppSidebar />
+        )}
         <div className="lg:pl-[280px]">
           <div className="mx-auto max-w-[1400px] px-6 lg:px-8 py-8">
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
