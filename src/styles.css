@@ -149,3 +149,24 @@
     color: var(--color-foreground);
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Portal identity theming                                             */
+/* Admin Agent (Nutritionist / Vet) uses a purple identity — scoped so */
+/* it does not leak into the other portals. Overrides only the primary */
+/* channel + sidebar-primary so buttons, active states and accents     */
+/* shift while all other tokens stay consistent.                       */
+/* ------------------------------------------------------------------ */
+.theme-agent {
+  --primary: oklch(0.55 0.2 295);
+  --primary-foreground: oklch(0.99 0.005 295);
+  --primary-soft: oklch(0.95 0.05 295);
+  --accent: oklch(0.95 0.05 295);
+  --accent-foreground: oklch(0.4 0.16 295);
+  --ring: oklch(0.55 0.2 295);
+  --sidebar-primary: oklch(0.55 0.2 295);
+  --sidebar-primary-foreground: oklch(0.99 0.005 295);
+  --sidebar-ring: oklch(0.55 0.2 295);
+  --chart-1: oklch(0.55 0.2 295);
+  --chart-3: oklch(0.62 0.17 250);
+}
