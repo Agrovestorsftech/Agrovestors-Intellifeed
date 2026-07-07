@@ -16,6 +16,9 @@ import { AppSidebar } from "@/components/dashboard/AppSidebar";
 import { AdminSidebar } from "@/components/dashboard/AdminSidebar";
 import { FeedOpsSidebar } from "@/components/dashboard/FeedOpsSidebar";
 import { AgentSidebar } from "@/components/dashboard/AgentSidebar";
+import { AuthProvider } from "@/lib/auth/AuthContext";
+import { RouteGuard } from "@/components/auth/RouteGuard";
+import { isPublicPath } from "@/lib/auth/route-policy";
 
 function NotFoundComponent() {
   return (
@@ -124,29 +127,38 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const publicPath = isPublicPath(pathname);
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const isFeedOps = pathname === "/feedops" || pathname.startsWith("/feedops/");
   const isAgent = pathname === "/agent" || pathname.startsWith("/agent/");
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background text-foreground">
-        {isAgent ? (
-          <AgentSidebar />
-        ) : isFeedOps ? (
-          <FeedOpsSidebar />
-        ) : isAdmin ? (
-          <AdminSidebar />
-        ) : (
-          <AppSidebar />
-        )}
-        <div className="lg:pl-[280px]">
-          <div className="mx-auto max-w-[1400px] px-6 lg:px-8 py-8">
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <AuthProvider>
+        <RouteGuard>
+          {publicPath ? (
             <Outlet />
-          </div>
-        </div>
-      </div>
+          ) : (
+            <div className="min-h-screen bg-background text-foreground">
+              {isAgent ? (
+                <AgentSidebar />
+              ) : isFeedOps ? (
+                <FeedOpsSidebar />
+              ) : isAdmin ? (
+                <AdminSidebar />
+              ) : (
+                <AppSidebar />
+              )}
+              <div className="lg:pl-[280px]">
+                <div className="mx-auto max-w-[1400px] px-6 lg:px-8 py-8">
+                  {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                  <Outlet />
+                </div>
+              </div>
+            </div>
+          )}
+        </RouteGuard>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

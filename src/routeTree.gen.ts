@@ -16,6 +16,7 @@ import { Route as PerformanceRouteImport } from './routes/performance'
 import { Route as OfflineSyncRouteImport } from './routes/offline-sync'
 import { Route as MyVisitsRouteImport } from './routes/my-visits'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FeedopsRouteImport } from './routes/feedops'
 import { Route as FeedOrdersRouteImport } from './routes/feed-orders'
 import { Route as FarmersRouteImport } from './routes/farmers'
@@ -26,6 +27,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as FeedopsIndexRouteImport } from './routes/feedops.index'
 import { Route as AgentIndexRouteImport } from './routes/agent.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as LoginFeedopsRouteImport } from './routes/login.feedops'
+import { Route as LoginAgentRouteImport } from './routes/login.agent'
+import { Route as LoginAdminRouteImport } from './routes/login.admin'
 import { Route as FeedopsSuppliersRouteImport } from './routes/feedops.suppliers'
 import { Route as FeedopsStockTransfersRouteImport } from './routes/feedops.stock-transfers'
 import { Route as FeedopsSettingsRouteImport } from './routes/feedops.settings'
@@ -93,6 +97,11 @@ const MessagesRoute = MessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FeedopsRoute = FeedopsRouteImport.update({
   id: '/feedops',
   path: '/feedops',
@@ -142,6 +151,21 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const LoginFeedopsRoute = LoginFeedopsRouteImport.update({
+  id: '/login/feedops',
+  path: '/login/feedops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginAgentRoute = LoginAgentRouteImport.update({
+  id: '/login/agent',
+  path: '/login/agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginAdminRoute = LoginAdminRouteImport.update({
+  id: '/login/admin',
+  path: '/login/admin',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const FeedopsSuppliersRoute = FeedopsSuppliersRouteImport.update({
   id: '/suppliers',
@@ -307,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
   '/feedops': typeof FeedopsRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/messages': typeof MessagesRoute
   '/my-visits': typeof MyVisitsRoute
   '/offline-sync': typeof OfflineSyncRoute
@@ -345,6 +370,9 @@ export interface FileRoutesByFullPath {
   '/feedops/settings': typeof FeedopsSettingsRoute
   '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
   '/feedops/suppliers': typeof FeedopsSuppliersRoute
+  '/login/admin': typeof LoginAdminRoute
+  '/login/agent': typeof LoginAgentRoute
+  '/login/feedops': typeof LoginFeedopsRoute
   '/admin/': typeof AdminIndexRoute
   '/agent/': typeof AgentIndexRoute
   '/feedops/': typeof FeedopsIndexRoute
@@ -354,6 +382,7 @@ export interface FileRoutesByTo {
   '/farm-visits': typeof FarmVisitsRoute
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/messages': typeof MessagesRoute
   '/my-visits': typeof MyVisitsRoute
   '/offline-sync': typeof OfflineSyncRoute
@@ -392,6 +421,9 @@ export interface FileRoutesByTo {
   '/feedops/settings': typeof FeedopsSettingsRoute
   '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
   '/feedops/suppliers': typeof FeedopsSuppliersRoute
+  '/login/admin': typeof LoginAdminRoute
+  '/login/agent': typeof LoginAgentRoute
+  '/login/feedops': typeof LoginFeedopsRoute
   '/admin': typeof AdminIndexRoute
   '/agent': typeof AgentIndexRoute
   '/feedops': typeof FeedopsIndexRoute
@@ -405,6 +437,7 @@ export interface FileRoutesById {
   '/farmers': typeof FarmersRoute
   '/feed-orders': typeof FeedOrdersRoute
   '/feedops': typeof FeedopsRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/messages': typeof MessagesRoute
   '/my-visits': typeof MyVisitsRoute
   '/offline-sync': typeof OfflineSyncRoute
@@ -443,6 +476,9 @@ export interface FileRoutesById {
   '/feedops/settings': typeof FeedopsSettingsRoute
   '/feedops/stock-transfers': typeof FeedopsStockTransfersRoute
   '/feedops/suppliers': typeof FeedopsSuppliersRoute
+  '/login/admin': typeof LoginAdminRoute
+  '/login/agent': typeof LoginAgentRoute
+  '/login/feedops': typeof LoginFeedopsRoute
   '/admin/': typeof AdminIndexRoute
   '/agent/': typeof AgentIndexRoute
   '/feedops/': typeof FeedopsIndexRoute
@@ -457,6 +493,7 @@ export interface FileRouteTypes {
     | '/farmers'
     | '/feed-orders'
     | '/feedops'
+    | '/forgot-password'
     | '/messages'
     | '/my-visits'
     | '/offline-sync'
@@ -495,6 +532,9 @@ export interface FileRouteTypes {
     | '/feedops/settings'
     | '/feedops/stock-transfers'
     | '/feedops/suppliers'
+    | '/login/admin'
+    | '/login/agent'
+    | '/login/feedops'
     | '/admin/'
     | '/agent/'
     | '/feedops/'
@@ -504,6 +544,7 @@ export interface FileRouteTypes {
     | '/farm-visits'
     | '/farmers'
     | '/feed-orders'
+    | '/forgot-password'
     | '/messages'
     | '/my-visits'
     | '/offline-sync'
@@ -542,6 +583,9 @@ export interface FileRouteTypes {
     | '/feedops/settings'
     | '/feedops/stock-transfers'
     | '/feedops/suppliers'
+    | '/login/admin'
+    | '/login/agent'
+    | '/login/feedops'
     | '/admin'
     | '/agent'
     | '/feedops'
@@ -554,6 +598,7 @@ export interface FileRouteTypes {
     | '/farmers'
     | '/feed-orders'
     | '/feedops'
+    | '/forgot-password'
     | '/messages'
     | '/my-visits'
     | '/offline-sync'
@@ -592,6 +637,9 @@ export interface FileRouteTypes {
     | '/feedops/settings'
     | '/feedops/stock-transfers'
     | '/feedops/suppliers'
+    | '/login/admin'
+    | '/login/agent'
+    | '/login/feedops'
     | '/admin/'
     | '/agent/'
     | '/feedops/'
@@ -605,6 +653,7 @@ export interface RootRouteChildren {
   FarmersRoute: typeof FarmersRoute
   FeedOrdersRoute: typeof FeedOrdersRoute
   FeedopsRoute: typeof FeedopsRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   MessagesRoute: typeof MessagesRoute
   MyVisitsRoute: typeof MyVisitsRoute
   OfflineSyncRoute: typeof OfflineSyncRoute
@@ -612,6 +661,9 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SupportRoute: typeof SupportRoute
   TasksRoute: typeof TasksRoute
+  LoginAdminRoute: typeof LoginAdminRoute
+  LoginAgentRoute: typeof LoginAgentRoute
+  LoginFeedopsRoute: typeof LoginFeedopsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -663,6 +715,13 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/messages'
       preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feedops': {
@@ -734,6 +793,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/login/feedops': {
+      id: '/login/feedops'
+      path: '/login/feedops'
+      fullPath: '/login/feedops'
+      preLoaderRoute: typeof LoginFeedopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/agent': {
+      id: '/login/agent'
+      path: '/login/agent'
+      fullPath: '/login/agent'
+      preLoaderRoute: typeof LoginAgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/admin': {
+      id: '/login/admin'
+      path: '/login/admin'
+      fullPath: '/login/admin'
+      preLoaderRoute: typeof LoginAdminRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/feedops/suppliers': {
       id: '/feedops/suppliers'
@@ -1056,6 +1136,7 @@ const rootRouteChildren: RootRouteChildren = {
   FarmersRoute: FarmersRoute,
   FeedOrdersRoute: FeedOrdersRoute,
   FeedopsRoute: FeedopsRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   MessagesRoute: MessagesRoute,
   MyVisitsRoute: MyVisitsRoute,
   OfflineSyncRoute: OfflineSyncRoute,
@@ -1063,6 +1144,9 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SupportRoute: SupportRoute,
   TasksRoute: TasksRoute,
+  LoginAdminRoute: LoginAdminRoute,
+  LoginAgentRoute: LoginAgentRoute,
+  LoginFeedopsRoute: LoginFeedopsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
