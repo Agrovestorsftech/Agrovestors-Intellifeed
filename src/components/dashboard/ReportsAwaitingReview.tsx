@@ -31,13 +31,16 @@ const rows: Row[] = [
 
 export function ReportsAwaitingReview() {
   return (
-    <section className="rounded-2xl bg-card border border-border p-6 shadow-sm flex flex-col">
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-base font-semibold text-foreground">Reports Awaiting Review</h2>
-        <span className="text-xs text-muted-foreground">28 pending</span>
+    <section className="rounded-2xl bg-card border border-border p-5 sm:p-6 shadow-sm flex flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Reports Awaiting Review</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Primary daily workspace — submissions from field agents</p>
+        </div>
+        <span className="text-xs font-medium text-primary bg-primary-soft px-3 py-1 rounded-full">28 pending</span>
       </div>
-      <div className="flex-1 overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="flex-1 -mx-5 sm:mx-0 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm px-5 sm:px-0">
           <thead>
             <tr className="text-xs text-muted-foreground">
               <th className="text-left font-medium pb-3">Farmer</th>
