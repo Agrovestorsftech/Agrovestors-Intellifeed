@@ -30,11 +30,10 @@ const navItems: NavItem[] = [
   { title: "Settings", to: "/feedops/settings", icon: Settings },
 ];
 
-export function FeedOpsSidebar() {
+export function FeedOpsSidebarInner({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-
   return (
-    <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-[280px] flex-col bg-sidebar text-sidebar-foreground">
+    <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="px-6 pt-7 pb-6 border-b border-sidebar-border">
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-primary/30">
@@ -61,6 +60,7 @@ export function FeedOpsSidebar() {
             <Link
               key={item.to}
               to={item.to}
+              onClick={onNavigate}
               className={[
                 "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200",
                 active
@@ -84,6 +84,14 @@ export function FeedOpsSidebar() {
           portal="feedops"
         />
       </div>
+    </div>
+  );
+}
+
+export function FeedOpsSidebar() {
+  return (
+    <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-[280px]">
+      <FeedOpsSidebarInner />
     </aside>
   );
 }
