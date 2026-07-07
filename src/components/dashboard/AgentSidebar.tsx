@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SidebarUser } from "./SidebarUser";
-import { useAuth } from "@/lib/auth/AuthContext";
 
 type NavItem = { title: string; to: string; icon: LucideIcon };
 
