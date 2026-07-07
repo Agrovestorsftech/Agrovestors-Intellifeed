@@ -16,6 +16,7 @@ import { AppSidebar } from "@/components/dashboard/AppSidebar";
 import { AdminSidebar } from "@/components/dashboard/AdminSidebar";
 import { FeedOpsSidebar } from "@/components/dashboard/FeedOpsSidebar";
 import { AgentSidebar } from "@/components/dashboard/AgentSidebar";
+import { MobileTopbar } from "@/components/dashboard/MobileTopbar";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { isPublicPath } from "@/lib/auth/route-policy";
@@ -139,18 +140,34 @@ function RootComponent() {
           {publicPath ? (
             <Outlet />
           ) : (
-            <div className="min-h-screen bg-background text-foreground">
+            <div
+              className={`min-h-screen bg-background text-foreground ${
+                isAgent ? "theme-agent" : ""
+              }`}
+            >
               {isAgent ? (
-                <AgentSidebar />
+                <>
+                  <AgentSidebar />
+                  <MobileTopbar portal="agent" />
+                </>
               ) : isFeedOps ? (
-                <FeedOpsSidebar />
+                <>
+                  <FeedOpsSidebar />
+                  <MobileTopbar portal="feedops" />
+                </>
               ) : isAdmin ? (
-                <AdminSidebar />
+                <>
+                  <AdminSidebar />
+                  <MobileTopbar portal="admin" />
+                </>
               ) : (
-                <AppSidebar />
+                <>
+                  <AppSidebar />
+                  <MobileTopbar portal="field" />
+                </>
               )}
               <div className="lg:pl-[280px]">
-                <div className="mx-auto max-w-[1400px] px-6 lg:px-8 py-8">
+                <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                   {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
                   <Outlet />
                 </div>

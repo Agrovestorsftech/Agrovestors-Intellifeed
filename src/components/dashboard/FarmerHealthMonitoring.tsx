@@ -32,12 +32,12 @@ const rows: Row[] = [
 export function FarmerHealthMonitoring() {
   return (
     <section className="rounded-2xl bg-card border border-border p-6 shadow-sm flex flex-col">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
         <h2 className="text-base font-semibold text-foreground">Farmer Health Monitoring</h2>
         <span className="text-xs text-muted-foreground">Farms needing attention</span>
       </div>
-      <div className="flex-1 overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="flex-1 -mx-6 sm:mx-0 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm px-6 sm:px-0">
           <thead>
             <tr className="text-xs text-muted-foreground">
               <th className="text-left font-medium pb-3">Farm</th>
