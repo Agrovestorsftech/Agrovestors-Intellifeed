@@ -13,10 +13,10 @@ import {
   LifeBuoy,
   History,
   Settings,
-
   Sprout,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { SidebarUser } from "./SidebarUser";
 
 type NavItem = { title: string; to: string; icon: LucideIcon };
 
@@ -82,16 +82,13 @@ export function AdminSidebar() {
       </nav>
 
       <div className="border-t border-sidebar-border p-4">
-        <button className="w-full flex items-center gap-3 rounded-xl p-2 hover:bg-sidebar-accent transition-colors">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-info to-primary flex items-center justify-center text-sm font-semibold text-white ring-2 ring-sidebar-border">
-            AU
-          </div>
-          <div className="flex-1 text-left min-w-0">
-            <p className="text-sm font-medium text-white truncate">Admin User</p>
-            <p className="text-xs text-sidebar-foreground/60 truncate">System Administrator</p>
-          </div>
-          <ChevronDown className="h-4 w-4 text-sidebar-foreground/60" />
-        </button>
+        <SidebarUser
+          fallbackName="Admin User"
+          fallbackRole="System Administrator"
+          fallbackInitials="AU"
+          avatarGradient="from-info to-primary"
+          portal="admin"
+        />
       </div>
     </aside>
   );
