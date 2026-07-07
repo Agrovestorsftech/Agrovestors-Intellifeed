@@ -2,14 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   ClipboardList,
   Salad,
-  LifeBuoy,
-  AlertTriangle,
   HeartPulse,
+  MessageSquareText,
+  CheckSquare,
 } from "lucide-react";
 import { AgentHeader } from "@/components/dashboard/AgentHeader";
 import { FeedOpsKpiCard as KpiCard } from "@/components/dashboard/FeedOpsKpiCard";
 import { ReportsAwaitingReview } from "@/components/dashboard/ReportsAwaitingReview";
-import { NutritionMonitoring } from "@/components/dashboard/NutritionMonitoring";
 import { CriticalAlerts } from "@/components/dashboard/CriticalAlerts";
 import { VeterinaryWorkspace } from "@/components/dashboard/VeterinaryWorkspace";
 import { KnowledgePanel } from "@/components/dashboard/KnowledgePanel";
@@ -38,37 +37,39 @@ function AgentDashboardPage() {
   return (
     <>
       <AgentHeader
-        title="Welcome, Dr. Jane! 👋"
-        subtitle="Review farmer reports, update nutrition plans and monitor livestock health."
+        title="Welcome, Dr. Jane 👋"
+        subtitle="Manage nutrition plans, health cases & consultations."
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
-        <KpiCard title="Reports Awaiting Review" value="28" description="Pending review" icon={ClipboardList} tone="warning" />
-        <KpiCard title="Nutrition Plans Updated" value="16" description="This week" icon={Salad} tone="primary" />
-        <KpiCard title="Rescue Plans Active" value="7" description="Require monitoring" icon={LifeBuoy} tone="info" />
-        <KpiCard title="Critical Cases" value="5" description="Needs immediate attention" icon={AlertTriangle} tone="destructive" />
-        <KpiCard title="Farm Health Score" value="92%" description="Across all assigned farms" icon={HeartPulse} tone="accent" />
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-5">
+        <KpiCard title="Active Farms" value="142" description="Under your care" icon={HeartPulse} tone="primary" />
+        <KpiCard title="Nutrition Plans" value="56" description="Active plans" icon={Salad} tone="primary" />
+        <KpiCard title="Health Cases" value="18" description="Active cases" icon={MessageSquareText} tone="destructive" />
+        <KpiCard title="Consultations" value="24" description="This week" icon={ClipboardList} tone="info" />
+        <KpiCard title="Pending Tasks" value="7" description="To review" icon={CheckSquare} tone="warning" />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2">
-          <ReportsAwaitingReview />
-        </div>
-        <NutritionMonitoring />
+      {/* Hero: Reports Awaiting Review */}
+      <div className="mt-6">
+        <ReportsAwaitingReview />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2">
-          <VeterinaryWorkspace />
-        </div>
-        <CriticalAlerts />
-      </div>
-
+      {/* Critical Alerts + Farmer Health */}
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
           <FarmerHealthMonitoring />
         </div>
+        <CriticalAlerts />
+      </div>
+
+      {/* Knowledge & Research */}
+      <div className="mt-6">
         <KnowledgePanel />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mt-6">
+        <VeterinaryWorkspace />
       </div>
     </>
   );
