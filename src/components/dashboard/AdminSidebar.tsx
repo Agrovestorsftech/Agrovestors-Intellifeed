@@ -13,7 +13,7 @@ import {
   LifeBuoy,
   History,
   Settings,
-  ChevronDown,
+
   Sprout,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
