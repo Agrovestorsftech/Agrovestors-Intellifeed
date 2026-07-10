@@ -42,9 +42,9 @@ export function SidebarUser({
   const role = session?.user.roleLabel ?? fallbackRole;
   const initials = session?.user.initials ?? fallbackInitials;
 
-  const performLogout = () => {
+  const performLogout = async () => {
     setConfirmOpen(false);
-    logout();
+    await logout();
     navigate({ to: PORTAL_LOGIN[portal], replace: true });
   };
 

@@ -8,10 +8,8 @@ interface LoginCardProps {
   portal: PortalId;
   portalName: string; // "Admin Portal"
   tagline: string;
-  identifierLabel: string; // "Email", "Agent ID", "Staff ID"
-  identifierPlaceholder: string;
-  identifierType?: string; // "email" | "text"
-  identifierAutoComplete?: string;
+  identifierLabel?: string;
+  identifierPlaceholder?: string;
   hint?: ReactNode;
   accent: "primary" | "info" | "warning";
 }
@@ -32,10 +30,8 @@ export function LoginCard({
   portal,
   portalName,
   tagline,
-  identifierLabel,
-  identifierPlaceholder,
-  identifierType = "text",
-  identifierAutoComplete = "username",
+  identifierLabel = "Email",
+  identifierPlaceholder = "you@example.com",
   hint,
   accent,
 }: LoginCardProps) {
@@ -51,12 +47,12 @@ export function LoginCard({
     if (submitting) return;
     setError(null);
     setSubmitting(true);
-    const result = await login(identifier, password, portal);
+    const result = await login(identifier, password);
     if (!result.ok || !result.user) {
       setSubmitting(false);
-      setError(
-        `Invalid ${identifierLabel} or Password. Please try again.`,
-      );
+      setError(result.error === "invalid" || !result.error
+        ? `Invalid ${identifierLabel} or Password. Please try again.`
+        : result.error);
       return;
     }
     navigate({ to: ROLE_HOME[result.user.role], replace: true });
@@ -87,8 +83,8 @@ export function LoginCard({
               <input
                 id="identifier"
                 name="identifier"
-                type={identifierType}
-                autoComplete={identifierAutoComplete}
+                type="email"
+                autoComplete="email"
                 required
                 disabled={submitting}
                 value={identifier}
@@ -141,7 +137,9 @@ export function LoginCard({
               >
                 Forgot password?
               </Link>
-              <span className="text-muted-foreground">IntelliFeed360 · {portalName}</span>
+              <Link to="/signup" className="text-primary hover:underline">
+                Create account
+              </Link>
             </div>
           </form>
 
@@ -151,6 +149,9 @@ export function LoginCard({
             </div>
           )}
         </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          IntelliFeed360 · {portalName}
+        </p>
       </div>
     </div>
   );
