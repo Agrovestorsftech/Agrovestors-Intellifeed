@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PerformanceRouteImport } from './routes/performance'
 import { Route as OfflineSyncRouteImport } from './routes/offline-sync'
@@ -70,6 +71,11 @@ const TasksRoute = TasksRouteImport.update({
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -337,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/offline-sync': typeof OfflineSyncRoute
   '/performance': typeof PerformanceRoute
   '/reports': typeof ReportsRoute
+  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
   '/admin/agents': typeof AdminAgentsRoute
@@ -388,6 +395,7 @@ export interface FileRoutesByTo {
   '/offline-sync': typeof OfflineSyncRoute
   '/performance': typeof PerformanceRoute
   '/reports': typeof ReportsRoute
+  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
   '/admin/agents': typeof AdminAgentsRoute
@@ -443,6 +451,7 @@ export interface FileRoutesById {
   '/offline-sync': typeof OfflineSyncRoute
   '/performance': typeof PerformanceRoute
   '/reports': typeof ReportsRoute
+  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
   '/admin/agents': typeof AdminAgentsRoute
@@ -499,6 +508,7 @@ export interface FileRouteTypes {
     | '/offline-sync'
     | '/performance'
     | '/reports'
+    | '/signup'
     | '/support'
     | '/tasks'
     | '/admin/agents'
@@ -550,6 +560,7 @@ export interface FileRouteTypes {
     | '/offline-sync'
     | '/performance'
     | '/reports'
+    | '/signup'
     | '/support'
     | '/tasks'
     | '/admin/agents'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/offline-sync'
     | '/performance'
     | '/reports'
+    | '/signup'
     | '/support'
     | '/tasks'
     | '/admin/agents'
@@ -659,6 +671,7 @@ export interface RootRouteChildren {
   OfflineSyncRoute: typeof OfflineSyncRoute
   PerformanceRoute: typeof PerformanceRoute
   ReportsRoute: typeof ReportsRoute
+  SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
   TasksRoute: typeof TasksRoute
   LoginAdminRoute: typeof LoginAdminRoute
@@ -680,6 +693,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -1142,6 +1162,7 @@ const rootRouteChildren: RootRouteChildren = {
   OfflineSyncRoute: OfflineSyncRoute,
   PerformanceRoute: PerformanceRoute,
   ReportsRoute: ReportsRoute,
+  SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
   TasksRoute: TasksRoute,
   LoginAdminRoute: LoginAdminRoute,
