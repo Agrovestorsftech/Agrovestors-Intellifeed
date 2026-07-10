@@ -17,10 +17,8 @@ function FeedOpsLoginPage() {
       portal="feedops"
       portalName="FeedOps Portal"
       tagline="Sign in to manage feed production, inventory and deliveries."
-      identifierLabel="Staff ID"
-      identifierPlaceholder="FOP001"
       accent="warning"
-      hint={<><strong className="text-foreground">Demo:</strong> FOP001 / Password123</>}
+      hint={<>Feed Operations staff sign in here. No account? <a href="/signup" className="text-primary hover:underline">Create one</a>.</>}
     />
   );
 }

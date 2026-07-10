@@ -17,10 +17,8 @@ function AgentLoginPage() {
       portal="agent"
       portalName="Agent Portal"
       tagline="Shared login for Field Agents and Admin Agents."
-      identifierLabel="Agent ID"
-      identifierPlaceholder="AGT001"
       accent="primary"
-      hint={<><strong className="text-foreground">Demo:</strong> AGT001 (Field Agent) or ADM001 (Admin Agent) · Password123</>}
+      hint={<>Field Agents and Admin Agents (Nutritionists/Vets) sign in here. No account? <a href="/signup" className="text-primary hover:underline">Create one</a>.</>}
     />
   );
 }
