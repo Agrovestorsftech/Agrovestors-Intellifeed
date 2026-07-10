@@ -34,3 +34,17 @@ export const PORTAL_LOGIN: Record<PortalId, string> = {
   agent: "/login/agent",
   feedops: "/login/feedops",
 };
+
+export const ROLE_LABEL: Record<UserRole, string> = {
+  system_admin: "System Administrator",
+  field_agent: "Field Agent",
+  admin_agent: "Admin Agent · Nutrition & Vet",
+  feedops: "Feed Operations",
+};
+
+/** Roles a visitor can self-assign at signup. system_admin is intentionally omitted. */
+export const SIGNUP_ROLES: { value: Exclude<UserRole,"system_admin">; label: string; description: string }[] = [
+  { value: "field_agent", label: "Field Agent", description: "Farm visits, farmer support, on-the-ground reports." },
+  { value: "admin_agent", label: "Admin Agent (Nutrition / Vet)", description: "Nutritionists & veterinarians reviewing reports and plans." },
+  { value: "feedops",     label: "Feed Operations",              description: "Inventory, production, warehouse and fulfilment." },
+];
