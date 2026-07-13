@@ -132,7 +132,7 @@ export async function fetchFarmerHealth(limit = 8) {
   if (error) throw error;
   return (data ?? []).map((f: any) => {
     const openCases = (f.health_cases ?? []).filter((c: any) => c.status !== "resolved");
-    const worst = openCases.reduce<string>((acc, c) => (severityRank(c.severity) > severityRank(acc) ? c.severity : acc), "low");
+    const worst: string = openCases.reduce((acc: string, c: any) => (severityRank(c.severity) > severityRank(acc) ? c.severity : acc), "low");
     const score = openCases.length === 0 ? 92 : openCases.length === 1 ? 82 : openCases.length === 2 ? 68 : 55;
     return {
       id: f.id,
@@ -351,7 +351,8 @@ export async function fetchSystemLogs(limit = 8) {
 /* --------------------------------- helpers --------------------------------- */
 
 function severityRank(sev: string): number {
-  return { low: 1, medium: 2, high: 3, critical: 4 }[sev] ?? 0;
+  const m: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
+  return m[sev] ?? 0;
 }
 
 function startOfDay(): string {
