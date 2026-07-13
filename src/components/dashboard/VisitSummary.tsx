@@ -1,11 +1,12 @@
 import { ChevronDown } from "lucide-react";
-
-const total = 24;
-const completed = 15;
-const pending = 9;
-const percent = Math.round((completed / total) * 100);
+import { useFieldKpis } from "@/hooks/useDashboard";
 
 export function VisitSummary() {
+  const { data } = useFieldKpis();
+  const completed = data?.completedThisWeek ?? 0;
+  const pending = data?.pendingReports ?? 0;
+  const total = completed + pending;
+  const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
   const size = 180;
   const stroke = 16;
   const radius = (size - stroke) / 2;

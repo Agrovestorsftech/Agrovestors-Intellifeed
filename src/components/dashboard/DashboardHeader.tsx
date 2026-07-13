@@ -1,4 +1,5 @@
-import { Bell, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
+import { NotificationsBell } from "./NotificationsBell";
 
 type Props = {
   title: string;
@@ -21,12 +22,7 @@ export function DashboardHeader({ title, subtitle }: Props) {
           <Calendar className="h-4 w-4 text-muted-foreground" />
         </button>
 
-        <button className="relative h-11 w-11 grid place-items-center rounded-xl border border-border bg-card hover:bg-muted transition-colors shadow-sm">
-          <Bell className="h-[18px] w-[18px] text-foreground" />
-          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-[10px] font-semibold text-destructive-foreground grid place-items-center ring-2 ring-background">
-            2
-          </span>
-        </button>
+        <NotificationsBell />
       </div>
     </header>
   );

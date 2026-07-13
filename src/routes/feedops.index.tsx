@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { FeedOpsHeader } from "@/components/dashboard/FeedOpsHeader";
 import { FeedOpsKpiCard } from "@/components/dashboard/FeedOpsKpiCard";
+import { useFeedOpsKpis } from "@/hooks/useDashboard";
 import { InventorySummary } from "@/components/dashboard/InventorySummary";
 import { ProductionOverview } from "@/components/dashboard/ProductionOverview";
 import { RecentOrders } from "@/components/dashboard/RecentOrders";
@@ -33,6 +34,8 @@ export const Route = createFileRoute("/feedops/")({
 });
 
 function FeedOpsDashboardPage() {
+  const { data, isLoading } = useFeedOpsKpis();
+  const invMt = Math.round(((data?.totalInventory ?? 0) / 1000) * 10) / 10;
   return (
     <>
       <FeedOpsHeader
@@ -41,11 +44,11 @@ function FeedOpsDashboardPage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
-        <FeedOpsKpiCard title="Total Inventory" value="12.6 MT" trend={{ direction: "up", value: "8.3%", label: "from last week" }} icon={Boxes} tone="primary" />
-        <FeedOpsKpiCard title="Production Today" value="4.2 MT" trend={{ direction: "up", value: "12.6%", label: "from yesterday" }} icon={Factory} tone="accent" />
-        <FeedOpsKpiCard title="Orders to Fulfill" value="42" description="Pending fulfillment" icon={ClipboardList} tone="info" />
-        <FeedOpsKpiCard title="Deliveries Today" value="18" description="Out for delivery" icon={Truck} tone="warning" />
-        <FeedOpsKpiCard title="Low Stock Alerts" value="5" description="Needs attention" icon={AlertTriangle} tone="destructive" />
+        <FeedOpsKpiCard title="Total Inventory" value={`${invMt} MT`} description="Across all warehouses" icon={Boxes} tone="primary" loading={isLoading} />
+        <FeedOpsKpiCard title="Production Queue" value={data?.productionQueue ?? 0} description="Queued or running" icon={Factory} tone="accent" loading={isLoading} />
+        <FeedOpsKpiCard title="Orders to Fulfill" value={data?.pendingOrders ?? 0} description="Pending fulfillment" icon={ClipboardList} tone="info" loading={isLoading} />
+        <FeedOpsKpiCard title="Orders Today" value={data?.deliveriesToday ?? 0} description="Placed today" icon={Truck} tone="warning" loading={isLoading} />
+        <FeedOpsKpiCard title="Low Stock Alerts" value={data?.lowStock ?? 0} description="At or below reorder level" icon={AlertTriangle} tone="destructive" loading={isLoading} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">

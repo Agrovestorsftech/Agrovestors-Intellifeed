@@ -8,18 +8,11 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-
-const data = [
-  { day: "May 15", users: 1200, orders: 1400 },
-  { day: "May 16", users: 1650, orders: 1750 },
-  { day: "May 17", users: 1700, orders: 1800 },
-  { day: "May 18", users: 1400, orders: 1550 },
-  { day: "May 19", users: 1800, orders: 2100 },
-  { day: "May 20", users: 1900, orders: 2400 },
-  { day: "May 21", users: 2000, orders: 2550 },
-];
+import { usePlatformSeries } from "@/hooks/useDashboard";
 
 export function PlatformPerformance() {
+  const { data: series } = usePlatformSeries();
+  const data = series ?? [];
   return (
     <section className="rounded-2xl bg-card border border-border p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
