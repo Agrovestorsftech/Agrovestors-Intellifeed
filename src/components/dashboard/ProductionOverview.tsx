@@ -1,4 +1,5 @@
 import { ChevronDown } from "lucide-react";
+import { useProductionSeries } from "@/hooks/useDashboard";
 import {
   Bar,
   BarChart,
@@ -9,17 +10,9 @@ import {
   YAxis,
 } from "recharts";
 
-const data = [
-  { day: "May 15", mt: 5.8 },
-  { day: "May 16", mt: 6.0 },
-  { day: "May 17", mt: 6.6 },
-  { day: "May 18", mt: 5.0 },
-  { day: "May 19", mt: 5.2 },
-  { day: "May 20", mt: 4.4 },
-  { day: "May 21", mt: 5.6 },
-];
-
 export function ProductionOverview() {
+  const { data: series } = useProductionSeries();
+  const data = series ?? [];
   return (
     <section className="rounded-2xl bg-card border border-border p-6 shadow-sm flex flex-col">
       <div className="flex items-center justify-between mb-4">

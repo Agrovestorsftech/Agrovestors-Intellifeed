@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { AgentHeader } from "@/components/dashboard/AgentHeader";
 import { FeedOpsKpiCard as KpiCard } from "@/components/dashboard/FeedOpsKpiCard";
+import { useAgentKpis } from "@/hooks/useDashboard";
 import { ReportsAwaitingReview } from "@/components/dashboard/ReportsAwaitingReview";
 import { CriticalAlerts } from "@/components/dashboard/CriticalAlerts";
 import { VeterinaryWorkspace } from "@/components/dashboard/VeterinaryWorkspace";
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/agent/")({
 });
 
 function AgentDashboardPage() {
+  const { data, isLoading } = useAgentKpis();
   return (
     <>
       <AgentHeader
@@ -42,11 +44,11 @@ function AgentDashboardPage() {
       />
 
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-5">
-        <KpiCard title="Active Farms" value="142" description="Under your care" icon={HeartPulse} tone="primary" />
-        <KpiCard title="Nutrition Plans" value="56" description="Active plans" icon={Salad} tone="primary" />
-        <KpiCard title="Health Cases" value="18" description="Active cases" icon={MessageSquareText} tone="destructive" />
-        <KpiCard title="Consultations" value="24" description="This week" icon={ClipboardList} tone="info" />
-        <KpiCard title="Pending Tasks" value="7" description="To review" icon={CheckSquare} tone="warning" />
+        <KpiCard title="Active Farms" value={data?.activeFarms ?? 0} description="Under your care" icon={HeartPulse} tone="primary" loading={isLoading} />
+        <KpiCard title="Nutrition Plans" value={data?.plans ?? 0} description="Active plans" icon={Salad} tone="primary" loading={isLoading} />
+        <KpiCard title="Health Cases" value={data?.cases ?? 0} description="Active cases" icon={MessageSquareText} tone="destructive" loading={isLoading} />
+        <KpiCard title="Pending Reports" value={data?.reports ?? 0} description="To review" icon={ClipboardList} tone="info" loading={isLoading} />
+        <KpiCard title="Pending Tasks" value={data?.tasks ?? 0} description="Assigned to you" icon={CheckSquare} tone="warning" loading={isLoading} />
       </div>
 
       {/* Hero: Reports Awaiting Review */}

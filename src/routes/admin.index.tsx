@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Users, UserCheck, Warehouse, ShoppingCart, Banknote } from "lucide-react";
+import { Users, UserCheck, Warehouse, ShoppingCart, HeartPulse } from "lucide-react";
 import { AdminHeader } from "@/components/dashboard/AdminHeader";
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { useAdminKpis } from "@/hooks/useDashboard";
 import { PlatformPerformance } from "@/components/dashboard/PlatformPerformance";
 import { UserDistribution } from "@/components/dashboard/UserDistribution";
 import { SystemLogs } from "@/components/dashboard/SystemLogs";
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminDashboardPage() {
+  const { data, isLoading } = useAdminKpis();
   return (
     <>
       <AdminHeader
@@ -37,11 +39,11 @@ function AdminDashboardPage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
-        <KpiCard title="Total Farmers" value="2,583" growth="12.4%" icon={Users} tone="primary" />
-        <KpiCard title="Total Agents" value="156" growth="8.7%" icon={UserCheck} tone="info" />
-        <KpiCard title="Active Farms" value="1,976" growth="9.7%" icon={Warehouse} tone="accent" />
-        <KpiCard title="Feed Orders" value="1,342" growth="18.8%" icon={ShoppingCart} tone="destructive" />
-        <KpiCard title="Total Revenue" value="₦24.8M" growth="22.1%" icon={Banknote} tone="warning" />
+        <KpiCard title="Total Farmers" value={data?.totalFarmers ?? 0} icon={Users} tone="primary" loading={isLoading} />
+        <KpiCard title="Platform Users" value={data?.totalUsers ?? 0} icon={UserCheck} tone="info" loading={isLoading} />
+        <KpiCard title="Active Farmers" value={data?.activeFarmers ?? 0} icon={Warehouse} tone="accent" loading={isLoading} />
+        <KpiCard title="Pending Orders" value={data?.pendingOrders ?? 0} icon={ShoppingCart} tone="destructive" loading={isLoading} />
+        <KpiCard title="Open Health Cases" value={data?.openCases ?? 0} icon={HeartPulse} tone="warning" loading={isLoading} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
