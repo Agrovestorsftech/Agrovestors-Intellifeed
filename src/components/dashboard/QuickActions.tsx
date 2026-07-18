@@ -1,6 +1,5 @@
 import { PlayCircle, FilePlus2, UserPlus, ShoppingCart, RefreshCw, LifeBuoy } from "lucide-react";
-import type { LucideIcon, ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AddFarmerDialog, AddReportDialog, CreateOrderDialog, OpenTicketDialog } from "@/components/field/dialogs";
@@ -14,21 +13,6 @@ const toneStyles: Record<Tone, string> = {
   destructive: "bg-destructive-soft text-destructive",
   accent: "bg-accent text-accent-foreground",
 };
-
-function Tile({ icon: Icon, title, tone, onClick, children }: { icon: LucideIcon; title: string; tone: Tone; onClick?: () => void; children?: ReactNode }) {
-  const inner = (
-    <button
-      onClick={onClick}
-      className="group w-full flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card px-3 py-5 hover:border-primary/40 hover:bg-primary-soft/40 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
-    >
-      <span className={`h-12 w-12 grid place-items-center rounded-2xl ${toneStyles[tone]} group-hover:scale-110 transition-transform`}>
-        <Icon className="h-5 w-5" />
-      </span>
-      <span className="text-sm font-medium text-foreground text-center">{title}</span>
-    </button>
-  );
-  return children ? <>{inner}</> : inner;
-}
 
 export function QuickActions() {
   const qc = useQueryClient();
