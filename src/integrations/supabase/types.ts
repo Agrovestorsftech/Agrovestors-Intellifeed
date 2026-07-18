@@ -47,11 +47,13 @@ export type Database = {
       farmers: {
         Row: {
           assigned_agent_id: string | null
+          avatar_url: string | null
           created_at: string
           farm_name: string | null
           id: string
           livestock_type: string | null
           name: string
+          notes: string | null
           phone: string | null
           region: string | null
           status: string
@@ -59,11 +61,13 @@ export type Database = {
         }
         Insert: {
           assigned_agent_id?: string | null
+          avatar_url?: string | null
           created_at?: string
           farm_name?: string | null
           id?: string
           livestock_type?: string | null
           name: string
+          notes?: string | null
           phone?: string | null
           region?: string | null
           status?: string
@@ -71,11 +75,13 @@ export type Database = {
         }
         Update: {
           assigned_agent_id?: string | null
+          avatar_url?: string | null
           created_at?: string
           farm_name?: string | null
           id?: string
           livestock_type?: string | null
           name?: string
+          notes?: string | null
           phone?: string | null
           region?: string | null
           status?: string

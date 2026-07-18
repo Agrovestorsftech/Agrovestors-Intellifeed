@@ -43,12 +43,31 @@ function computeInitials(name: string): string {
   return (first + last).toUpperCase();
 }
 
-async function hydrateSessionFromSupabase(userId: string, email: string | undefined): Promise<Session | null> {
-  const [{ data: profile }, { data: roleRow }] = await Promise.all([
-    supabase.from("profiles").select("full_name, initials, avatar_url").eq("id", userId).maybeSingle(),
-    supabase.from("user_roles").select("role").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle(),
-  ]);
-  const role = (roleRow?.role as UserRole | undefined) ?? "field_agent";
+async function hydrateSessionFromSupabase(
+  userId: string,
+  email: string | undefined,
+  preferredRole?: UserRole,
+): Promise<Session | null> {
+  // Poll the role row briefly — right after signup the handle_new_user trigger
+  // may not yet have inserted user_roles, so a naive read races and defaults
+  // every new signup to field_agent.
+  type RoleRow = { role: string } | null;
+  type ProfileRow = { full_name: string | null; initials: string | null; avatar_url: string | null } | null;
+  let roleRow: RoleRow = null;
+  let profile: ProfileRow = null;
+  const attempts = preferredRole ? 6 : 1;
+  for (let i = 0; i < attempts; i++) {
+    const [{ data: p }, { data: r }] = await Promise.all([
+      supabase.from("profiles").select("full_name, initials, avatar_url").eq("id", userId).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle(),
+    ]);
+    profile = p as ProfileRow;
+    roleRow = r as RoleRow;
+    if (!preferredRole) break;
+    if (roleRow?.role === preferredRole) break;
+    await new Promise((res) => setTimeout(res, 250));
+  }
+  const role = (preferredRole ?? (roleRow?.role as UserRole | undefined)) ?? "field_agent";
   const name = profile?.full_name || email?.split("@")[0] || "User";
   const initials = profile?.initials || computeInitials(name);
   const user: AuthUser = {
@@ -125,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: false, error: "confirm-email" };
     }
     if (data.user) {
-      const s = await hydrateSessionFromSupabase(data.user.id, data.user.email ?? undefined);
+      const s = await hydrateSessionFromSupabase(data.user.id, data.user.email ?? undefined, role);
       setSession(s);
       return { ok: !!s, user: s?.user };
     }

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { Sprout, Loader2, Check } from "lucide-react";
+import { Sprout, Loader2, Check, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { ROLE_HOME, SIGNUP_ROLES, type UserRole } from "@/lib/auth/types";
@@ -20,6 +20,9 @@ function SignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [role, setRole] = useState<Exclude<UserRole, "system_admin">>("field_agent");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +33,10 @@ function SignupPage() {
     if (submitting) return;
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
     setError(null);
@@ -85,12 +92,36 @@ function SignupPage() {
             </div>
             <div>
               <label htmlFor="password" className="text-sm font-medium text-foreground">Password</label>
-              <input
-                id="password" type="password" required minLength={8} disabled={submitting}
-                value={password} onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password" placeholder="At least 8 characters"
-                className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-              />
+              <div className="relative mt-1.5">
+                <input
+                  id="password" type={showPassword ? "text" : "password"} required minLength={8} disabled={submitting}
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password" placeholder="At least 8 characters"
+                  className="block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
+                />
+                <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">Confirm password</label>
+              <div className="relative mt-1.5">
+                <input
+                  id="confirmPassword" type={showConfirm ? "text" : "password"} required minLength={8} disabled={submitting}
+                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password" placeholder="Re-enter your password"
+                  className="block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
+                />
+                <button type="button" onClick={() => setShowConfirm((v) => !v)} aria-label={showConfirm ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground">
+                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {confirmPassword && confirmPassword !== password && (
+                <p className="mt-1 text-xs text-destructive">Passwords do not match.</p>
+              )}
             </div>
 
             <fieldset className="space-y-2">
