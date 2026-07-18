@@ -51,16 +51,18 @@ async function hydrateSessionFromSupabase(
   // Poll the role row briefly — right after signup the handle_new_user trigger
   // may not yet have inserted user_roles, so a naive read races and defaults
   // every new signup to field_agent.
-  let roleRow: { role: string } | null = null;
-  let profile: { full_name: string | null; initials: string | null; avatar_url: string | null } | null = null;
+  type RoleRow = { role: string } | null;
+  type ProfileRow = { full_name: string | null; initials: string | null; avatar_url: string | null } | null;
+  let roleRow: RoleRow = null;
+  let profile: ProfileRow = null;
   const attempts = preferredRole ? 6 : 1;
   for (let i = 0; i < attempts; i++) {
     const [{ data: p }, { data: r }] = await Promise.all([
       supabase.from("profiles").select("full_name, initials, avatar_url").eq("id", userId).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle(),
     ]);
-    profile = p as typeof profile;
-    roleRow = r as typeof roleRow;
+    profile = p as ProfileRow;
+    roleRow = r as RoleRow;
     if (!preferredRole) break;
     if (roleRow?.role === preferredRole) break;
     await new Promise((res) => setTimeout(res, 250));
