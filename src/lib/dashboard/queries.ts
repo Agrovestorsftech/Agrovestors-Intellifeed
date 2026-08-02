@@ -395,3 +395,428 @@ export function formatPriority(p: string): "High" | "Medium" | "Normal" {
 export function formatReportStatus(s: string): "Pending" | "Under Review" {
   return s === "under_review" ? "Under Review" : "Pending";
 }
+
+/* ================================ PHASE 2: ADMIN AGENT PAGES ================================ */
+
+/* ---- NUTRITION PLANS ---- */
+
+export type NutritionPlanRow = {
+  id: string;
+  farm: string;
+  plan_name: string;
+  status: string;
+  created_at: string;
+  assigned_to: string;
+};
+
+export async function fetchNutritionPlans(limit = 50): Promise<NutritionPlanRow[]> {
+  const { data, error } = await supabase
+    .from("nutrition_plans")
+    .select("id, plan_name, status, created_at, assigned_to, farmers(farm_name)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((p: any) => ({
+    id: p.id,
+    farm: p.farmers?.farm_name ?? "—",
+    plan_name: p.plan_name ?? "Untitled",
+    status: p.status ?? "draft",
+    created_at: relativeTime(p.created_at),
+    assigned_to: p.assigned_to ?? "—",
+  }));
+}
+
+export async function fetchNutritionPlanDetail(id: string) {
+  const { data, error } = await supabase
+    .from("nutrition_plans")
+    .select("id, plan_name, status, description, created_at, updated_at, assigned_to, farmer_id, farmers(farm_name, name)")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/* ---- HEALTH ASSESSMENTS (Health Cases) ---- */
+
+export type HealthCaseRow = {
+  id: string;
+  farm: string;
+  diagnosis: string;
+  severity: string;
+  status: string;
+  date: string;
+  assigned_to: string;
+};
+
+export async function fetchHealthCases(limit = 50): Promise<HealthCaseRow[]> {
+  const { data, error } = await supabase
+    .from("health_cases")
+    .select("id, diagnosis, severity, status, created_at, assigned_to, farmers(farm_name)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((c: any) => ({
+    id: c.id,
+    farm: c.farmers?.farm_name ?? "—",
+    diagnosis: c.diagnosis ?? "Unknown",
+    severity: c.severity ?? "low",
+    status: c.status ?? "open",
+    date: relativeTime(c.created_at),
+    assigned_to: c.assigned_to ?? "—",
+  }));
+}
+
+export async function fetchHealthCaseDetail(id: string) {
+  const { data, error } = await supabase
+    .from("health_cases")
+    .select("id, diagnosis, severity, status, description, created_at, updated_at, assigned_to, farmer_id, farmers(farm_name, name)")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/* ---- RESCUE PLANS (Health Cases filtered for severity) ---- */
+
+export type RescuePlanRow = {
+  id: string;
+  farm: string;
+  risk_level: string;
+  intervention: string;
+  status: string;
+  created_at: string;
+};
+
+export async function fetchRescuePlans(limit = 50): Promise<RescuePlanRow[]> {
+  const { data, error } = await supabase
+    .from("health_cases")
+    .select("id, diagnosis, severity, status, created_at, farmers(farm_name)")
+    .in("severity", ["high", "critical"])
+    .neq("status", "resolved")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((c: any) => ({
+    id: c.id,
+    farm: c.farmers?.farm_name ?? "—",
+    risk_level: c.severity ?? "high",
+    intervention: c.diagnosis ?? "Emergency response",
+    status: c.status ?? "open",
+    created_at: relativeTime(c.created_at),
+  }));
+}
+
+/* ---- VISIT REPORTS FOR REVIEW ---- */
+
+export type ReviewReportRow = {
+  id: string;
+  farm: string;
+  report_type: string;
+  submitted_by: string;
+  status: string;
+  date: string;
+  priority: string;
+};
+
+export async function fetchVisitReportsForReview(limit = 50): Promise<ReviewReportRow[]> {
+  const { data, error } = await supabase
+    .from("visit_reports")
+    .select("id, species, status, submitted_at, priority, agent_id, farmers(farm_name, name)")
+    .in("status", ["pending", "under_review"])
+    .order("submitted_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    farm: r.farmers?.farm_name ?? "—",
+    report_type: r.species ?? "General",
+    submitted_by: r.farmers?.name ?? "—",
+    status: r.status ?? "pending",
+    date: relativeTime(r.submitted_at),
+    priority: r.priority ?? "normal",
+  }));
+}
+
+export async function fetchReportDetail(id: string) {
+  const { data, error } = await supabase
+    .from("visit_reports")
+    .select("id, species, notes, status, submitted_at, priority, agent_id, farmer_id, farmers(farm_name, name)")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/* ---- FARMER REVIEWS ---- */
+
+export type FarmerReviewRow = {
+  id: string;
+  farm: string;
+  farmer_name: string;
+  species: string;
+  last_review: string;
+  report_count: number;
+  health_score: number;
+};
+
+export async function fetchFarmersWithReportSummary(limit = 50): Promise<FarmerReviewRow[]> {
+  const { data: farmers, error } = await supabase
+    .from("farmers")
+    .select("id, farm_name, name, livestock_type, updated_at, visit_reports(id), health_cases(id, status)")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (farmers ?? []).map((f: any) => {
+    const reportCount = (f.visit_reports ?? []).length;
+    const healthScore = Math.max(50, 95 - (f.health_cases?.filter((c: any) => c.status !== "resolved").length ?? 0) * 10);
+    return {
+      id: f.id,
+      farm: f.farm_name ?? "—",
+      farmer_name: f.name ?? "—",
+      species: f.livestock_type ?? "—",
+      last_review: relativeTime(f.updated_at),
+      report_count: reportCount,
+      health_score: healthScore,
+    };
+  });
+}
+
+export async function fetchFarmerReviewDetail(farmerId: string) {
+  const { data: farmer, error } = await supabase
+    .from("farmers")
+    .select("id, farm_name, name, livestock_type, contact_info, status, created_at, visit_reports(id, species, status), health_cases(id, diagnosis, status), nutrition_plans(id, plan_name, status)")
+    .eq("id", farmerId)
+    .single();
+  if (error) throw error;
+  return farmer;
+}
+
+/* ---- SUPPORT TICKETS (Extended) ---- */
+
+export type SupportTicketRow = {
+  id: string;
+  ticket_id: string;
+  subject: string;
+  priority: string;
+  status: string;
+  created_at: string;
+  assigned_to: string;
+};
+
+export async function fetchSupportTicketsForPage(limit = 50): Promise<SupportTicketRow[]> {
+  const { data, error } = await supabase
+    .from("support_tickets")
+    .select("id, subject, priority, status, created_at, assigned_to")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((t: any) => ({
+    id: t.id,
+    ticket_id: t.id.slice(0, 8).toUpperCase(),
+    subject: t.subject ?? "No subject",
+    priority: t.priority ?? "normal",
+    status: t.status ?? "open",
+    created_at: relativeTime(t.created_at),
+    assigned_to: t.assigned_to ?? "—",
+  }));
+}
+
+export async function fetchSupportTicketDetail(id: string) {
+  const { data, error } = await supabase
+    .from("support_tickets")
+    .select("id, subject, description, priority, status, created_at, updated_at, assigned_to, user_id, profiles(name)")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/* ---- KNOWLEDGE ARTICLES ---- */
+
+export type ArticleRow = {
+  id: string;
+  title: string;
+  category: string;
+  tags: string[];
+  updated_at: string;
+  is_published: boolean;
+};
+
+export async function fetchArticles(limit = 100, category?: string, search?: string): Promise<ArticleRow[]> {
+  let q = supabase
+    .from("knowledge_articles")
+    .select("id, title, category, tags, updated_at, is_published")
+    .eq("is_published", true)
+    .order("updated_at", { ascending: false });
+  
+  if (category) q = q.eq("category", category);
+  if (search) q = q.ilike("title", `%${search}%`);
+  
+  q = q.limit(limit);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchArticleDetail(id: string) {
+  const { data, error } = await supabase
+    .from("knowledge_articles")
+    .select("id, title, body, category, tags, is_published, created_at, updated_at")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/* ---- RESEARCH INSIGHTS (Aggregates) ---- */
+
+export type InsightData = {
+  most_common_diagnosis: string;
+  top_nutrition_issue: string;
+  case_resolution_rate: number;
+  disease_prevalence: Array<{ diagnosis: string; count: number }>;
+  severity_distribution: Array<{ severity: string; count: number }>;
+  recovery_trends: Array<{ month: string; resolved: number; total: number }>;
+};
+
+export async function fetchResearchInsights(): Promise<InsightData> {
+  const [healthCases, nutritionPlans] = await Promise.all([
+    supabase.from("health_cases").select("diagnosis, severity, status, created_at"),
+    supabase.from("nutrition_plans").select("status, created_at"),
+  ]);
+
+  const cases = healthCases.data ?? [];
+  const plans = nutritionPlans.data ?? [];
+
+  // Most common diagnosis
+  const diagnosisCounts: Record<string, number> = {};
+  cases.forEach((c: any) => {
+    if (c.diagnosis) diagnosisCounts[c.diagnosis] = (diagnosisCounts[c.diagnosis] ?? 0) + 1;
+  });
+  const most_common_diagnosis = Object.entries(diagnosisCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
+
+  // Most common nutrition issue (placeholder)
+  const top_nutrition_issue = "Feed Deficiency";
+
+  // Case resolution rate
+  const resolved = cases.filter((c: any) => c.status === "resolved").length;
+  const case_resolution_rate = cases.length > 0 ? Math.round((resolved / cases.length) * 100) : 0;
+
+  // Disease prevalence (top 5)
+  const disease_prevalence = Object.entries(diagnosisCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([diagnosis, count]) => ({ diagnosis, count }));
+
+  // Severity distribution
+  const severityCounts: Record<string, number> = {};
+  cases.forEach((c: any) => {
+    const sev = c.severity ?? "low";
+    severityCounts[sev] = (severityCounts[sev] ?? 0) + 1;
+  });
+  const severity_distribution = Object.entries(severityCounts)
+    .map(([severity, count]) => ({ severity, count }))
+    .sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
+
+  // Recovery trends (last 6 months)
+  const recovery_trends: Array<{ month: string; resolved: number; total: number }> = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const monthKey = d.toISOString().slice(0, 7);
+    const monthCases = cases.filter((c: any) => c.created_at?.slice(0, 7) === monthKey);
+    const monthResolved = monthCases.filter((c: any) => c.status === "resolved").length;
+    recovery_trends.push({
+      month: d.toLocaleDateString(undefined, { month: "short" }),
+      resolved: monthResolved,
+      total: monthCases.length,
+    });
+  }
+
+  return {
+    most_common_diagnosis,
+    top_nutrition_issue,
+    case_resolution_rate,
+    disease_prevalence,
+    severity_distribution,
+    recovery_trends,
+  };
+}
+
+/* ================================ PHASE 3: SHARED PAGES ================================ */
+
+/* ---- ANALYTICS ---- */
+
+export type AnalyticsData = {
+  total_farms: number;
+  active_cases: number;
+  avg_health_score: number;
+  reports_this_week: number;
+  case_severity_distribution: Array<{ severity: string; count: number }>;
+  farm_health_trends: Array<{ farm: string; score: number }>;
+  report_submission_pattern: Array<{ day: string; count: number }>;
+};
+
+export async function fetchAnalyticsSeries(): Promise<AnalyticsData> {
+  const week = new Date();
+  week.setDate(week.getDate() - 7);
+  const [farmers, cases, reports] = await Promise.all([
+    supabase.from("farmers").select("id, farm_name, health_cases(status)"),
+    supabase.from("health_cases").select("severity, status"),
+    supabase.from("visit_reports").select("created_at").gte("created_at", week.toISOString()),
+  ]);
+
+  const farmerCount = (farmers.data ?? []).length;
+  const activeCases = (cases.data ?? []).filter((c: any) => c.status !== "resolved").length;
+  const totalScore = (farmers.data ?? []).reduce((sum: number, f: any) => {
+    const openCases = (f.health_cases ?? []).filter((c: any) => c.status !== "resolved").length;
+    const score = Math.max(50, 95 - openCases * 10);
+    return sum + score;
+  }, 0);
+  const avgHealthScore = farmerCount > 0 ? Math.round(totalScore / farmerCount) : 90;
+
+  const severityCounts: Record<string, number> = {};
+  (cases.data ?? []).forEach((c: any) => {
+    const sev = c.severity ?? "low";
+    severityCounts[sev] = (severityCounts[sev] ?? 0) + 1;
+  });
+
+  const case_severity_distribution = Object.entries(severityCounts)
+    .map(([severity, count]) => ({ severity, count }))
+    .sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
+
+  const farm_health_trends = (farmers.data ?? [])
+    .slice(0, 10)
+    .map((f: any) => {
+      const openCases = (f.health_cases ?? []).filter((c: any) => c.status !== "resolved").length;
+      const score = Math.max(50, 95 - openCases * 10);
+      return { farm: f.farm_name ?? "—", score };
+    });
+
+  const reportsByDay: Record<string, number> = {};
+  (reports.data ?? []).forEach((r: any) => {
+    const day = new Date(r.created_at).toISOString().slice(0, 10);
+    reportsByDay[day] = (reportsByDay[day] ?? 0) + 1;
+  });
+
+  const report_submission_pattern: Array<{ day: string; count: number }> = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dayKey = d.toISOString().slice(0, 10);
+    report_submission_pattern.push({
+      day: d.toLocaleDateString(undefined, { weekday: "short" }),
+      count: reportsByDay[dayKey] ?? 0,
+    });
+  }
+
+  return {
+    total_farms: farmerCount,
+    active_cases: activeCases,
+    avg_health_score: avgHealthScore,
+    reports_this_week: (reports.data ?? []).length,
+    case_severity_distribution,
+    farm_health_trends,
+    report_submission_pattern,
+  };
+}
