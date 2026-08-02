@@ -7,6 +7,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { FilterHeaderSkeleton, TableRowSkeleton, LoadingContainer } from "@/components/ui/lazy-loader";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -77,65 +78,83 @@ function ReportsReviewPage() {
   return (
     <>
       <DashboardHeader title="Reports Review" subtitle="Approve or reject field visit reports." />
-      <section className="rounded-2xl bg-card border border-border p-4 shadow-sm mb-4 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by farmer, farm, summary…" className="pl-9" />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending_review">Awaiting review</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="all">All reports</SelectItem>
-          </SelectContent>
-        </Select>
-      </section>
+      
+      {isLoading ? (
+        <FilterHeaderSkeleton />
+      ) : (
+        <section className="rounded-2xl bg-card border border-border p-4 shadow-sm mb-4 flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by farmer, farm, summary…" className="pl-9" />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pending_review">Awaiting review</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="all">All reports</SelectItem>
+            </SelectContent>
+          </Select>
+        </section>
+      )}
 
-      <section className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
-        <div className="divide-y divide-border">
-          {isLoading && Array.from({ length: 5 }).map((_, i) => <div key={i} className="p-5 h-24 animate-pulse bg-muted/30" />)}
-          {error && <p className="p-6 text-sm text-destructive">Couldn't load reports.</p>}
-          {!isLoading && !error && filtered.length === 0 && (
-            <p className="p-10 text-center text-sm text-muted-foreground">Nothing here — you're all caught up.</p>
-          )}
-          {filtered.map((r: any) => {
-            const pending = ["pending", "under_review"].includes(r.status);
-            return (
-              <div key={r.id} className="p-5 flex flex-wrap items-start gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-foreground">{r.farmers?.name ?? "Unknown farmer"}</h3>
-                    <span className="text-xs text-muted-foreground">· {r.farmers?.farm_name ?? "—"}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{r.summary ?? "—"}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {r.species ?? "—"} · Submitted {relativeTime(r.submitted_at)}
-                    {r.reviewed_at ? ` · Reviewed ${relativeTime(r.reviewed_at)}` : ""}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex gap-2">
-                    <Badge className={statusStyle[r.status] ?? "bg-muted"}>{r.status.replace("_", " ")}</Badge>
-                    {r.priority !== "normal" && <Badge variant="outline">{r.priority}</Badge>}
-                  </div>
-                  {pending && (
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => review.mutate({ id: r.id, status: "rejected" })} disabled={review.isPending}>
-                        <X className="h-4 w-4 mr-1" />Reject
-                      </Button>
-                      <Button size="sm" onClick={() => review.mutate({ id: r.id, status: "approved" })} disabled={review.isPending}>
-                        <Check className="h-4 w-4 mr-1" />Approve
-                      </Button>
+      {isLoading ? (
+        <section className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
+          <div className="divide-y divide-border">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <TableRowSkeleton key={i} />
+            ))}
+          </div>
+        </section>
+      ) : error ? (
+        <section className="rounded-2xl bg-card border border-destructive/20 shadow-sm p-6">
+          <p className="text-sm text-destructive">Couldn't load reports.</p>
+        </section>
+      ) : filtered.length === 0 ? (
+        <section className="rounded-2xl bg-card border border-border shadow-sm p-10">
+          <p className="text-center text-sm text-muted-foreground">Nothing here — you're all caught up.</p>
+        </section>
+      ) : (
+        <section className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
+          <div className="divide-y divide-border">
+            {filtered.map((r: any) => {
+              const pending = ["pending", "under_review"].includes(r.status);
+              return (
+                <div key={r.id} className="p-5 flex flex-wrap items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground">{r.farmers?.name ?? "Unknown farmer"}</h3>
+                      <span className="text-xs text-muted-foreground">· {r.farmers?.farm_name ?? "—"}</span>
                     </div>
-                  )}
+                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{r.summary ?? "—"}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {r.species ?? "—"} · Submitted {relativeTime(r.submitted_at)}
+                      {r.reviewed_at ? ` · Reviewed ${relativeTime(r.reviewed_at)}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex gap-2">
+                      <Badge className={statusStyle[r.status] ?? "bg-muted"}>{r.status.replace("_", " ")}</Badge>
+                      {r.priority !== "normal" && <Badge variant="outline">{r.priority}</Badge>}
+                    </div>
+                    {pending && (
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => review.mutate({ id: r.id, status: "rejected" })} disabled={review.isPending}>
+                          <X className="h-4 w-4 mr-1" />Reject
+                        </Button>
+                        <Button size="sm" onClick={() => review.mutate({ id: r.id, status: "approved" })} disabled={review.isPending}>
+                          <Check className="h-4 w-4 mr-1" />Approve
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </>
   );
 }
