@@ -25,11 +25,11 @@ export async function fetchAdminKpis() {
     supportTickets,
   ] = await Promise.all([
     count("farmers"),
-    count("farmers", (q) => q.eq("status", "active")),
+    count("farmers"),
     count("user_roles"),
-    count("nutrition_plans", (q) => q.eq("status", "active")),
+    count("nutrition_plans"),
     count("health_cases", (q) => q.in("status", ["open", "in_progress"])),
-    count("visit_reports", (q) => q.in("status", ["pending", "under_review"])),
+    count("visit_reports", (q) => q.eq("follow_up_needed", true)),
     count("feed_orders", (q) => q.in("status", ["pending", "processing", "out_for_delivery"])),
     count("inventory_items"),
     count("support_tickets", (q) => q.in("status", ["open", "in_progress"])),
@@ -84,11 +84,11 @@ export async function fetchPlatformSeries() {
 
 export async function fetchAgentKpis() {
   const [activeFarms, plans, cases, tasks, reports] = await Promise.all([
-    count("farmers", (q) => q.eq("status", "active")),
-    count("nutrition_plans", (q) => q.eq("status", "active")),
+    count("farmers"),
+    count("nutrition_plans"),
     count("health_cases", (q) => q.in("status", ["open", "in_progress"])),
-    count("tasks", (q) => q.in("status", ["pending", "in_progress"])),
-    count("visit_reports", (q) => q.eq("status", "pending")),
+    count("tasks", (q) => q.in("status", ["pending", "in_progress", "open", "urgent"])),
+    count("visit_reports", (q) => q.eq("follow_up_needed", true)),
   ]);
   return { activeFarms, plans, cases, tasks, reports };
 }
@@ -106,27 +106,26 @@ export type ReportRow = {
 export async function fetchPendingReports(limit = 8): Promise<ReportRow[]> {
   const { data, error } = await supabase
     .from("visit_reports")
-    .select("id, priority, status, species, submitted_at, farmers(name, farm_name)")
-    .in("status", ["pending", "under_review"])
-    .order("submitted_at", { ascending: false })
+    .select("id, visit_type, visit_date, created_at, follow_up_needed, farmers(farm_name)")
+    .eq("follow_up_needed", true)
+    .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
   return (data ?? []).map((r: any) => ({
     id: r.id,
-    farmer: r.farmers?.name ?? "Unknown",
+    farmer: "Farmer",
     farm: r.farmers?.farm_name ?? "—",
-    species: r.species,
-    submitted: relativeTime(r.submitted_at),
-    priority: r.priority,
-    status: r.status,
+    species: r.visit_type,
+    submitted: relativeTime(r.created_at),
+    priority: r.follow_up_needed ? "High" : "Normal",
+    status: "Pending",
   }));
 }
 
 export async function fetchFarmerHealth(limit = 8) {
   const { data, error } = await supabase
     .from("farmers")
-    .select("id, farm_name, livestock_type, status, updated_at, health_cases(severity, status)")
-    .eq("status", "active")
+    .select("id, farm_name, primary_livestock_type, updated_at, health_cases(case_type, status)")
     .order("updated_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -137,7 +136,7 @@ export async function fetchFarmerHealth(limit = 8) {
     return {
       id: f.id,
       farm: f.farm_name ?? "—",
-      species: f.livestock_type ?? "—",
+      species: f.primary_livestock_type ?? "—",
       score,
       risk: openCases.length === 0 ? "Low" : worst === "critical" || worst === "high" ? "High" : "Medium",
       lastReview: relativeTime(f.updated_at),
@@ -148,8 +147,7 @@ export async function fetchFarmerHealth(limit = 8) {
 export async function fetchCriticalAlerts(limit = 6) {
   const { data, error } = await supabase
     .from("health_cases")
-    .select("id, severity, status, diagnosis, created_at, farmers(farm_name)")
-    .in("severity", ["critical", "high"])
+    .select("id, case_type, status, diagnosis, created_at, farmers(farm_name)")
     .neq("status", "resolved")
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -158,15 +156,15 @@ export async function fetchCriticalAlerts(limit = 6) {
     id: c.id,
     title: c.diagnosis ?? "Health alert",
     farm: c.farmers?.farm_name ?? "—",
-    priority: c.severity === "critical" ? "Critical" : "High",
+    priority: c.case_type === "respiratory_disease" ? "Critical" : "High",
   }));
 }
 
 export async function fetchKnowledgeArticles(limit = 6) {
   const { data, error } = await supabase
     .from("knowledge_articles")
-    .select("id, title, category, tags")
-    .eq("published", true)
+    .select("id, title, category, is_published")
+    .eq("is_published", true)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -262,10 +260,10 @@ export async function fetchFieldKpis(userId: string | undefined) {
   const startWeek = new Date();
   startWeek.setDate(startWeek.getDate() - 7);
   const [assigned, todayReports, pending, weekReports, alerts] = await Promise.all([
-    count("farmers", (q) => q.eq("assigned_agent_id", userId)),
-    count("visit_reports", (q) => q.eq("agent_id", userId).gte("submitted_at", startOfDay())),
-    count("visit_reports", (q) => q.eq("agent_id", userId).eq("status", "pending")),
-    count("visit_reports", (q) => q.eq("agent_id", userId).gte("submitted_at", startWeek.toISOString())),
+    count("farmers", (q) => q.eq("user_id", userId)),
+    count("visit_reports", (q) => q.eq("visitor_id", userId).gte("visit_date", new Date().toISOString().slice(0, 10))),
+    count("visit_reports", (q) => q.eq("visitor_id", userId).eq("follow_up_needed", true)),
+    count("visit_reports", (q) => q.eq("visitor_id", userId).gte("visit_date", startWeek.toISOString().slice(0, 10))),
     count("health_cases", (q) => q.in("severity", ["critical", "high"]).neq("status", "resolved")),
   ]);
   return { assigned, todayVisits: todayReports, pendingReports: pending, completedThisWeek: weekReports, urgentAlerts: alerts };
@@ -275,17 +273,18 @@ export async function fetchTodaysSchedule(userId: string | undefined, limit = 6)
   if (!userId) return [];
   const { data, error } = await supabase
     .from("visit_reports")
-    .select("id, status, species, submitted_at, farmers(farm_name)")
-    .eq("agent_id", userId)
-    .order("submitted_at", { ascending: false })
+    .select("id, visit_type, visit_date, created_at, follow_up_needed, farmers(farm_name)")
+    .eq("visitor_id", userId)
+    .eq("visit_date", new Date().toISOString().slice(0, 10))
+    .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
   return (data ?? []).map((r: any) => ({
     id: r.id,
     farm: r.farmers?.farm_name ?? "—",
-    category: r.species ?? "—",
-    time: new Date(r.submitted_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
-    status: r.status === "approved" || r.status === "reviewed" ? "Completed" : r.status === "under_review" ? "Upcoming" : "Pending",
+    category: r.visit_type ?? "Visit",
+    time: new Date(r.created_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
+    status: r.follow_up_needed ? "Pending" : "Completed",
   }));
 }
 
@@ -294,7 +293,7 @@ export async function fetchTodaysSchedule(userId: string | undefined, limit = 6)
 export async function fetchActivities(limit = 20) {
   const { data, error } = await supabase
     .from("activities")
-    .select("id, verb, meta, created_at, target_type, target_id")
+    .select("id, activity_type, description, metadata, created_at")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -304,8 +303,8 @@ export async function fetchActivities(limit = 20) {
 export async function fetchUnreadNotifications() {
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, title, body, link, type, created_at, read_at")
-    .is("read_at", null)
+    .select("id, title, message, notification_type, is_read, created_at")
+    .eq("is_read", false)
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) throw error;
@@ -315,7 +314,7 @@ export async function fetchUnreadNotifications() {
 export async function fetchAllNotifications(limit = 20) {
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, title, body, link, type, created_at, read_at")
+    .select("id, title, message, notification_type, is_read, created_at")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -323,14 +322,14 @@ export async function fetchAllNotifications(limit = 20) {
 }
 
 export async function markNotificationRead(id: string) {
-  const { error } = await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
+  const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
   if (error) throw error;
 }
 
 export async function fetchSupportTickets(limit = 6) {
   const { data, error } = await supabase
     .from("support_tickets")
-    .select("id, subject, priority, status, created_at")
+    .select("id, title, priority, status, created_at")
     .in("status", ["open", "in_progress"])
     .order("created_at", { ascending: false })
     .limit(limit);

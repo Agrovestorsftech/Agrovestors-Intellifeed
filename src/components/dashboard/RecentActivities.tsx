@@ -51,9 +51,9 @@ export function RecentActivities() {
       ) : (
       <ul className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
         {activities.map((a: any) => {
-          const meta = META[a.verb] ?? { icon: MessageCircle, tone: "accent" as Tone, title: () => a.verb };
+          const meta = META[a.activity_type] ?? { icon: MessageCircle, tone: "accent" as Tone, title: () => a.description ?? "Activity" };
           const Icon = meta.icon;
-          const title = meta.title(a.meta);
+          const title = meta.title(a.metadata);
           return (
             <li key={a.id} className="flex items-start gap-3">
               <div className={`h-9 w-9 shrink-0 grid place-items-center rounded-xl ${toneStyles[meta.tone]}`}>
