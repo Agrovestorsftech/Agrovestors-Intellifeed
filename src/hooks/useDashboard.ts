@@ -76,3 +76,34 @@ export const useSupportTickets = () =>
 
 export const useSystemLogs = () =>
   useQuery({ queryKey: ["system-logs"], queryFn: () => Q.fetchSystemLogs(8), refetchInterval: REFRESH_MS });
+
+/* ================================ PHASE 2: ADMIN AGENT PAGES ================================ */
+
+export const useNutritionPlans = (limit = 50) =>
+  useQuery({ queryKey: ["nutrition-plans", limit], queryFn: () => Q.fetchNutritionPlans(limit), refetchInterval: REFRESH_MS });
+
+export const useHealthCases = (limit = 50) =>
+  useQuery({ queryKey: ["health-cases", limit], queryFn: () => Q.fetchHealthCases(limit), refetchInterval: REFRESH_MS });
+
+export const useRescuePlans = (limit = 50) =>
+  useQuery({ queryKey: ["rescue-plans", limit], queryFn: () => Q.fetchRescuePlans(limit), refetchInterval: REFRESH_MS });
+
+export const useVisitReportsForReview = (limit = 50) =>
+  useQuery({ queryKey: ["visit-reports-review", limit], queryFn: () => Q.fetchVisitReportsForReview(limit), refetchInterval: REFRESH_MS });
+
+export const useFarmersWithReportSummary = (limit = 50) =>
+  useQuery({ queryKey: ["farmers-review", limit], queryFn: () => Q.fetchFarmersWithReportSummary(limit), refetchInterval: REFRESH_MS });
+
+export const useSupportTicketsForPage = (limit = 50) =>
+  useQuery({ queryKey: ["support-tickets-page", limit], queryFn: () => Q.fetchSupportTicketsForPage(limit), refetchInterval: REFRESH_MS });
+
+export const useArticles = (limit = 100, category?: string, search?: string) =>
+  useQuery({ queryKey: ["articles", limit, category, search], queryFn: () => Q.fetchArticles(limit, category, search), refetchInterval: REFRESH_MS });
+
+export const useResearchInsights = () =>
+  useQuery({ queryKey: ["research-insights"], queryFn: Q.fetchResearchInsights, refetchInterval: REFRESH_MS });
+
+/* ================================ PHASE 3: SHARED PAGES ================================ */
+
+export const useAnalyticsSeries = () =>
+  useQuery({ queryKey: ["analytics-series"], queryFn: Q.fetchAnalyticsSeries, refetchInterval: REFRESH_MS });
