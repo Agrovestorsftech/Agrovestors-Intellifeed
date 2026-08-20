@@ -9,128 +9,63 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TasksRouteImport } from './routes/tasks'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as PerformanceRouteImport } from './routes/performance'
-import { Route as OfflineSyncRouteImport } from './routes/offline-sync'
-import { Route as MyVisitsRouteImport } from './routes/my-visits'
-import { Route as MessagesRouteImport } from './routes/messages'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as FeedopsRouteImport } from './routes/feedops'
-import { Route as FeedOrdersRouteImport } from './routes/feed-orders'
-import { Route as FarmersRouteImport } from './routes/farmers'
-import { Route as FarmVisitsRouteImport } from './routes/farm-visits'
-import { Route as AgentRouteImport } from './routes/agent'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as FeedopsIndexRouteImport } from './routes/feedops.index'
-import { Route as AgentIndexRouteImport } from './routes/agent.index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AgentRouteImport } from './routes/agent'
+import { Route as FarmVisitsRouteImport } from './routes/farm-visits'
+import { Route as FarmersRouteImport } from './routes/farmers'
+import { Route as FeedOrdersRouteImport } from './routes/feed-orders'
+import { Route as FeedopsRouteImport } from './routes/feedops'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as MyVisitsRouteImport } from './routes/my-visits'
+import { Route as OfflineSyncRouteImport } from './routes/offline-sync'
+import { Route as PerformanceRouteImport } from './routes/performance'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as LoginFeedopsRouteImport } from './routes/login.feedops'
-import { Route as LoginAgentRouteImport } from './routes/login.agent'
-import { Route as LoginAdminRouteImport } from './routes/login.admin'
-import { Route as FeedopsSuppliersRouteImport } from './routes/feedops.suppliers'
-import { Route as FeedopsStockTransfersRouteImport } from './routes/feedops.stock-transfers'
-import { Route as FeedopsSettingsRouteImport } from './routes/feedops.settings'
-import { Route as FeedopsReportsRouteImport } from './routes/feedops.reports'
-import { Route as FeedopsQualityControlRouteImport } from './routes/feedops.quality-control'
-import { Route as FeedopsProductionRouteImport } from './routes/feedops.production'
-import { Route as FeedopsOrdersRouteImport } from './routes/feedops.orders'
-import { Route as FeedopsInventoryRouteImport } from './routes/feedops.inventory'
-import { Route as FeedopsDeliveriesRouteImport } from './routes/feedops.deliveries'
-import { Route as AgentSupportRouteImport } from './routes/agent.support'
-import { Route as AgentResearchInsightsRouteImport } from './routes/agent.research-insights'
-import { Route as AgentRescuePlansRouteImport } from './routes/agent.rescue-plans'
-import { Route as AgentReportsReviewRouteImport } from './routes/agent.reports-review'
-import { Route as AgentNutritionPlansRouteImport } from './routes/agent.nutrition-plans'
-import { Route as AgentMessagesRouteImport } from './routes/agent.messages'
-import { Route as AgentKnowledgeBaseRouteImport } from './routes/agent.knowledge-base'
-import { Route as AgentHealthAssessmentsRouteImport } from './routes/agent.health-assessments'
-import { Route as AgentFarmerReviewsRouteImport } from './routes/agent.farmer-reviews'
-import { Route as AgentAnalyticsRouteImport } from './routes/agent.analytics'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AdminSystemLogsRouteImport } from './routes/admin.system-logs'
-import { Route as AdminSupportTicketsRouteImport } from './routes/admin.support-tickets'
-import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
-import { Route as AdminRolesRouteImport } from './routes/admin.roles'
-import { Route as AdminReportsRouteImport } from './routes/admin.reports'
-import { Route as AdminFeedopsRouteImport } from './routes/admin.feedops'
-import { Route as AdminFarmersRouteImport } from './routes/admin.farmers'
-import { Route as AdminConfigurationsRouteImport } from './routes/admin.configurations'
-import { Route as AdminBillingRouteImport } from './routes/admin.billing'
-import { Route as AdminAuditTrailRouteImport } from './routes/admin.audit-trail'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
+import { Route as AdminAuditTrailRouteImport } from './routes/admin.audit-trail'
+import { Route as AdminBillingRouteImport } from './routes/admin.billing'
+import { Route as AdminConfigurationsRouteImport } from './routes/admin.configurations'
+import { Route as AdminFarmersRouteImport } from './routes/admin.farmers'
+import { Route as AdminFeedopsRouteImport } from './routes/admin.feedops'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminRolesRouteImport } from './routes/admin.roles'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminSupportTicketsRouteImport } from './routes/admin.support-tickets'
+import { Route as AdminSystemLogsRouteImport } from './routes/admin.system-logs'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AgentIndexRouteImport } from './routes/agent.index'
+import { Route as AgentAnalyticsRouteImport } from './routes/agent.analytics'
+import { Route as AgentFarmerReviewsRouteImport } from './routes/agent.farmer-reviews'
+import { Route as AgentHealthAssessmentsRouteImport } from './routes/agent.health-assessments'
+import { Route as AgentKnowledgeBaseRouteImport } from './routes/agent.knowledge-base'
+import { Route as AgentMessagesRouteImport } from './routes/agent.messages'
+import { Route as AgentNutritionPlansRouteImport } from './routes/agent.nutrition-plans'
+import { Route as AgentReportsReviewRouteImport } from './routes/agent.reports-review'
+import { Route as AgentRescuePlansRouteImport } from './routes/agent.rescue-plans'
+import { Route as AgentResearchInsightsRouteImport } from './routes/agent.research-insights'
+import { Route as AgentSupportRouteImport } from './routes/agent.support'
+import { Route as FeedopsIndexRouteImport } from './routes/feedops.index'
+import { Route as FeedopsDeliveriesRouteImport } from './routes/feedops.deliveries'
+import { Route as FeedopsInventoryRouteImport } from './routes/feedops.inventory'
+import { Route as FeedopsOrdersRouteImport } from './routes/feedops.orders'
+import { Route as FeedopsProductionRouteImport } from './routes/feedops.production'
+import { Route as FeedopsQualityControlRouteImport } from './routes/feedops.quality-control'
+import { Route as FeedopsReportsRouteImport } from './routes/feedops.reports'
+import { Route as FeedopsSettingsRouteImport } from './routes/feedops.settings'
+import { Route as FeedopsStockTransfersRouteImport } from './routes/feedops.stock-transfers'
+import { Route as FeedopsSuppliersRouteImport } from './routes/feedops.suppliers'
+import { Route as LoginAdminRouteImport } from './routes/login.admin'
+import { Route as LoginAgentRouteImport } from './routes/login.agent'
+import { Route as LoginFeedopsRouteImport } from './routes/login.feedops'
 
-const TasksRoute = TasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportsRoute = ReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PerformanceRoute = PerformanceRouteImport.update({
-  id: '/performance',
-  path: '/performance',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OfflineSyncRoute = OfflineSyncRouteImport.update({
-  id: '/offline-sync',
-  path: '/offline-sync',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyVisitsRoute = MyVisitsRouteImport.update({
-  id: '/my-visits',
-  path: '/my-visits',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MessagesRoute = MessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedopsRoute = FeedopsRouteImport.update({
-  id: '/feedops',
-  path: '/feedops',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedOrdersRoute = FeedOrdersRouteImport.update({
-  id: '/feed-orders',
-  path: '/feed-orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FarmersRoute = FarmersRouteImport.update({
-  id: '/farmers',
-  path: '/farmers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FarmVisitsRoute = FarmVisitsRouteImport.update({
-  id: '/farm-visits',
-  path: '/farm-visits',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgentRoute = AgentRouteImport.update({
-  id: '/agent',
-  path: '/agent',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -138,184 +73,84 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AgentRoute = AgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FeedopsIndexRoute = FeedopsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => FeedopsRoute,
+const FarmVisitsRoute = FarmVisitsRouteImport.update({
+  id: '/farm-visits',
+  path: '/farm-visits',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AgentIndexRoute = AgentIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AgentRoute,
+const FarmersRoute = FarmersRouteImport.update({
+  id: '/farmers',
+  path: '/farmers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedOrdersRoute = FeedOrdersRouteImport.update({
+  id: '/feed-orders',
+  path: '/feed-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedopsRoute = FeedopsRouteImport.update({
+  id: '/feedops',
+  path: '/feedops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyVisitsRoute = MyVisitsRouteImport.update({
+  id: '/my-visits',
+  path: '/my-visits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfflineSyncRoute = OfflineSyncRouteImport.update({
+  id: '/offline-sync',
+  path: '/offline-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerformanceRoute = PerformanceRouteImport.update({
+  id: '/performance',
+  path: '/performance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TasksRoute = TasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const LoginFeedopsRoute = LoginFeedopsRouteImport.update({
-  id: '/login/feedops',
-  path: '/login/feedops',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginAgentRoute = LoginAgentRouteImport.update({
-  id: '/login/agent',
-  path: '/login/agent',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginAdminRoute = LoginAdminRouteImport.update({
-  id: '/login/admin',
-  path: '/login/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedopsSuppliersRoute = FeedopsSuppliersRouteImport.update({
-  id: '/suppliers',
-  path: '/suppliers',
-  getParentRoute: () => FeedopsRoute,
-} as any)
-const FeedopsStockTransfersRoute = FeedopsStockTransfersRouteImport.update({
-  id: '/stock-transfers',
-  path: '/stock-transfers',
-  getParentRoute: () => FeedopsRoute,
-} as any)
-const FeedopsSettingsRoute = FeedopsSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => FeedopsRoute,
-} as any)
-const FeedopsReportsRoute = FeedopsReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => FeedopsRoute,
-} as any)
-const FeedopsQualityControlRoute = FeedopsQualityControlRouteImport.update({
-  id: '/quality-control',
-  path: '/quality-control',
-  getParentRoute: () => FeedopsRoute,
-} as any)
-const FeedopsProductionRoute = FeedopsProductionRouteImport.update({
-  id: '/production',
-  path: '/production',
-  getParentRoute: () => FeedopsRoute,
-} as any)
-const FeedopsOrdersRoute = FeedopsOrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => FeedopsRoute,
-} as any)
-const FeedopsInventoryRoute = FeedopsInventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
-  getParentRoute: () => FeedopsRoute,
-} as any)
-const FeedopsDeliveriesRoute = FeedopsDeliveriesRouteImport.update({
-  id: '/deliveries',
-  path: '/deliveries',
-  getParentRoute: () => FeedopsRoute,
-} as any)
-const AgentSupportRoute = AgentSupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AgentResearchInsightsRoute = AgentResearchInsightsRouteImport.update({
-  id: '/research-insights',
-  path: '/research-insights',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AgentRescuePlansRoute = AgentRescuePlansRouteImport.update({
-  id: '/rescue-plans',
-  path: '/rescue-plans',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AgentReportsReviewRoute = AgentReportsReviewRouteImport.update({
-  id: '/reports-review',
-  path: '/reports-review',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AgentNutritionPlansRoute = AgentNutritionPlansRouteImport.update({
-  id: '/nutrition-plans',
-  path: '/nutrition-plans',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AgentMessagesRoute = AgentMessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AgentKnowledgeBaseRoute = AgentKnowledgeBaseRouteImport.update({
-  id: '/knowledge-base',
-  path: '/knowledge-base',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AgentHealthAssessmentsRoute = AgentHealthAssessmentsRouteImport.update({
-  id: '/health-assessments',
-  path: '/health-assessments',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AgentFarmerReviewsRoute = AgentFarmerReviewsRouteImport.update({
-  id: '/farmer-reviews',
-  path: '/farmer-reviews',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AgentAnalyticsRoute = AgentAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => AgentRoute,
-} as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSystemLogsRoute = AdminSystemLogsRouteImport.update({
-  id: '/system-logs',
-  path: '/system-logs',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSupportTicketsRoute = AdminSupportTicketsRouteImport.update({
-  id: '/support-tickets',
-  path: '/support-tickets',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSettingsRoute = AdminSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminRolesRoute = AdminRolesRouteImport.update({
-  id: '/roles',
-  path: '/roles',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminFeedopsRoute = AdminFeedopsRouteImport.update({
-  id: '/feedops',
-  path: '/feedops',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminFarmersRoute = AdminFarmersRouteImport.update({
-  id: '/farmers',
-  path: '/farmers',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminConfigurationsRoute = AdminConfigurationsRouteImport.update({
-  id: '/configurations',
-  path: '/configurations',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminBillingRoute = AdminBillingRouteImport.update({
-  id: '/billing',
-  path: '/billing',
+const AdminAgentsRoute = AdminAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAuditTrailRoute = AdminAuditTrailRouteImport.update({
@@ -323,10 +158,175 @@ const AdminAuditTrailRoute = AdminAuditTrailRouteImport.update({
   path: '/audit-trail',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAgentsRoute = AdminAgentsRouteImport.update({
-  id: '/agents',
-  path: '/agents',
+const AdminBillingRoute = AdminBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
   getParentRoute: () => AdminRoute,
+} as any)
+const AdminConfigurationsRoute = AdminConfigurationsRouteImport.update({
+  id: '/configurations',
+  path: '/configurations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFarmersRoute = AdminFarmersRouteImport.update({
+  id: '/farmers',
+  path: '/farmers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFeedopsRoute = AdminFeedopsRouteImport.update({
+  id: '/feedops',
+  path: '/feedops',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRolesRoute = AdminRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSupportTicketsRoute = AdminSupportTicketsRouteImport.update({
+  id: '/support-tickets',
+  path: '/support-tickets',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSystemLogsRoute = AdminSystemLogsRouteImport.update({
+  id: '/system-logs',
+  path: '/system-logs',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AgentIndexRoute = AgentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentAnalyticsRoute = AgentAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentFarmerReviewsRoute = AgentFarmerReviewsRouteImport.update({
+  id: '/farmer-reviews',
+  path: '/farmer-reviews',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentHealthAssessmentsRoute = AgentHealthAssessmentsRouteImport.update({
+  id: '/health-assessments',
+  path: '/health-assessments',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentKnowledgeBaseRoute = AgentKnowledgeBaseRouteImport.update({
+  id: '/knowledge-base',
+  path: '/knowledge-base',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentMessagesRoute = AgentMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentNutritionPlansRoute = AgentNutritionPlansRouteImport.update({
+  id: '/nutrition-plans',
+  path: '/nutrition-plans',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentReportsReviewRoute = AgentReportsReviewRouteImport.update({
+  id: '/reports-review',
+  path: '/reports-review',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentRescuePlansRoute = AgentRescuePlansRouteImport.update({
+  id: '/rescue-plans',
+  path: '/rescue-plans',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentResearchInsightsRoute = AgentResearchInsightsRouteImport.update({
+  id: '/research-insights',
+  path: '/research-insights',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentSupportRoute = AgentSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AgentRoute,
+} as any)
+const FeedopsIndexRoute = FeedopsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsDeliveriesRoute = FeedopsDeliveriesRouteImport.update({
+  id: '/deliveries',
+  path: '/deliveries',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsInventoryRoute = FeedopsInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsOrdersRoute = FeedopsOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsProductionRoute = FeedopsProductionRouteImport.update({
+  id: '/production',
+  path: '/production',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsQualityControlRoute = FeedopsQualityControlRouteImport.update({
+  id: '/quality-control',
+  path: '/quality-control',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsReportsRoute = FeedopsReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsSettingsRoute = FeedopsSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsStockTransfersRoute = FeedopsStockTransfersRouteImport.update({
+  id: '/stock-transfers',
+  path: '/stock-transfers',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const FeedopsSuppliersRoute = FeedopsSuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
+  getParentRoute: () => FeedopsRoute,
+} as any)
+const LoginAdminRoute = LoginAdminRouteImport.update({
+  id: '/login/admin',
+  path: '/login/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginAgentRoute = LoginAgentRouteImport.update({
+  id: '/login/agent',
+  path: '/login/agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginFeedopsRoute = LoginFeedopsRouteImport.update({
+  id: '/login/feedops',
+  path: '/login/feedops',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -681,102 +681,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tasks': {
-      id: '/tasks'
-      path: '/tasks'
-      fullPath: '/tasks'
-      preLoaderRoute: typeof TasksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/support': {
-      id: '/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reports': {
-      id: '/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/performance': {
-      id: '/performance'
-      path: '/performance'
-      fullPath: '/performance'
-      preLoaderRoute: typeof PerformanceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/offline-sync': {
-      id: '/offline-sync'
-      path: '/offline-sync'
-      fullPath: '/offline-sync'
-      preLoaderRoute: typeof OfflineSyncRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-visits': {
-      id: '/my-visits'
-      path: '/my-visits'
-      fullPath: '/my-visits'
-      preLoaderRoute: typeof MyVisitsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/messages': {
-      id: '/messages'
-      path: '/messages'
-      fullPath: '/messages'
-      preLoaderRoute: typeof MessagesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feedops': {
-      id: '/feedops'
-      path: '/feedops'
-      fullPath: '/feedops'
-      preLoaderRoute: typeof FeedopsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feed-orders': {
-      id: '/feed-orders'
-      path: '/feed-orders'
-      fullPath: '/feed-orders'
-      preLoaderRoute: typeof FeedOrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/farmers': {
-      id: '/farmers'
-      path: '/farmers'
-      fullPath: '/farmers'
-      preLoaderRoute: typeof FarmersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/farm-visits': {
-      id: '/farm-visits'
-      path: '/farm-visits'
-      fullPath: '/farm-visits'
-      preLoaderRoute: typeof FarmVisitsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agent': {
-      id: '/agent'
-      path: '/agent'
-      fullPath: '/agent'
-      preLoaderRoute: typeof AgentRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -786,26 +695,103 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/agent': {
+      id: '/agent'
+      path: '/agent'
+      fullPath: '/agent'
+      preLoaderRoute: typeof AgentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/feedops/': {
-      id: '/feedops/'
-      path: '/'
-      fullPath: '/feedops/'
-      preLoaderRoute: typeof FeedopsIndexRouteImport
-      parentRoute: typeof FeedopsRoute
+    '/farm-visits': {
+      id: '/farm-visits'
+      path: '/farm-visits'
+      fullPath: '/farm-visits'
+      preLoaderRoute: typeof FarmVisitsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/agent/': {
-      id: '/agent/'
-      path: '/'
-      fullPath: '/agent/'
-      preLoaderRoute: typeof AgentIndexRouteImport
-      parentRoute: typeof AgentRoute
+    '/farmers': {
+      id: '/farmers'
+      path: '/farmers'
+      fullPath: '/farmers'
+      preLoaderRoute: typeof FarmersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed-orders': {
+      id: '/feed-orders'
+      path: '/feed-orders'
+      fullPath: '/feed-orders'
+      preLoaderRoute: typeof FeedOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedops': {
+      id: '/feedops'
+      path: '/feedops'
+      fullPath: '/feedops'
+      preLoaderRoute: typeof FeedopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-visits': {
+      id: '/my-visits'
+      path: '/my-visits'
+      fullPath: '/my-visits'
+      preLoaderRoute: typeof MyVisitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offline-sync': {
+      id: '/offline-sync'
+      path: '/offline-sync'
+      fullPath: '/offline-sync'
+      preLoaderRoute: typeof OfflineSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/performance': {
+      id: '/performance'
+      path: '/performance'
+      fullPath: '/performance'
+      preLoaderRoute: typeof PerformanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tasks': {
+      id: '/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
@@ -814,228 +800,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/login/feedops': {
-      id: '/login/feedops'
-      path: '/login/feedops'
-      fullPath: '/login/feedops'
-      preLoaderRoute: typeof LoginFeedopsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login/agent': {
-      id: '/login/agent'
-      path: '/login/agent'
-      fullPath: '/login/agent'
-      preLoaderRoute: typeof LoginAgentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login/admin': {
-      id: '/login/admin'
-      path: '/login/admin'
-      fullPath: '/login/admin'
-      preLoaderRoute: typeof LoginAdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feedops/suppliers': {
-      id: '/feedops/suppliers'
-      path: '/suppliers'
-      fullPath: '/feedops/suppliers'
-      preLoaderRoute: typeof FeedopsSuppliersRouteImport
-      parentRoute: typeof FeedopsRoute
-    }
-    '/feedops/stock-transfers': {
-      id: '/feedops/stock-transfers'
-      path: '/stock-transfers'
-      fullPath: '/feedops/stock-transfers'
-      preLoaderRoute: typeof FeedopsStockTransfersRouteImport
-      parentRoute: typeof FeedopsRoute
-    }
-    '/feedops/settings': {
-      id: '/feedops/settings'
-      path: '/settings'
-      fullPath: '/feedops/settings'
-      preLoaderRoute: typeof FeedopsSettingsRouteImport
-      parentRoute: typeof FeedopsRoute
-    }
-    '/feedops/reports': {
-      id: '/feedops/reports'
-      path: '/reports'
-      fullPath: '/feedops/reports'
-      preLoaderRoute: typeof FeedopsReportsRouteImport
-      parentRoute: typeof FeedopsRoute
-    }
-    '/feedops/quality-control': {
-      id: '/feedops/quality-control'
-      path: '/quality-control'
-      fullPath: '/feedops/quality-control'
-      preLoaderRoute: typeof FeedopsQualityControlRouteImport
-      parentRoute: typeof FeedopsRoute
-    }
-    '/feedops/production': {
-      id: '/feedops/production'
-      path: '/production'
-      fullPath: '/feedops/production'
-      preLoaderRoute: typeof FeedopsProductionRouteImport
-      parentRoute: typeof FeedopsRoute
-    }
-    '/feedops/orders': {
-      id: '/feedops/orders'
-      path: '/orders'
-      fullPath: '/feedops/orders'
-      preLoaderRoute: typeof FeedopsOrdersRouteImport
-      parentRoute: typeof FeedopsRoute
-    }
-    '/feedops/inventory': {
-      id: '/feedops/inventory'
-      path: '/inventory'
-      fullPath: '/feedops/inventory'
-      preLoaderRoute: typeof FeedopsInventoryRouteImport
-      parentRoute: typeof FeedopsRoute
-    }
-    '/feedops/deliveries': {
-      id: '/feedops/deliveries'
-      path: '/deliveries'
-      fullPath: '/feedops/deliveries'
-      preLoaderRoute: typeof FeedopsDeliveriesRouteImport
-      parentRoute: typeof FeedopsRoute
-    }
-    '/agent/support': {
-      id: '/agent/support'
-      path: '/support'
-      fullPath: '/agent/support'
-      preLoaderRoute: typeof AgentSupportRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/agent/research-insights': {
-      id: '/agent/research-insights'
-      path: '/research-insights'
-      fullPath: '/agent/research-insights'
-      preLoaderRoute: typeof AgentResearchInsightsRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/agent/rescue-plans': {
-      id: '/agent/rescue-plans'
-      path: '/rescue-plans'
-      fullPath: '/agent/rescue-plans'
-      preLoaderRoute: typeof AgentRescuePlansRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/agent/reports-review': {
-      id: '/agent/reports-review'
-      path: '/reports-review'
-      fullPath: '/agent/reports-review'
-      preLoaderRoute: typeof AgentReportsReviewRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/agent/nutrition-plans': {
-      id: '/agent/nutrition-plans'
-      path: '/nutrition-plans'
-      fullPath: '/agent/nutrition-plans'
-      preLoaderRoute: typeof AgentNutritionPlansRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/agent/messages': {
-      id: '/agent/messages'
-      path: '/messages'
-      fullPath: '/agent/messages'
-      preLoaderRoute: typeof AgentMessagesRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/agent/knowledge-base': {
-      id: '/agent/knowledge-base'
-      path: '/knowledge-base'
-      fullPath: '/agent/knowledge-base'
-      preLoaderRoute: typeof AgentKnowledgeBaseRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/agent/health-assessments': {
-      id: '/agent/health-assessments'
-      path: '/health-assessments'
-      fullPath: '/agent/health-assessments'
-      preLoaderRoute: typeof AgentHealthAssessmentsRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/agent/farmer-reviews': {
-      id: '/agent/farmer-reviews'
-      path: '/farmer-reviews'
-      fullPath: '/agent/farmer-reviews'
-      preLoaderRoute: typeof AgentFarmerReviewsRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/agent/analytics': {
-      id: '/agent/analytics'
-      path: '/analytics'
-      fullPath: '/agent/analytics'
-      preLoaderRoute: typeof AgentAnalyticsRouteImport
-      parentRoute: typeof AgentRoute
-    }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/system-logs': {
-      id: '/admin/system-logs'
-      path: '/system-logs'
-      fullPath: '/admin/system-logs'
-      preLoaderRoute: typeof AdminSystemLogsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/support-tickets': {
-      id: '/admin/support-tickets'
-      path: '/support-tickets'
-      fullPath: '/admin/support-tickets'
-      preLoaderRoute: typeof AdminSupportTicketsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/settings': {
-      id: '/admin/settings'
-      path: '/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AdminSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/roles': {
-      id: '/admin/roles'
-      path: '/roles'
-      fullPath: '/admin/roles'
-      preLoaderRoute: typeof AdminRolesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/feedops': {
-      id: '/admin/feedops'
-      path: '/feedops'
-      fullPath: '/admin/feedops'
-      preLoaderRoute: typeof AdminFeedopsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/farmers': {
-      id: '/admin/farmers'
-      path: '/farmers'
-      fullPath: '/admin/farmers'
-      preLoaderRoute: typeof AdminFarmersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/configurations': {
-      id: '/admin/configurations'
-      path: '/configurations'
-      fullPath: '/admin/configurations'
-      preLoaderRoute: typeof AdminConfigurationsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/billing': {
-      id: '/admin/billing'
-      path: '/billing'
-      fullPath: '/admin/billing'
-      preLoaderRoute: typeof AdminBillingRouteImport
+    '/admin/agents': {
+      id: '/admin/agents'
+      path: '/agents'
+      fullPath: '/admin/agents'
+      preLoaderRoute: typeof AdminAgentsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/audit-trail': {
@@ -1045,12 +814,243 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditTrailRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/agents': {
-      id: '/admin/agents'
-      path: '/agents'
-      fullPath: '/admin/agents'
-      preLoaderRoute: typeof AdminAgentsRouteImport
+    '/admin/billing': {
+      id: '/admin/billing'
+      path: '/billing'
+      fullPath: '/admin/billing'
+      preLoaderRoute: typeof AdminBillingRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/admin/configurations': {
+      id: '/admin/configurations'
+      path: '/configurations'
+      fullPath: '/admin/configurations'
+      preLoaderRoute: typeof AdminConfigurationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/farmers': {
+      id: '/admin/farmers'
+      path: '/farmers'
+      fullPath: '/admin/farmers'
+      preLoaderRoute: typeof AdminFarmersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/feedops': {
+      id: '/admin/feedops'
+      path: '/feedops'
+      fullPath: '/admin/feedops'
+      preLoaderRoute: typeof AdminFeedopsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/roles': {
+      id: '/admin/roles'
+      path: '/roles'
+      fullPath: '/admin/roles'
+      preLoaderRoute: typeof AdminRolesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/support-tickets': {
+      id: '/admin/support-tickets'
+      path: '/support-tickets'
+      fullPath: '/admin/support-tickets'
+      preLoaderRoute: typeof AdminSupportTicketsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/system-logs': {
+      id: '/admin/system-logs'
+      path: '/system-logs'
+      fullPath: '/admin/system-logs'
+      preLoaderRoute: typeof AdminSystemLogsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/agent/': {
+      id: '/agent/'
+      path: '/'
+      fullPath: '/agent/'
+      preLoaderRoute: typeof AgentIndexRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/analytics': {
+      id: '/agent/analytics'
+      path: '/analytics'
+      fullPath: '/agent/analytics'
+      preLoaderRoute: typeof AgentAnalyticsRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/farmer-reviews': {
+      id: '/agent/farmer-reviews'
+      path: '/farmer-reviews'
+      fullPath: '/agent/farmer-reviews'
+      preLoaderRoute: typeof AgentFarmerReviewsRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/health-assessments': {
+      id: '/agent/health-assessments'
+      path: '/health-assessments'
+      fullPath: '/agent/health-assessments'
+      preLoaderRoute: typeof AgentHealthAssessmentsRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/knowledge-base': {
+      id: '/agent/knowledge-base'
+      path: '/knowledge-base'
+      fullPath: '/agent/knowledge-base'
+      preLoaderRoute: typeof AgentKnowledgeBaseRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/messages': {
+      id: '/agent/messages'
+      path: '/messages'
+      fullPath: '/agent/messages'
+      preLoaderRoute: typeof AgentMessagesRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/nutrition-plans': {
+      id: '/agent/nutrition-plans'
+      path: '/nutrition-plans'
+      fullPath: '/agent/nutrition-plans'
+      preLoaderRoute: typeof AgentNutritionPlansRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/reports-review': {
+      id: '/agent/reports-review'
+      path: '/reports-review'
+      fullPath: '/agent/reports-review'
+      preLoaderRoute: typeof AgentReportsReviewRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/rescue-plans': {
+      id: '/agent/rescue-plans'
+      path: '/rescue-plans'
+      fullPath: '/agent/rescue-plans'
+      preLoaderRoute: typeof AgentRescuePlansRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/research-insights': {
+      id: '/agent/research-insights'
+      path: '/research-insights'
+      fullPath: '/agent/research-insights'
+      preLoaderRoute: typeof AgentResearchInsightsRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/support': {
+      id: '/agent/support'
+      path: '/support'
+      fullPath: '/agent/support'
+      preLoaderRoute: typeof AgentSupportRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/feedops/': {
+      id: '/feedops/'
+      path: '/'
+      fullPath: '/feedops/'
+      preLoaderRoute: typeof FeedopsIndexRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/deliveries': {
+      id: '/feedops/deliveries'
+      path: '/deliveries'
+      fullPath: '/feedops/deliveries'
+      preLoaderRoute: typeof FeedopsDeliveriesRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/inventory': {
+      id: '/feedops/inventory'
+      path: '/inventory'
+      fullPath: '/feedops/inventory'
+      preLoaderRoute: typeof FeedopsInventoryRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/orders': {
+      id: '/feedops/orders'
+      path: '/orders'
+      fullPath: '/feedops/orders'
+      preLoaderRoute: typeof FeedopsOrdersRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/production': {
+      id: '/feedops/production'
+      path: '/production'
+      fullPath: '/feedops/production'
+      preLoaderRoute: typeof FeedopsProductionRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/quality-control': {
+      id: '/feedops/quality-control'
+      path: '/quality-control'
+      fullPath: '/feedops/quality-control'
+      preLoaderRoute: typeof FeedopsQualityControlRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/reports': {
+      id: '/feedops/reports'
+      path: '/reports'
+      fullPath: '/feedops/reports'
+      preLoaderRoute: typeof FeedopsReportsRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/settings': {
+      id: '/feedops/settings'
+      path: '/settings'
+      fullPath: '/feedops/settings'
+      preLoaderRoute: typeof FeedopsSettingsRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/stock-transfers': {
+      id: '/feedops/stock-transfers'
+      path: '/stock-transfers'
+      fullPath: '/feedops/stock-transfers'
+      preLoaderRoute: typeof FeedopsStockTransfersRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/feedops/suppliers': {
+      id: '/feedops/suppliers'
+      path: '/suppliers'
+      fullPath: '/feedops/suppliers'
+      preLoaderRoute: typeof FeedopsSuppliersRouteImport
+      parentRoute: typeof FeedopsRoute
+    }
+    '/login/admin': {
+      id: '/login/admin'
+      path: '/login/admin'
+      fullPath: '/login/admin'
+      preLoaderRoute: typeof LoginAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/agent': {
+      id: '/login/agent'
+      path: '/login/agent'
+      fullPath: '/login/agent'
+      preLoaderRoute: typeof LoginAgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/feedops': {
+      id: '/login/feedops'
+      path: '/login/feedops'
+      fullPath: '/login/feedops'
+      preLoaderRoute: typeof LoginFeedopsRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
