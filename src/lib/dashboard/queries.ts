@@ -164,8 +164,8 @@ export async function fetchCriticalAlerts(limit = 6) {
 export async function fetchKnowledgeArticles(limit = 6) {
   const { data, error } = await supabase
     .from("knowledge_articles")
-    .select("id, title, category, is_published")
-    .eq("is_published", true)
+    .select("id, title, category, published")
+    .eq("published", true)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -305,8 +305,8 @@ export async function fetchActivities(limit = 20) {
 export async function fetchUnreadNotifications() {
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, title, message, notification_type, is_read, created_at")
-    .eq("is_read", false)
+    .select("id, title, body, type, read_at, created_at")
+    .is("read_at", null)
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) throw error;
@@ -316,7 +316,7 @@ export async function fetchUnreadNotifications() {
 export async function fetchAllNotifications(limit = 20) {
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, title, message, notification_type, is_read, created_at")
+    .select("id, title, body, type, read_at, created_at")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -324,7 +324,7 @@ export async function fetchAllNotifications(limit = 20) {
 }
 
 export async function markNotificationRead(id: string) {
-  const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+  const { error } = await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
   if (error) throw error;
 }
 
@@ -640,9 +640,9 @@ export type ArticleRow = {
 export async function fetchArticles(limit = 100, category?: string, search?: string): Promise<ArticleRow[]> {
   let q = supabase
     .from("knowledge_articles")
-    .select("id, title, category, tags, updated_at, is_published")
-    .eq("is_published", true)
-    .order("updated_at", { ascending: false });
+    .select("id, title, category, tags, published, created_at")
+    .eq("published", true)
+    .order("created_at", { ascending: false });
   
   if (category) q = q.eq("category", category);
   if (search) q = q.ilike("title", `%${search}%`);
@@ -650,7 +650,14 @@ export async function fetchArticles(limit = 100, category?: string, search?: str
   q = q.limit(limit);
   const { data, error } = await q;
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map((article: any) => ({
+    id: article.id,
+    title: article.title,
+    category: article.category,
+    tags: article.tags ?? [],
+    updated_at: article.created_at,
+    is_published: article.published,
+  }));
 }
 
 export async function fetchArticleDetail(id: string) {
