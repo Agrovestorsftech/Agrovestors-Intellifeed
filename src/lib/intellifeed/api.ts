@@ -28,31 +28,33 @@ function unwrap<T>(payload: T | Page<T>) {
   return payload;
 }
 
+export const isIntelliFeedConfigured = Boolean(API_ROOT);
+
 export async function intellifeedFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!API_ROOT) {
     throw new IntelliFeedApiError("IntelliFeed360 API URL is not configured.", 0);
   }
 
-  const token = await accessToken();
-  const headers = new Headers(init.headers);
-  headers.set("Accept", "application/json");
-  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const request = async (token?: string) => {
+    const headers = new Headers(init.headers);
+    headers.set("Accept", "application/json");
+    if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(`${API_ROOT}${path}`, { ...init, headers });
+  };
 
-  const response = await fetch(`${API_ROOT}${path}`, { ...init, headers });
+  let response = await request(await accessToken());
+  if (response.status === 401) {
+    const refreshed = await supabase.auth.refreshSession();
+    if (refreshed.data.session?.access_token) response = await request(refreshed.data.session.access_token);
+  }
+
   const text = await response.text();
   let payload: unknown = null;
-  try {
-    payload = text ? JSON.parse(text) : null;
-  } catch {
-    payload = text;
-  }
-
+  try { payload = text ? JSON.parse(text) : null; } catch { payload = text; }
   if (!response.ok) {
-    if (response.status === 401) await supabase.auth.refreshSession();
     throw new IntelliFeedApiError(`IntelliFeed360 request failed (${response.status}).`, response.status, payload);
   }
-
   return payload as T;
 }
 
