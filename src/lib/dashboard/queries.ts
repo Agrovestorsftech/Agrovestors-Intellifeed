@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { intellifeed } from "@/lib/intellifeed/api";
 
 export type CountResult = number;
 
@@ -83,14 +84,20 @@ export async function fetchPlatformSeries() {
 /* --------------------------------- Agent (Admin Agent) --------------------------------- */
 
 export async function fetchAgentKpis() {
-  const [activeFarms, plans, cases, tasks, reports] = await Promise.all([
-    count("farmers"),
-    count("nutrition_plans"),
-    count("health_cases", (q) => q.in("status", ["open", "in_progress"])),
-    count("tasks", (q) => q.in("status", ["pending", "in_progress", "open", "urgent"])),
-    count("visit_reports", (q) => q.eq("follow_up_needed", true)),
+  const [farms, assignments, visits, cases, plans] = await Promise.all([
+    intellifeed.farms(),
+    intellifeed.assignments(),
+    intellifeed.visits(),
+    intellifeed.healthCases(),
+    intellifeed.nutritionPlans(),
   ]);
-  return { activeFarms, plans, cases, tasks, reports };
+  return {
+    activeFarms: farms.length,
+    plans: plans.length,
+    cases: cases.filter((c: any) => !["resolved", "closed"].includes(c.status)).length,
+    tasks: assignments.filter((a: any) => !["completed", "closed"].includes(a.status)).length,
+    reports: visits.filter((v: any) => v.follow_up_needed || v.status === "pending").length,
+  };
 }
 
 export type ReportRow = {
@@ -104,21 +111,15 @@ export type ReportRow = {
 };
 
 export async function fetchPendingReports(limit = 8): Promise<ReportRow[]> {
-  const { data, error } = await supabase
-    .from("visit_reports")
-    .select("id, visit_type, visit_date, created_at, follow_up_needed, farmers(farm_name)")
-    .eq("follow_up_needed", true)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (data ?? []).map((r: any) => ({
-    id: r.id,
-    farmer: "Farmer",
-    farm: r.farmers?.farm_name ?? "—",
-    species: r.visit_type,
-    submitted: relativeTime(r.created_at),
-    priority: r.follow_up_needed ? "High" : "Normal",
-    status: "Pending",
+  const visits = await intellifeed.visits({ page_size: limit });
+  return visits.filter((r: any) => r.follow_up_needed || r.status === "pending").map((r: any) => ({
+    id: String(r.id),
+    farmer: r.farmer_name ?? r.farmer?.name ?? "Farmer",
+    farm: r.farm_name ?? r.farm?.name ?? "—",
+    species: r.species ?? r.livestock_type ?? r.visit_type ?? null,
+    submitted: relativeTime(r.created_at ?? r.visit_date),
+    priority: r.priority ?? (r.follow_up_needed ? "High" : "Normal"),
+    status: r.status ?? "Pending",
   }));
 }
 
@@ -271,33 +272,34 @@ export async function fetchFieldKpis(userId: string | undefined) {
 
 export async function fetchTodaysSchedule(userId: string | undefined, limit = 6) {
   if (!userId) return [];
-  const { data, error } = await supabase
-    .from("visit_reports")
-    .select("id, visit_type, visit_date, created_at, follow_up_needed, farmers(farm_name)")
-    .eq("visitor_id", userId)
-    .eq("visit_date", new Date().toISOString().slice(0, 10))
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (data ?? []).map((r: any) => ({
-    id: r.id,
-    farm: r.farmers?.farm_name ?? "—",
-    category: r.visit_type ?? "Visit",
-    time: new Date(r.created_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
-    status: r.follow_up_needed ? "Pending" : "Completed",
+  const visits = await intellifeed.visits({ page_size: limit, visitor: userId, visit_date: new Date().toISOString().slice(0, 10) });
+  return visits.map((r: any) => ({
+    id: String(r.id),
+    farm: r.farm_name ?? r.farm?.name ?? "—",
+    category: r.visit_type ?? r.visit_category ?? "Visit",
+    time: new Date(r.created_at ?? r.visit_date).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
+    status: r.follow_up_needed ? "Pending" : r.status === "completed" ? "Completed" : "Upcoming",
   }));
 }
 
 /* --------------------------------- Shared --------------------------------- */
 
 export async function fetchActivities(limit = 20) {
-  const { data, error } = await supabase
-    .from("activities")
-    .select("id, activity_type, description, metadata, created_at")
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data ?? [];
+  const [visits, cases, plans] = await Promise.all([
+    intellifeed.visits({ page_size: limit }),
+    intellifeed.healthCases({ page_size: limit }),
+    intellifeed.nutritionPlans({ page_size: limit }),
+  ]);
+  return [...visits, ...cases, ...plans]
+    .map((item: any) => ({
+      id: String(item.id),
+      activity_type: item.visit_type ? "visit_report_submitted" : item.diagnosis ? "health_case_created" : "nutrition_plan_created",
+      description: item.description ?? item.diagnosis ?? item.plan_name ?? item.visit_type ?? "IntelliFeed360 update",
+      metadata: item,
+      created_at: item.created_at ?? item.updated_at,
+    }))
+    .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())
+    .slice(0, limit);
 }
 
 export async function fetchUnreadNotifications() {
@@ -327,14 +329,8 @@ export async function markNotificationRead(id: string) {
 }
 
 export async function fetchSupportTickets(limit = 6) {
-  const { data, error } = await supabase
-    .from("support_tickets")
-    .select("id, title, priority, status, created_at")
-    .in("status", ["open", "in_progress"])
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data ?? [];
+  const tickets = await intellifeed.supportTickets({ page_size: limit });
+  return tickets.filter((ticket: any) => !["resolved", "closed"].includes(ticket.status));
 }
 
 export async function fetchSystemLogs(limit = 8) {
