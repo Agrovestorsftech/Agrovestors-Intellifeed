@@ -30,12 +30,20 @@ export interface AuthTokens {
   refresh: string;
 }
 
+// Login accepts either a phone number or an email — auto-detected by shape
+// (LoginCard.tsx decides which and passes it through). Since neither field
+// name is documented in the spec, we send BOTH `phone` and `email` keys
+// (whichever one is empty is sent as null) so the request works regardless
+// of which one the backend actually reads. If the backend rejects unknown
+// keys outright, drop the unused one once confirmed.
 interface OtpSendPayload {
-  phone: string;
+  phone: string | null;
+  email: string | null;
 }
 
 interface OtpVerifyPayload {
-  phone: string;
+  phone: string | null;
+  email: string | null;
   otp: string;
 }
 
@@ -44,14 +52,23 @@ interface OtpVerifyResponse extends AuthTokens {
   user: IntellifeedUser;
 }
 
-export async function sendOtp(phone: string): Promise<void> {
-  await api.post<void>("/auth/otp/send", { phone } satisfies OtpSendPayload, { skipAuth: true });
+function isEmail(identifier: string): boolean {
+  return identifier.includes("@");
 }
 
-export async function verifyOtp(phone: string, otp: string): Promise<OtpVerifyResponse> {
-  return api.post<OtpVerifyResponse>("/auth/otp/verify", { phone, otp } satisfies OtpVerifyPayload, {
-    skipAuth: true,
-  });
+function toIdentifierPayload(identifier: string): { phone: string | null; email: string | null } {
+  const trimmed = identifier.trim();
+  return isEmail(trimmed) ? { phone: null, email: trimmed } : { phone: trimmed, email: null };
+}
+
+export async function sendOtp(identifier: string): Promise<void> {
+  const payload: OtpSendPayload = toIdentifierPayload(identifier);
+  await api.post<void>("/auth/otp/send", payload, { skipAuth: true });
+}
+
+export async function verifyOtp(identifier: string, otp: string): Promise<OtpVerifyResponse> {
+  const payload: OtpVerifyPayload = { ...toIdentifierPayload(identifier), otp };
+  return api.post<OtpVerifyResponse>("/auth/otp/verify", payload, { skipAuth: true });
 }
 
 export async function fetchMe(): Promise<IntellifeedUser> {
@@ -64,4 +81,22 @@ export async function logout(): Promise<void> {
   } catch {
     // Best-effort — token gets cleared client-side regardless.
   }
+}
+
+// Farmer self-registration. This is the ONLY self-signup endpoint that
+// exists in the API spec, and — like otp/send and otp/verify — its request
+// body isn't documented (drf-spectacular gap). Fields below are a best
+// guess built from the User + FarmerProfile schemas (phone/email/name live
+// on User, preferred_language lives on FarmerProfile). CONFIRM against the
+// live server and fix here if wrong — nowhere else needs to change.
+export interface FarmerRegisterPayload {
+  phone: string;
+  email?: string;
+  first_name: string;
+  last_name: string;
+  preferred_language?: string;
+}
+
+export async function registerFarmer(payload: FarmerRegisterPayload): Promise<void> {
+  await api.post<void>("/farmers/register", payload, { skipAuth: true });
 }

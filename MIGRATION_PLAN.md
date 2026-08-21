@@ -71,14 +71,19 @@ to see exactly where to resume — do not restart from scratch.
      API user until this is resolved.
    Needs a product decision on whether to add farmer/investor/feedops
    portals or fold those users into existing ones.
-6. **Self-signup is not possible right now (found during Phase 2).**
-   `POST /farmers/register` is the only self-service account-creation
-   endpoint in the spec, and — like OTP send/verify — its request/response
-   body isn't documented (same drf-spectacular gap). There's no endpoint at
-   all for creating agent/nutritionist/admin accounts. `signup.tsx` has
-   been replaced with an honest "not available yet" placeholder rather than
-   a form built on guessed field names. Revisit once the backend exposes
-   (or confirms) these shapes.
+6. **Self-signup limited to farmers (updated after Phase 2 follow-up).**
+   `signup.tsx` now calls `POST /farmers/register` with a best-guess payload
+   (`phone`, `first_name`, `last_name`, optional `email`) — see
+   `registerFarmer` in `src/lib/api/auth.ts` for the exact shape and the
+   caveat that the endpoint's body isn't documented in the spec. Agent /
+   nutritionist / admin / investor accounts still have **no self-signup
+   endpoint at all** — the form only offers farmer registration and says so.
+   Login (`LoginCard.tsx`) now accepts phone **or** email in one field
+   (auto-detected by whether it contains `@`), sending both `phone` and
+   `email` keys to `/auth/otp/send` and `/auth/otp/verify` (whichever one
+   applies, the other is `null`) since we don't know which key name the
+   backend actually reads. Confirm via curl (see below) and simplify once
+   known.
 
 None of these block Phases 0–3. Flag decisions on gaps 1–3, 5, 6 whenever you
 reach the phase that needs them.

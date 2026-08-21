@@ -32,15 +32,15 @@ export function LoginCard({
   portal,
   portalName,
   tagline,
-  identifierLabel = "Phone number",
-  identifierPlaceholder = "+234 800 000 0000",
+  identifierLabel = "Phone or email",
+  identifierPlaceholder = "+234 800 000 0000 or you@example.com",
   hint,
   accent,
 }: LoginCardProps) {
   const { requestOtp, verifyLogin } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<"phone" | "otp">("phone");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("+234 ");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -50,7 +50,7 @@ export function LoginCard({
     if (submitting) return;
     setError(null);
     setSubmitting(true);
-    const result = await requestOtp(phone);
+    const result = await requestOtp(phone.replace(/\s+/g, ""));
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error ?? "Couldn't send code. Please try again.");
@@ -64,7 +64,7 @@ export function LoginCard({
     if (submitting) return;
     setError(null);
     setSubmitting(true);
-    const result = await verifyLogin(phone, otp);
+    const result = await verifyLogin(phone.replace(/\s+/g, ""), otp.trim());
     if (!result.ok || !result.user) {
       setSubmitting(false);
       setError(result.error ?? "Invalid or expired code. Please try again.");
@@ -99,8 +99,8 @@ export function LoginCard({
                 <input
                   id="phone"
                   name="phone"
-                  type="tel"
-                  autoComplete="tel"
+                  type="text"
+                  autoComplete="username"
                   required
                   disabled={submitting}
                   value={phone}
@@ -108,6 +108,10 @@ export function LoginCard({
                   placeholder={identifierPlaceholder}
                   className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
                 />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Using a phone number? Keep the +234 country code. Using email? Just clear the field
+                  and type it in instead.
+                </p>
               </div>
 
               {error && (

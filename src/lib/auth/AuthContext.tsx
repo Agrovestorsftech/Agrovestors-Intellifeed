@@ -12,7 +12,7 @@ import { tokenStore } from "@/lib/api/client";
 import type { AuthUser, Session } from "./types";
 import { ROLE_LABEL, mapApiRoleToUserRole } from "./types";
 
-// --- Login is now a two-step OTP flow (phone -> code), not email/password. ---
+// --- Login is now a two-step OTP flow (phone OR email -> code), not password. ---
 // See MIGRATION_PLAN.md Phase 2 for the field-name caveats on otp/send and
 // otp/verify — the API spec didn't document their request/response bodies.
 
@@ -30,8 +30,8 @@ interface VerifyOtpResult {
 interface AuthContextValue {
   session: Session | null;
   hydrated: boolean;
-  requestOtp: (phone: string) => Promise<RequestOtpResult>;
-  verifyLogin: (phone: string, otp: string) => Promise<VerifyOtpResult>;
+  requestOtp: (identifier: string) => Promise<RequestOtpResult>;
+  verifyLogin: (identifier: string, otp: string) => Promise<VerifyOtpResult>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -90,18 +90,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [load]);
 
-  const requestOtp = useCallback<AuthContextValue["requestOtp"]>(async (phone) => {
+  const requestOtp = useCallback<AuthContextValue["requestOtp"]>(async (identifier) => {
     try {
-      await sendOtp(phone.trim());
+      await sendOtp(identifier.trim());
       return { ok: true };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : "Failed to send code." };
     }
   }, []);
 
-  const verifyLogin = useCallback<AuthContextValue["verifyLogin"]>(async (phone, otp) => {
+  const verifyLogin = useCallback<AuthContextValue["verifyLogin"]>(async (identifier, otp) => {
     try {
-      const result = await verifyOtp(phone.trim(), otp.trim());
+      const result = await verifyOtp(identifier.trim(), otp.trim());
       tokenStore.set(result.access, result.refresh);
       const s = toSession(result.user);
       setSession(s);
