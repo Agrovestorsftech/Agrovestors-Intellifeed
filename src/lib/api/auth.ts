@@ -89,12 +89,20 @@ export async function logout(): Promise<void> {
 // guess built from the User + FarmerProfile schemas (phone/email/name live
 // on User, preferred_language lives on FarmerProfile). CONFIRM against the
 // live server and fix here if wrong — nowhere else needs to change.
+//
+// `role` is added for TESTING ONLY: /farmers/register is still the only
+// registration endpoint that exists, so it's the only door available for
+// creating agent/nutritionist/admin/investor test accounts too. Whether the
+// backend actually honors a `role` override on this endpoint (vs. silently
+// ignoring it and always creating a farmer) is UNCONFIRMED — check the
+// created user's role via /auth/me after registering to verify.
 export interface FarmerRegisterPayload {
   phone: string;
   email?: string;
   first_name: string;
   last_name: string;
   preferred_language?: string;
+  role?: Role430;
 }
 
 export async function registerFarmer(payload: FarmerRegisterPayload): Promise<void> {

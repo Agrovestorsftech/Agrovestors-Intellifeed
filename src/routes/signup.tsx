@@ -1,8 +1,16 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Sprout, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { registerFarmer } from "@/lib/api/auth";
+import { registerFarmer, type Role430 } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
+
+const TEST_ROLES: { value: Role430; label: string }[] = [
+  { value: "farmer", label: "Farmer" },
+  { value: "agent", label: "Agent" },
+  { value: "nutritionist", label: "Nutritionist" },
+  { value: "admin", label: "Admin" },
+  { value: "investor", label: "Investor" },
+];
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -14,7 +22,13 @@ export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
 
-// Farmer self-registration via POST /farmers/register.
+// Self-registration via POST /farmers/register — the only registration
+// endpoint that exists in the API spec, so it's also being used here as a
+// TESTING-ONLY way to create accounts of any role. The `role` field on the
+// payload is UNCONFIRMED to actually override the created account's role
+// (the backend may just always create a farmer regardless of what's sent).
+// After registering, check the resulting user's role via /auth/me and
+// report back if it doesn't match what was picked here.
 //
 // IMPORTANT CAVEAT: this is the ONLY self-signup endpoint in the API spec,
 // and its request/response body isn't documented there either (same
@@ -24,15 +38,16 @@ export const Route = createFileRoute("/signup")({
 // usually name the exact field it expected — and fix `registerFarmer` in
 // src/lib/api/auth.ts (only one place to change).
 //
-// Agent / nutritionist / admin / investor accounts have NO self-signup
-// endpoint at all in this spec. Those still need to be provisioned some
-// other way — this page only handles farmers. See MIGRATION_PLAN.md gap #6.
+// NOTE: This is test-account creation, not a real production signup flow —
+// don't leave the role picker here once real self-signup rules exist.
+// See MIGRATION_PLAN.md gap #6.
 function SignupPage() {
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("+234 ");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<Role430>("farmer");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -47,6 +62,7 @@ function SignupPage() {
         phone: phone.replace(/\s+/g, ""),
         first_name: firstName.trim(),
         last_name: lastName.trim(),
+        role,
         ...(email.trim() ? { email: email.trim() } : {}),
       });
       setDone(true);
@@ -96,10 +112,10 @@ function SignupPage() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
-          <h1 className="text-xl font-semibold text-foreground">Register as a farmer</h1>
+          <h1 className="text-xl font-semibold text-foreground">Create a test account</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Agent, nutritionist and admin accounts aren't self-serve yet — talk to your administrator
-            for those. This form is for farmer registration only.
+            Testing only — this registers through the farmer signup endpoint but lets you pick any
+            role below. Whether the backend actually honors that role isn't confirmed yet.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
@@ -132,6 +148,19 @@ function SignupPage() {
                 autoComplete="tel" placeholder="+234 800 000 0000"
                 className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
               />
+            </div>
+
+            <div>
+              <label htmlFor="role" className="text-sm font-medium text-foreground">Role</label>
+              <select
+                id="role" disabled={submitting}
+                value={role} onChange={(e) => setRole(e.target.value as Role430)}
+                className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
+              >
+                {TEST_ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
             </div>
 
             <div>
