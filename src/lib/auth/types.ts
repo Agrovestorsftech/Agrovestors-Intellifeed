@@ -4,6 +4,43 @@ export type UserRole =
   | "admin_agent"
   | "feedops";
 
+// IntelliFeed360 API's role enum (Role430Enum). Kept distinct from UserRole
+// because the two models don't line up 1:1 — see the mapping + gaps below.
+export type ApiRole = "farmer" | "agent" | "nutritionist" | "admin" | "investor";
+
+/**
+ * Best-guess mapping from the API's role model to this app's existing
+ * portal/role model. NOT confirmed against product requirements:
+ *  - "admin"        -> system_admin   (straightforward)
+ *  - "agent"        -> field_agent    (straightforward)
+ *  - "nutritionist" -> admin_agent    (closest match to "Nutrition & Vet")
+ *  - "farmer"       -> no portal exists in this app yet. Falls back to
+ *                      field_agent so the app doesn't crash, but a farmer
+ *                      logging in will land on the wrong dashboard. Needs a
+ *                      product decision + likely a new portal.
+ *  - "investor"     -> no portal exists in this app yet. Same fallback and
+ *                      same caveat as "farmer".
+ *  - "feedops" (this app's role) has NO equivalent in the API's role enum
+ *    at all. Nothing currently maps to it — the Feed Operations portal will
+ *    be unreachable for any real API user until this is resolved.
+ * Flagged in MIGRATION_PLAN.md Phase 2 gaps. Fix in this one spot once the
+ * product decision is made.
+ */
+export function mapApiRoleToUserRole(role: ApiRole): UserRole {
+  switch (role) {
+    case "admin":
+      return "system_admin";
+    case "agent":
+      return "field_agent";
+    case "nutritionist":
+      return "admin_agent";
+    case "farmer":
+    case "investor":
+    default:
+      return "field_agent";
+  }
+}
+
 export type PortalId = "admin" | "agent" | "feedops";
 
 export interface AuthUser {

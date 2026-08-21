@@ -7,28 +7,31 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { AuthUser, Session, UserRole } from "./types";
-import { ROLE_LABEL } from "./types";
+import { sendOtp, verifyOtp, fetchMe, logout as apiLogout, type IntellifeedUser } from "@/lib/api/auth";
+import { tokenStore } from "@/lib/api/client";
+import type { AuthUser, Session } from "./types";
+import { ROLE_LABEL, mapApiRoleToUserRole } from "./types";
 
-interface LoginResult {
+// --- Login is now a two-step OTP flow (phone -> code), not email/password. ---
+// See MIGRATION_PLAN.md Phase 2 for the field-name caveats on otp/send and
+// otp/verify — the API spec didn't document their request/response bodies.
+
+interface RequestOtpResult {
+  ok: boolean;
+  error?: string;
+}
+
+interface VerifyOtpResult {
   ok: boolean;
   user?: AuthUser;
   error?: string;
 }
 
-interface SignupInput {
-  email: string;
-  password: string;
-  fullName: string;
-  role: Exclude<UserRole, "system_admin">;
-}
-
 interface AuthContextValue {
   session: Session | null;
   hydrated: boolean;
-  login: (email: string, password: string) => Promise<LoginResult>;
-  signup: (input: SignupInput) => Promise<LoginResult>;
+  requestOtp: (phone: string) => Promise<RequestOtpResult>;
+  verifyLogin: (phone: string, otp: string) => Promise<VerifyOtpResult>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -43,40 +46,16 @@ function computeInitials(name: string): string {
   return (first + last).toUpperCase();
 }
 
-async function hydrateSessionFromSupabase(
-  userId: string,
-  email: string | undefined,
-  preferredRole?: UserRole,
-): Promise<Session | null> {
-  // Poll the role row briefly — right after signup the handle_new_user trigger
-  // may not yet have inserted user_roles, so a naive read races and defaults
-  // every new signup to field_agent.
-  type RoleRow = { role: string } | null;
-  type ProfileRow = { full_name: string | null; initials: string | null; avatar_url: string | null } | null;
-  let roleRow: RoleRow = null;
-  let profile: ProfileRow = null;
-  const attempts = preferredRole ? 6 : 1;
-  for (let i = 0; i < attempts; i++) {
-    const [{ data: p }, { data: r }] = await Promise.all([
-      supabase.from("profiles").select("full_name, initials, avatar_url").eq("id", userId).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle(),
-    ]);
-    profile = p as ProfileRow;
-    roleRow = r as RoleRow;
-    if (!preferredRole) break;
-    if (roleRow?.role === preferredRole) break;
-    await new Promise((res) => setTimeout(res, 250));
-  }
-  const role = (preferredRole ?? (roleRow?.role as UserRole | undefined)) ?? "field_agent";
-  const name = profile?.full_name || email?.split("@")[0] || "User";
-  const initials = profile?.initials || computeInitials(name);
+function toSession(apiUser: IntellifeedUser): Session {
+  const role = mapApiRoleToUserRole(apiUser.role);
+  const name = `${apiUser.first_name} ${apiUser.last_name}`.trim() || apiUser.phone;
   const user: AuthUser = {
-    id: userId,
-    identifier: email ?? "",
+    id: apiUser.id,
+    identifier: apiUser.phone,
     name,
     role,
     roleLabel: ROLE_LABEL[role],
-    initials,
+    initials: computeInitials(name),
   };
   return { user, loggedInAt: Date.now() };
 }
@@ -86,13 +65,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   const load = useCallback(async () => {
-    const { data } = await supabase.auth.getSession();
-    const sb = data.session;
-    if (!sb?.user) {
+    if (!tokenStore.getAccess()) {
       setSession(null);
       return;
     }
-    setSession(await hydrateSessionFromSupabase(sb.user.id, sb.user.email ?? undefined));
+    try {
+      const me = await fetchMe();
+      setSession(toSession(me));
+    } catch {
+      // Access token invalid/expired and refresh failed (handled inside apiFetch).
+      tokenStore.clear();
+      setSession(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -101,58 +85,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await load();
       if (mounted) setHydrated(true);
     })();
-    const { data: sub } = supabase.auth.onAuthStateChange((event, sb) => {
-      if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") return;
-      if (!sb?.user) {
-        setSession(null);
-        return;
-      }
-      // Fire-and-forget hydration; RLS ensures we only ever read our own profile+role.
-      void hydrateSessionFromSupabase(sb.user.id, sb.user.email ?? undefined).then((s) => {
-        setSession(s);
-      });
-    });
     return () => {
       mounted = false;
-      sub.subscription.unsubscribe();
     };
   }, [load]);
 
-  const login = useCallback<AuthContextValue["login"]>(async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (error || !data.user) {
-      return { ok: false, error: error?.message ?? "invalid" };
+  const requestOtp = useCallback<AuthContextValue["requestOtp"]>(async (phone) => {
+    try {
+      await sendOtp(phone.trim());
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Failed to send code." };
     }
-    const s = await hydrateSessionFromSupabase(data.user.id, data.user.email ?? undefined);
-    setSession(s);
-    return { ok: !!s, user: s?.user };
   }, []);
 
-  const signup = useCallback<AuthContextValue["signup"]>(async ({ email, password, fullName, role }) => {
-    const emailRedirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        emailRedirectTo,
-        data: { full_name: fullName.trim(), role },
-      },
-    });
-    if (error) return { ok: false, error: error.message };
-    if (!data.session && data.user) {
-      // Email confirmation required — session not yet available.
-      return { ok: false, error: "confirm-email" };
-    }
-    if (data.user) {
-      const s = await hydrateSessionFromSupabase(data.user.id, data.user.email ?? undefined, role);
+  const verifyLogin = useCallback<AuthContextValue["verifyLogin"]>(async (phone, otp) => {
+    try {
+      const result = await verifyOtp(phone.trim(), otp.trim());
+      tokenStore.set(result.access, result.refresh);
+      const s = toSession(result.user);
       setSession(s);
-      return { ok: !!s, user: s?.user };
+      return { ok: true, user: s.user };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "invalid" };
     }
-    return { ok: false, error: "unknown" };
   }, []);
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut();
+    await apiLogout();
+    tokenStore.clear();
     setSession(null);
   }, []);
 
@@ -161,8 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [load]);
 
   const value = useMemo(
-    () => ({ session, hydrated, login, signup, logout, refresh }),
-    [session, hydrated, login, signup, logout, refresh],
+    () => ({ session, hydrated, requestOtp, verifyLogin, logout, refresh }),
+    [session, hydrated, requestOtp, verifyLogin, logout, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

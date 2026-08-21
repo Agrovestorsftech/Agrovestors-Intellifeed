@@ -26,33 +26,48 @@ const accentIcon: Record<LoginCardProps["accent"], string> = {
   warning: "bg-warning/15 ring-warning/30 text-warning",
 };
 
+// Login is now a two-step phone + OTP flow (IntelliFeed360 API), replacing
+// the old single-step email/password form. See MIGRATION_PLAN.md Phase 2.
 export function LoginCard({
   portal,
   portalName,
   tagline,
-  identifierLabel = "Email",
-  identifierPlaceholder = "you@example.com",
+  identifierLabel = "Phone number",
+  identifierPlaceholder = "+234 800 000 0000",
   hint,
   accent,
 }: LoginCardProps) {
-  const { login } = useAuth();
+  const { requestOtp, verifyLogin } = useAuth();
   const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
+  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSendCode = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (submitting) return;
     setError(null);
     setSubmitting(true);
-    const result = await login(identifier, password);
+    const result = await requestOtp(phone);
+    setSubmitting(false);
+    if (!result.ok) {
+      setError(result.error ?? "Couldn't send code. Please try again.");
+      return;
+    }
+    setStep("otp");
+  };
+
+  const handleVerify = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (submitting) return;
+    setError(null);
+    setSubmitting(true);
+    const result = await verifyLogin(phone, otp);
     if (!result.ok || !result.user) {
       setSubmitting(false);
-      setError(result.error === "invalid" || !result.error
-        ? `Invalid ${identifierLabel} or Password. Please try again.`
-        : result.error);
+      setError(result.error ?? "Invalid or expired code. Please try again.");
       return;
     }
     navigate({ to: ROLE_HOME[result.user.role], replace: true });
@@ -75,73 +90,113 @@ export function LoginCard({
           <h1 className="text-xl font-semibold text-foreground">{portalName}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{tagline}</p>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
-            <div>
-              <label htmlFor="identifier" className="text-sm font-medium text-foreground">
-                {identifierLabel}
-              </label>
-              <input
-                id="identifier"
-                name="identifier"
-                type="email"
-                autoComplete="email"
-                required
-                disabled={submitting}
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder={identifierPlaceholder}
-                className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="text-sm font-medium text-foreground">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                disabled={submitting}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-              />
-            </div>
-
-            {error && (
-              <div
-                role="alert"
-                className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
-              >
-                {error}
+          {step === "phone" ? (
+            <form onSubmit={handleSendCode} className="mt-6 space-y-4" noValidate>
+              <div>
+                <label htmlFor="phone" className="text-sm font-medium text-foreground">
+                  {identifierLabel}
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  required
+                  disabled={submitting}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder={identifierPlaceholder}
+                  className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
+                />
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className={`w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-70 ${accentButton[accent]}`}
-            >
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {submitting ? "Signing in…" : "Login"}
-            </button>
+              {error && (
+                <div
+                  role="alert"
+                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
+                >
+                  {error}
+                </div>
+              )}
 
-            <div className="flex items-center justify-between text-xs">
-              <Link
-                to="/forgot-password"
-                className="text-muted-foreground hover:text-foreground transition-colors"
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-70 ${accentButton[accent]}`}
               >
-                Forgot password?
-              </Link>
-              <Link to="/signup" className="text-primary hover:underline">
-                Create account
-              </Link>
-            </div>
-          </form>
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {submitting ? "Sending code…" : "Send code"}
+              </button>
+
+              <div className="flex items-center justify-between text-xs">
+                <Link
+                  to="/forgot-password"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Trouble signing in?
+                </Link>
+                <Link to="/signup" className="text-primary hover:underline">
+                  Create account
+                </Link>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerify} className="mt-6 space-y-4" noValidate>
+              <p className="text-sm text-muted-foreground">
+                Enter the code sent to <span className="font-medium text-foreground">{phone}</span>.
+              </p>
+              <div>
+                <label htmlFor="otp" className="text-sm font-medium text-foreground">
+                  Verification code
+                </label>
+                <input
+                  id="otp"
+                  name="otp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  autoFocus
+                  disabled={submitting}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="123456"
+                  className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
+                />
+              </div>
+
+              {error && (
+                <div
+                  role="alert"
+                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
+                >
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-70 ${accentButton[accent]}`}
+              >
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {submitting ? "Verifying…" : "Verify & sign in"}
+              </button>
+
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => {
+                  setStep("phone");
+                  setOtp("");
+                  setError(null);
+                }}
+                className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Use a different phone number
+              </button>
+            </form>
+          )}
 
           {hint && (
             <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
