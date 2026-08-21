@@ -6,7 +6,7 @@ Goal: replace the frontend-only mock auth and placeholder data with a real Lovab
 
 ## 1. Backend enablement
 
-- Enable **Lovable Cloud** (Supabase under the hood). All secrets (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) live in the platform, never in the repo. `.env` stays out of git; only `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` are exposed to the browser.
+- Enable **Lovable Cloud** (Supabase under the hood). All secrets (`VITE_SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) live in the platform, never in the repo. `.env` stays out of git; only `VITE_VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` are exposed to the browser.
 - Client split:
   - Browser: `@/integrations/supabase/client` (publishable key, RLS applies).
   - Server-fn user context: `requireSupabaseAuth` middleware.
