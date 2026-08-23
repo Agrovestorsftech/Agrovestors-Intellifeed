@@ -30,21 +30,32 @@ export interface AuthTokens {
   refresh: string;
 }
 
-// Login. CONFIRMED against the live server (2026-08-23): `/auth/otp/send`
-// requires `phone` — a null or blank value is rejected outright — so phone
-// is NOT optional here no matter what identifier the user types. `email`
-// is accepted alongside it without complaint, but whether it does anything
-// (e.g. change delivery channel) is still unconfirmed. Bottom line: every
-// OTP login has to carry a real phone number.
+// Login. CONFIRMED against the live server (2026-08-23), straight from the
+// Django view source (apps.accounts.views.OTPSendView, seen in a debug
+// traceback): `OTPSendSerializer` has exactly two fields — `phone`
+// (required, PhoneNumberField) and `purpose` (registration/login/
+// phone_change, defaults to login). There is NO `email` field on this
+// endpoint; anything sent under that key is silently dropped by DRF, not
+// validated, not used. Do not add it back without new evidence.
+//
+// Also confirmed from the same source: this environment has
+// `SHOW_RANDOM_OTP = True`, so a successful send response includes the
+// actual code — `{"otp_code": "...", "is_test_user": true}` — no SMS or
+// email needed to test. `sendOtp` surfaces that in its return value when
+// present so the UI (or a caller testing manually) can read it directly.
 interface OtpSendPayload {
   phone: string;
-  email?: string;
+  purpose?: "registration" | "login" | "phone_change";
 }
 
 interface OtpVerifyPayload {
   phone: string;
-  email?: string;
   otp: string;
+}
+
+interface OtpSendResponse {
+  otp_code?: string;
+  is_test_user?: boolean;
 }
 
 // ASSUMED response shape — confirm against live server.
@@ -52,13 +63,13 @@ interface OtpVerifyResponse extends AuthTokens {
   user: IntellifeedUser;
 }
 
-export async function sendOtp(phone: string, email?: string): Promise<void> {
-  const payload: OtpSendPayload = { phone, ...(email ? { email } : {}) };
-  await api.post<void>("/auth/otp/send", payload, { skipAuth: true });
+export async function sendOtp(phone: string): Promise<OtpSendResponse | void> {
+  const payload: OtpSendPayload = { phone };
+  return api.post<OtpSendResponse | void>("/auth/otp/send", payload, { skipAuth: true });
 }
 
-export async function verifyOtp(phone: string, otp: string, email?: string): Promise<OtpVerifyResponse> {
-  const payload: OtpVerifyPayload = { phone, otp, ...(email ? { email } : {}) };
+export async function verifyOtp(phone: string, otp: string): Promise<OtpVerifyResponse> {
+  const payload: OtpVerifyPayload = { phone, otp };
   return api.post<OtpVerifyResponse>("/auth/otp/verify", payload, { skipAuth: true });
 }
 

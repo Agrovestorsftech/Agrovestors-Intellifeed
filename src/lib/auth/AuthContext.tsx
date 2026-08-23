@@ -12,16 +12,18 @@ import { tokenStore } from "@/lib/api/client";
 import type { AuthUser, Session } from "./types";
 import { ROLE_LABEL, mapApiRoleToUserRole } from "./types";
 
-// --- Login is a two-step OTP flow (phone required, email optional -> code), not password. ---
-// CONFIRMED against the live server (2026-08-23): /auth/otp/send rejects a
-// null or blank `phone`, so phone is mandatory on every request regardless
-// of whether the user also has an email on file. See MIGRATION_PLAN.md
-// Phase 2 for the remaining unconfirmed pieces (verify response shape,
-// whether `email` changes delivery channel at all).
+// --- Login is a two-step OTP flow (phone -> code), not password. ---
+// CONFIRMED against the live server (2026-08-23), from the Django view
+// source: /auth/otp/send takes ONLY `phone` (required) — there's no email
+// field on this endpoint at all, it's silently ignored if sent. This
+// environment also has SHOW_RANDOM_OTP=True, so a successful send returns
+// the actual code in the body; requestOtp surfaces that as `testCode` so
+// the UI can show it directly instead of waiting on SMS/email delivery.
 
 interface RequestOtpResult {
   ok: boolean;
   error?: string;
+  testCode?: string;
 }
 
 interface VerifyOtpResult {
@@ -33,8 +35,8 @@ interface VerifyOtpResult {
 interface AuthContextValue {
   session: Session | null;
   hydrated: boolean;
-  requestOtp: (phone: string, email?: string) => Promise<RequestOtpResult>;
-  verifyLogin: (phone: string, otp: string, email?: string) => Promise<VerifyOtpResult>;
+  requestOtp: (phone: string) => Promise<RequestOtpResult>;
+  verifyLogin: (phone: string, otp: string) => Promise<VerifyOtpResult>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -93,18 +95,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [load]);
 
-  const requestOtp = useCallback<AuthContextValue["requestOtp"]>(async (phone, email) => {
+  const requestOtp = useCallback<AuthContextValue["requestOtp"]>(async (phone) => {
     try {
-      await sendOtp(phone.trim(), email?.trim());
-      return { ok: true };
+      const result = await sendOtp(phone.trim());
+      return { ok: true, testCode: result?.otp_code };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : "Failed to send code." };
     }
   }, []);
 
-  const verifyLogin = useCallback<AuthContextValue["verifyLogin"]>(async (phone, otp, email) => {
+  const verifyLogin = useCallback<AuthContextValue["verifyLogin"]>(async (phone, otp) => {
     try {
-      const result = await verifyOtp(phone.trim(), otp.trim(), email?.trim());
+      const result = await verifyOtp(phone.trim(), otp.trim());
       tokenStore.set(result.access, result.refresh);
       const s = toSession(result.user);
       setSession(s);

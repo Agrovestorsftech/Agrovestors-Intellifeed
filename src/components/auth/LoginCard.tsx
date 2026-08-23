@@ -27,10 +27,11 @@ const accentIcon: Record<LoginCardProps["accent"], string> = {
 };
 
 // Login is a two-step phone + OTP flow (IntelliFeed360 API). CONFIRMED
-// against the live server (2026-08-23): /auth/otp/send requires a real,
-// non-blank phone — email-only login isn't possible. Email is accepted as
-// an optional add-on but doesn't replace phone. See MIGRATION_PLAN.md
-// Phase 2.
+// against the live server (2026-08-23), straight from the Django view
+// source: /auth/otp/send only accepts `phone` — there's no email field on
+// this endpoint at all. This test environment also has SHOW_RANDOM_OTP set,
+// so a successful send returns the code directly; it's shown below the form
+// so testing doesn't depend on SMS delivery.
 export function LoginCard({
   portal,
   portalName,
@@ -45,6 +46,7 @@ export function LoginCard({
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("+234 ");
   const [otp, setOtp] = useState("");
+  const [testCode, setTestCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -59,6 +61,7 @@ export function LoginCard({
       setError(result.error ?? "Couldn't send code. Please try again.");
       return;
     }
+    setTestCode(result.testCode ?? null);
     setStep("otp");
   };
 
@@ -113,7 +116,7 @@ export function LoginCard({
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
                   Use the phone number from signup — it's the auto-generated one shown after you
-                  registered. Email alone can't log you in; the backend requires phone.
+                  registered.
                 </p>
               </div>
 
@@ -152,6 +155,12 @@ export function LoginCard({
               <p className="text-sm text-muted-foreground">
                 Enter the code sent to <span className="font-medium text-foreground">{phone}</span>.
               </p>
+              {testCode && (
+                <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3">
+                  <p className="text-xs text-muted-foreground">Test code (SHOW_RANDOM_OTP is on for this environment)</p>
+                  <p className="mt-1 font-mono text-lg font-semibold text-foreground select-all">{testCode}</p>
+                </div>
+              )}
               <div>
                 <label htmlFor="otp" className="text-sm font-medium text-foreground">
                   Verification code
@@ -196,6 +205,7 @@ export function LoginCard({
                 onClick={() => {
                   setStep("phone");
                   setOtp("");
+                  setTestCode(null);
                   setError(null);
                 }}
                 className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
