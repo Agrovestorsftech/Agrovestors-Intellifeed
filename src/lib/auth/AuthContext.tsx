@@ -12,9 +12,12 @@ import { tokenStore } from "@/lib/api/client";
 import type { AuthUser, Session } from "./types";
 import { ROLE_LABEL, mapApiRoleToUserRole } from "./types";
 
-// --- Login is now a two-step OTP flow (phone OR email -> code), not password. ---
-// See MIGRATION_PLAN.md Phase 2 for the field-name caveats on otp/send and
-// otp/verify — the API spec didn't document their request/response bodies.
+// --- Login is a two-step OTP flow (phone required, email optional -> code), not password. ---
+// CONFIRMED against the live server (2026-08-23): /auth/otp/send rejects a
+// null or blank `phone`, so phone is mandatory on every request regardless
+// of whether the user also has an email on file. See MIGRATION_PLAN.md
+// Phase 2 for the remaining unconfirmed pieces (verify response shape,
+// whether `email` changes delivery channel at all).
 
 interface RequestOtpResult {
   ok: boolean;
@@ -30,8 +33,8 @@ interface VerifyOtpResult {
 interface AuthContextValue {
   session: Session | null;
   hydrated: boolean;
-  requestOtp: (identifier: string) => Promise<RequestOtpResult>;
-  verifyLogin: (identifier: string, otp: string) => Promise<VerifyOtpResult>;
+  requestOtp: (phone: string, email?: string) => Promise<RequestOtpResult>;
+  verifyLogin: (phone: string, otp: string, email?: string) => Promise<VerifyOtpResult>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -90,18 +93,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [load]);
 
-  const requestOtp = useCallback<AuthContextValue["requestOtp"]>(async (identifier) => {
+  const requestOtp = useCallback<AuthContextValue["requestOtp"]>(async (phone, email) => {
     try {
-      await sendOtp(identifier.trim());
+      await sendOtp(phone.trim(), email?.trim());
       return { ok: true };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : "Failed to send code." };
     }
   }, []);
 
-  const verifyLogin = useCallback<AuthContextValue["verifyLogin"]>(async (identifier, otp) => {
+  const verifyLogin = useCallback<AuthContextValue["verifyLogin"]>(async (phone, otp, email) => {
     try {
-      const result = await verifyOtp(identifier.trim(), otp.trim());
+      const result = await verifyOtp(phone.trim(), otp.trim(), email?.trim());
       tokenStore.set(result.access, result.refresh);
       const s = toSession(result.user);
       setSession(s);

@@ -30,20 +30,20 @@ export interface AuthTokens {
   refresh: string;
 }
 
-// Login accepts either a phone number or an email — auto-detected by shape
-// (LoginCard.tsx decides which and passes it through). Since neither field
-// name is documented in the spec, we send BOTH `phone` and `email` keys
-// (whichever one is empty is sent as null) so the request works regardless
-// of which one the backend actually reads. If the backend rejects unknown
-// keys outright, drop the unused one once confirmed.
+// Login. CONFIRMED against the live server (2026-08-23): `/auth/otp/send`
+// requires `phone` — a null or blank value is rejected outright — so phone
+// is NOT optional here no matter what identifier the user types. `email`
+// is accepted alongside it without complaint, but whether it does anything
+// (e.g. change delivery channel) is still unconfirmed. Bottom line: every
+// OTP login has to carry a real phone number.
 interface OtpSendPayload {
-  phone: string | null;
-  email: string | null;
+  phone: string;
+  email?: string;
 }
 
 interface OtpVerifyPayload {
-  phone: string | null;
-  email: string | null;
+  phone: string;
+  email?: string;
   otp: string;
 }
 
@@ -52,22 +52,13 @@ interface OtpVerifyResponse extends AuthTokens {
   user: IntellifeedUser;
 }
 
-function isEmail(identifier: string): boolean {
-  return identifier.includes("@");
-}
-
-function toIdentifierPayload(identifier: string): { phone: string | null; email: string | null } {
-  const trimmed = identifier.trim();
-  return isEmail(trimmed) ? { phone: null, email: trimmed } : { phone: trimmed, email: null };
-}
-
-export async function sendOtp(identifier: string): Promise<void> {
-  const payload: OtpSendPayload = toIdentifierPayload(identifier);
+export async function sendOtp(phone: string, email?: string): Promise<void> {
+  const payload: OtpSendPayload = { phone, ...(email ? { email } : {}) };
   await api.post<void>("/auth/otp/send", payload, { skipAuth: true });
 }
 
-export async function verifyOtp(identifier: string, otp: string): Promise<OtpVerifyResponse> {
-  const payload: OtpVerifyPayload = { ...toIdentifierPayload(identifier), otp };
+export async function verifyOtp(phone: string, otp: string, email?: string): Promise<OtpVerifyResponse> {
+  const payload: OtpVerifyPayload = { phone, otp, ...(email ? { email } : {}) };
   return api.post<OtpVerifyResponse>("/auth/otp/verify", payload, { skipAuth: true });
 }
 

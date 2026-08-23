@@ -41,11 +41,19 @@ export const Route = createFileRoute("/signup")({
 // NOTE: This is test-account creation, not a real production signup flow —
 // don't leave the role picker here once real self-signup rules exist.
 // See MIGRATION_PLAN.md gap #6.
+function randomTestPhone(): string {
+  // Backend requires phone on User even for email-first test accounts.
+  // Generate a plausible, likely-unique NG number so testers can register
+  // with just a name + email and not have to think about a real number.
+  const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10)).join("");
+  return `+234${digits}`;
+}
+
 function SignupPage() {
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("+234 ");
+  const [phone, setPhone] = useState(randomTestPhone);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role430>("farmer");
   const [submitting, setSubmitting] = useState(false);
@@ -60,10 +68,10 @@ function SignupPage() {
     try {
       await registerFarmer({
         phone: phone.replace(/\s+/g, ""),
+        email: email.trim(),
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         role,
-        ...(email.trim() ? { email: email.trim() } : {}),
       });
       setDone(true);
     } catch (err) {
@@ -84,8 +92,12 @@ function SignupPage() {
           <div className="rounded-2xl border border-border bg-card p-8 shadow-sm text-center">
             <h1 className="text-xl font-semibold text-foreground">You're registered</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Sign in with the phone number or email you just used to verify your account.
+              Sign in with the phone number below — login requires phone, email alone won't work.
             </p>
+            <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">Phone (auto-generated for this test account)</p>
+              <p className="mt-1 font-mono text-sm font-medium text-foreground select-all">{phone}</p>
+            </div>
             <Link
               to="/login/agent"
               className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/30 transition-colors hover:bg-primary/90"
@@ -115,7 +127,8 @@ function SignupPage() {
           <h1 className="text-xl font-semibold text-foreground">Create a test account</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Testing only — this registers through the farmer signup endpoint but lets you pick any
-            role below. Whether the backend actually honors that role isn't confirmed yet.
+            role below. Login requires phone (the backend rejects a missing one), so a number is
+            auto-filled for you; you'll see it again after registering.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
@@ -141,6 +154,20 @@ function SignupPage() {
             </div>
 
             <div>
+              <label htmlFor="email" className="text-sm font-medium text-foreground">Email</label>
+              <input
+                id="email" type="email" required disabled={submitting}
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email" placeholder="you@example.com"
+                className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                You'll use this to sign in via OTP. The phone number below is auto-filled since the
+                backend requires one, but it isn't used for login here.
+              </p>
+            </div>
+
+            <div>
               <label htmlFor="phone" className="text-sm font-medium text-foreground">Phone number</label>
               <input
                 id="phone" type="tel" required disabled={submitting}
@@ -161,16 +188,6 @@ function SignupPage() {
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="text-sm font-medium text-foreground">Email (optional)</label>
-              <input
-                id="email" type="email" disabled={submitting}
-                value={email} onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email" placeholder="you@example.com"
-                className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-              />
             </div>
 
             {error && (

@@ -26,14 +26,17 @@ const accentIcon: Record<LoginCardProps["accent"], string> = {
   warning: "bg-warning/15 ring-warning/30 text-warning",
 };
 
-// Login is now a two-step phone + OTP flow (IntelliFeed360 API), replacing
-// the old single-step email/password form. See MIGRATION_PLAN.md Phase 2.
+// Login is a two-step phone + OTP flow (IntelliFeed360 API). CONFIRMED
+// against the live server (2026-08-23): /auth/otp/send requires a real,
+// non-blank phone — email-only login isn't possible. Email is accepted as
+// an optional add-on but doesn't replace phone. See MIGRATION_PLAN.md
+// Phase 2.
 export function LoginCard({
   portal,
   portalName,
   tagline,
-  identifierLabel = "Phone or email",
-  identifierPlaceholder = "+234 800 000 0000 or you@example.com",
+  identifierLabel = "Phone number",
+  identifierPlaceholder = "+234 800 000 0000",
   hint,
   accent,
 }: LoginCardProps) {
@@ -99,8 +102,8 @@ export function LoginCard({
                 <input
                   id="phone"
                   name="phone"
-                  type="text"
-                  autoComplete="username"
+                  type="tel"
+                  autoComplete="tel"
                   required
                   disabled={submitting}
                   value={phone}
@@ -109,8 +112,8 @@ export function LoginCard({
                   className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Using a phone number? Keep the +234 country code. Using email? Just clear the field
-                  and type it in instead.
+                  Use the phone number from signup — it's the auto-generated one shown after you
+                  registered. Email alone can't log you in; the backend requires phone.
                 </p>
               </div>
 
