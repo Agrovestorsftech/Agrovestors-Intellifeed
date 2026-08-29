@@ -67,13 +67,20 @@ export async function listResource<T>(path: string, params: Record<string, strin
   return unwrap(payload) as T[];
 }
 
+// NOTE: `supportTickets` deliberately removed from this object — that
+// resource now has a real endpoint and lives in src/lib/api/support.ts
+// instead (see backend-additions/apps/support/ and MIGRATION_PLAN.md).
+// The remaining entries below (farms, assignments, visits, healthCases,
+// nutritionPlans) are unrelated to this task's scope and untouched;
+// healthCases/nutritionPlans still point at guessed paths that don't match
+// the real spec (see the gap report) — that's a separate, pre-existing
+// issue belonging to Phases 6–7 of MIGRATION_PLAN.md, not this change.
 export const intellifeed = {
   farms: () => listResource<any>("/api/v1/farms/"),
   assignments: (params?: Record<string, string | number | undefined>) => listResource<any>("/api/v1/farms/assignments/", params),
   visits: (params?: Record<string, string | number | undefined>) => listResource<any>("/api/v1/farms/visits/", params),
   healthCases: (params?: Record<string, string | number | undefined>) => listResource<any>("/api/v1/health/cases/", params),
   nutritionPlans: (params?: Record<string, string | number | undefined>) => listResource<any>("/api/v1/nutrition/plans/", params),
-  supportTickets: (params?: Record<string, string | number | undefined>) => listResource<any>("/api/v1/support/tickets/", params),
 };
 
 export function apiErrorMessage(error: unknown) {

@@ -163,3 +163,21 @@ export const api = {
 };
 
 export { API_BASE_URL };
+
+// --- Pagination helper --------------------------------------------------
+// Every list endpoint on this API uses DRF's standard pagination envelope
+// (apps.common.pagination.StandardPagination): { count, next, previous, results }.
+
+export interface Page<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+export function unwrapPage<T>(payload: Page<T> | T[]): T[] {
+  if (payload && typeof payload === "object" && "results" in payload && Array.isArray((payload as Page<T>).results)) {
+    return (payload as Page<T>).results;
+  }
+  return payload as T[];
+}

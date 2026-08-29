@@ -1,5 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { intellifeed } from "@/lib/intellifeed/api";
+import * as knowledgeApi from "@/lib/api/knowledge";
+import * as supportApi from "@/lib/api/support";
+import * as farmersApi from "@/lib/api/farmers";
 
 export type CountResult = number;
 
@@ -25,15 +28,15 @@ export async function fetchAdminKpis() {
     inventoryItems,
     supportTickets,
   ] = await Promise.all([
-    count("farmers"),
-    count("farmers"),
+    farmersApi.countFarmers(),
+    farmersApi.countFarmers({ status: "active" }),
     count("user_roles"),
     count("nutrition_plans"),
     count("health_cases", (q) => q.in("status", ["open", "in_progress"])),
     count("visit_reports", (q) => q.eq("follow_up_needed", true)),
     count("feed_orders", (q) => q.in("status", ["pending", "processing", "out_for_delivery"])),
     count("inventory_items"),
-    count("support_tickets", (q) => q.in("status", ["open", "in_progress"])),
+    supportApi.countOpenSupportTickets(),
   ]);
   return {
     totalFarmers,
@@ -162,14 +165,7 @@ export async function fetchCriticalAlerts(limit = 6) {
 }
 
 export async function fetchKnowledgeArticles(limit = 6) {
-  const { data, error } = await supabase
-    .from("knowledge_articles")
-    .select("id, title, category, is_published")
-    .eq("is_published", true)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data ?? [];
+  return knowledgeApi.listArticles({ limit });
 }
 
 /* --------------------------------- FeedOps --------------------------------- */
@@ -305,8 +301,8 @@ export async function fetchActivities(limit = 20) {
 export async function fetchUnreadNotifications() {
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, title, message, notification_type, is_read, created_at")
-    .eq("is_read", false)
+    .select("id, title, body, type, read_at, created_at")
+    .is("read_at", null)
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) throw error;
@@ -316,7 +312,7 @@ export async function fetchUnreadNotifications() {
 export async function fetchAllNotifications(limit = 20) {
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, title, message, notification_type, is_read, created_at")
+    .select("id, title, body, type, read_at, created_at")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -324,13 +320,16 @@ export async function fetchAllNotifications(limit = 20) {
 }
 
 export async function markNotificationRead(id: string) {
-  const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", id);
   if (error) throw error;
 }
 
 export async function fetchSupportTickets(limit = 6) {
-  const tickets = await intellifeed.supportTickets({ page_size: limit });
-  return tickets.filter((ticket: any) => !["resolved", "closed"].includes(ticket.status));
+  const tickets = await supportApi.listSupportTickets({ page_size: limit });
+  return tickets.filter((ticket) => !["resolved", "closed"].includes(ticket.status));
 }
 
 export async function fetchSystemLogs(limit = 8) {
@@ -555,35 +554,37 @@ export type FarmerReviewRow = {
 };
 
 export async function fetchFarmersWithReportSummary(limit = 50): Promise<FarmerReviewRow[]> {
-  const { data: farmers, error } = await supabase
-    .from("farmers")
-    .select("id, farm_name, name, livestock_type, updated_at, visit_reports(id), health_cases(id, status)")
-    .order("updated_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (farmers ?? []).map((f: any) => {
-    const reportCount = (f.visit_reports ?? []).length;
-    const healthScore = Math.max(50, 95 - (f.health_cases?.filter((c: any) => c.status !== "resolved").length ?? 0) * 10);
-    return {
-      id: f.id,
-      farm: f.farm_name ?? "—",
-      farmer_name: f.name ?? "—",
-      species: f.livestock_type ?? "—",
-      last_review: relativeTime(f.updated_at),
-      report_count: reportCount,
-      health_score: healthScore,
-    };
-  });
+  const farmers = await farmersApi.listFarmers({ page_size: limit });
+  return farmers.map((f) => ({
+    id: f.id,
+    farm: f.farm_name ?? "—",
+    farmer_name: f.name ?? "—",
+    species: f.livestock_type ?? "—",
+    last_review: relativeTime(f.updated_at),
+    report_count: f.report_count,
+    health_score: Math.max(50, 95 - f.open_health_cases * 10),
+  }));
 }
 
 export async function fetchFarmerReviewDetail(farmerId: string) {
-  const { data: farmer, error } = await supabase
-    .from("farmers")
-    .select("id, farm_name, name, livestock_type, contact_info, status, created_at, visit_reports(id, species, status), health_cases(id, diagnosis, status), nutrition_plans(id, plan_name, status)")
-    .eq("id", farmerId)
-    .single();
-  if (error) throw error;
-  return farmer;
+  // Base farmer record now comes from the real /farmers/{id}/ endpoint.
+  // Nested visit_reports / health_cases / nutrition_plans live in their own
+  // apps per MIGRATION_PLAN.md's endpoint map — fetched here in parallel
+  // rather than via a Supabase-style join, filtered by farmer id.
+  // NOTE: confirm each of these endpoints actually supports `?farmer=` —
+  // flagged in backend-additions/apps/farmers/serializers.py.
+  const [farmer, visits, healthCases, nutritionPlans] = await Promise.all([
+    farmersApi.getFarmer(farmerId),
+    supabase.from("visit_reports").select("id, species, status").eq("farmer_id", farmerId), // TODO: swap to GET /farms/visits/?farmer=<id> once confirmed
+    supabase.from("health_cases").select("id, diagnosis, status").eq("farmer_id", farmerId), // TODO: swap to GET /intelligence/signals/?farmer=<id>
+    supabase.from("nutrition_plans").select("id, plan_name, status").eq("farmer_id", farmerId), // TODO: swap to GET /ration/plans/?farmer=<id>
+  ]);
+  return {
+    ...farmer,
+    visit_reports: visits.data ?? [],
+    health_cases: healthCases.data ?? [],
+    nutrition_plans: nutritionPlans.data ?? [],
+  };
 }
 
 /* ---- SUPPORT TICKETS (Extended) ---- */
@@ -599,13 +600,8 @@ export type SupportTicketRow = {
 };
 
 export async function fetchSupportTicketsForPage(limit = 50): Promise<SupportTicketRow[]> {
-  const { data, error } = await supabase
-    .from("support_tickets")
-    .select("id, subject, priority, status, created_at, assigned_to")
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (data ?? []).map((t: any) => ({
+  const tickets = await supportApi.listSupportTickets({ page_size: limit });
+  return tickets.map((t) => ({
     id: t.id,
     ticket_id: t.id.slice(0, 8).toUpperCase(),
     subject: t.subject ?? "No subject",
@@ -617,13 +613,7 @@ export async function fetchSupportTicketsForPage(limit = 50): Promise<SupportTic
 }
 
 export async function fetchSupportTicketDetail(id: string) {
-  const { data, error } = await supabase
-    .from("support_tickets")
-    .select("id, subject, description, priority, status, created_at, updated_at, assigned_to, user_id, profiles(name)")
-    .eq("id", id)
-    .single();
-  if (error) throw error;
-  return data;
+  return supportApi.getSupportTicket(id);
 }
 
 /* ---- KNOWLEDGE ARTICLES ---- */
@@ -638,29 +628,11 @@ export type ArticleRow = {
 };
 
 export async function fetchArticles(limit = 100, category?: string, search?: string): Promise<ArticleRow[]> {
-  let q = supabase
-    .from("knowledge_articles")
-    .select("id, title, category, tags, updated_at, is_published")
-    .eq("is_published", true)
-    .order("updated_at", { ascending: false });
-  
-  if (category) q = q.eq("category", category);
-  if (search) q = q.ilike("title", `%${search}%`);
-  
-  q = q.limit(limit);
-  const { data, error } = await q;
-  if (error) throw error;
-  return data ?? [];
+  return knowledgeApi.listArticles({ limit, category, search });
 }
 
 export async function fetchArticleDetail(id: string) {
-  const { data, error } = await supabase
-    .from("knowledge_articles")
-    .select("id, title, body, category, tags, is_published, created_at, updated_at")
-    .eq("id", id)
-    .single();
-  if (error) throw error;
-  return data;
+  return knowledgeApi.getArticle(id);
 }
 
 /* ---- RESEARCH INSIGHTS (Aggregates) ---- */

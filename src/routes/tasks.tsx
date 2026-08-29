@@ -4,8 +4,8 @@ import { toast } from "sonner";
 import { CheckCircle2, Circle } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { listMyTasks, toggleTask } from "@/lib/api/tasks";
 
 export const Route = createFileRoute("/tasks")({ component: TasksPage });
 
@@ -21,19 +21,12 @@ function TasksPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["my-tasks", session?.user.id],
     enabled: !!session?.user.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tasks").select("id, title, description, due_at, status, priority")
-        .eq("assignee_id", session!.user.id).order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
+    // Backend already scopes /api/v1/tasks/ to the authenticated user
+    // (see backend-additions/apps/tasks/views.py) — no client-side filter needed.
+    queryFn: listMyTasks,
   });
   const toggle = useMutation({
-    mutationFn: async ({ id, done }: { id: string; done: boolean }) => {
-      const { error } = await supabase.from("tasks").update({ status: done ? "done" : "open" }).eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id }: { id: string; done: boolean }) => toggleTask(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my-tasks"] }),
     onError: (e: any) => toast.error(e.message ?? "Failed"),
   });
