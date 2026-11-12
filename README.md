@@ -22,7 +22,7 @@ their phase lands — check the plan file's checklist for current status.
 
 ```bash
 npm install
-cp .env.example .env
+cp env.example .env
 # then edit .env — at minimum set VITE_API_BASE_URL
 npm run dev
 ```
@@ -34,6 +34,7 @@ npm run dev
 | `VITE_API_BASE_URL` | Yes | IntelliFeed360 API base, e.g. `https://api-testing-intellifeed360.onrender.com/api/v1` |
 | `VITE_SUPABASE_URL` | Temporary | Still read by not-yet-migrated screens. Removed in migration Phase 9. |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Temporary | Same as above. |
+| `VITE_SHOW_TEST_OTP` | No | Set to `true` to show backend-returned OTP codes on the login screen (staging only; always on in dev). |
 
 ## Scripts
 
