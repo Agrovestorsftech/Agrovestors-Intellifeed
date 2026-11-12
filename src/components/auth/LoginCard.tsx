@@ -32,6 +32,12 @@ const accentIcon: Record<LoginCardProps["accent"], string> = {
 // this endpoint at all. This test environment also has SHOW_RANDOM_OTP set,
 // so a successful send returns the code directly; it's shown below the form
 // so testing doesn't depend on SMS delivery.
+//
+// Only ever displayed in dev builds, or when a deployment explicitly opts in
+// via VITE_SHOW_TEST_OTP=true (e.g. staging). Never enable that in
+// production: if the backend leaks codes there, the UI must not surface them.
+const SHOW_TEST_OTP = import.meta.env.DEV || import.meta.env.VITE_SHOW_TEST_OTP === "true";
+
 export function LoginCard({
   portal,
   portalName,
@@ -61,7 +67,7 @@ export function LoginCard({
       setError(result.error ?? "Couldn't send code. Please try again.");
       return;
     }
-    setTestCode(result.testCode ?? null);
+    setTestCode(SHOW_TEST_OTP ? (result.testCode ?? null) : null);
     setStep("otp");
   };
 
