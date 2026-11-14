@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { firstName } from "@/lib/dates";
 import {
   ClipboardList,
   Salad,
@@ -35,11 +37,12 @@ export const Route = createFileRoute("/agent/")({
 });
 
 function AgentDashboardPage() {
+  const { session } = useAuth();
   const { data, isLoading } = useAgentKpis();
   return (
     <>
       <AgentHeader
-        title="Welcome, Dr. Jane 👋"
+        title={`Welcome, ${firstName(session?.user.name)} 👋`}
         subtitle="Manage nutrition plans, health cases & consultations."
       />
 

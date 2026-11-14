@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { firstName } from "@/lib/dates";
 import {
   MapPin,
   CheckCircle2,
@@ -19,11 +21,12 @@ export const Route = createFileRoute("/")({
 });
 
 function DashboardPage() {
+  const { session } = useAuth();
   const { data, isLoading } = useFieldKpis();
   return (
     <>
       <DashboardHeader
-        title="Welcome, John! 👋"
+        title={`Welcome, ${firstName(session?.user.name)}! 👋`}
         subtitle="Here's your field activity summary."
       />
 
