@@ -44,7 +44,8 @@ export default defineConfig(({ command, mode }) => {
           environments: {
             client: { define: { "process.env.NODE_ENV": JSON.stringify("development") } },
           },
-          esbuild: { keepNames: true },
+          // Vite 8 bundles with Rolldown; keepNames moved from `esbuild` to the output options.
+          build: { rolldownOptions: { output: { keepNames: true } } },
         }
       : {}),
     server: {
