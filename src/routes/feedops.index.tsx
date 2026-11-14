@@ -34,7 +34,7 @@ export const Route = createFileRoute("/feedops/")({
 });
 
 function FeedOpsDashboardPage() {
-  const { data, isLoading } = useFeedOpsKpis();
+  const { data, isLoading, isError } = useFeedOpsKpis();
   const invMt = Math.round(((data?.totalInventory ?? 0) / 1000) * 10) / 10;
   return (
     <>
@@ -44,11 +44,11 @@ function FeedOpsDashboardPage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
-        <FeedOpsKpiCard title="Total Inventory" value={`${invMt} MT`} description="Across all warehouses" icon={Boxes} tone="primary" loading={isLoading} />
-        <FeedOpsKpiCard title="Production Queue" value={data?.productionQueue ?? 0} description="Queued or running" icon={Factory} tone="accent" loading={isLoading} />
-        <FeedOpsKpiCard title="Orders to Fulfill" value={data?.pendingOrders ?? 0} description="Pending fulfillment" icon={ClipboardList} tone="info" loading={isLoading} />
-        <FeedOpsKpiCard title="Orders Today" value={data?.deliveriesToday ?? 0} description="Placed today" icon={Truck} tone="warning" loading={isLoading} />
-        <FeedOpsKpiCard title="Low Stock Alerts" value={data?.lowStock ?? 0} description="At or below reorder level" icon={AlertTriangle} tone="destructive" loading={isLoading} />
+        <FeedOpsKpiCard title="Total Inventory" value={`${invMt} MT`} description="Across all warehouses" icon={Boxes} tone="primary" loading={isLoading} error={isError} />
+        <FeedOpsKpiCard title="Production Queue" value={data?.productionQueue ?? 0} description="Queued or running" icon={Factory} tone="accent" loading={isLoading} error={isError} />
+        <FeedOpsKpiCard title="Orders to Fulfill" value={data?.pendingOrders ?? 0} description="Pending fulfillment" icon={ClipboardList} tone="info" loading={isLoading} error={isError} />
+        <FeedOpsKpiCard title="Orders Today" value={data?.deliveriesToday ?? 0} description="Placed today" icon={Truck} tone="warning" loading={isLoading} error={isError} />
+        <FeedOpsKpiCard title="Low Stock Alerts" value={data?.lowStock ?? 0} description="At or below reorder level" icon={AlertTriangle} tone="destructive" loading={isLoading} error={isError} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, Target, Users, ClipboardCheck } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useFieldKpis } from "@/hooks/useDashboard";
 
@@ -16,7 +16,7 @@ function PerformancePage() {
     enabled: !!session?.user.id,
     queryFn: async () => {
       const since = new Date(); since.setDate(since.getDate() - 27); since.setHours(0,0,0,0);
-      const { data, error } = await supabase.from("visit_reports").select("submitted_at").eq("agent_id", session!.user.id).gte("submitted_at", since.toISOString());
+      const { data, error } = await db.from("visit_reports").select("submitted_at").eq("agent_id", session!.user.id).gte("submitted_at", since.toISOString());
       if (error) throw error;
       const buckets = Array.from({ length: 4 }, (_, i) => ({ week: `Week ${i+1}`, count: 0 }));
       for (const r of data ?? []) {

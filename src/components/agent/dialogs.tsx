@@ -13,14 +13,14 @@ import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 function useFarmersPicker() {
   return useQuery({
     queryKey: ["farmers-picker-agent"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("farmers").select("id, name, farm_name, livestock_type").order("name").limit(300);
+      const { data, error } = await db.from("farmers").select("id, name, farm_name, livestock_type").order("name").limit(300);
       if (error) throw error;
       return data ?? [];
     },
@@ -42,7 +42,7 @@ export function AddNutritionPlanDialog({ trigger }: { trigger: ReactNode }) {
 
   const m = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("nutrition_plans").insert({
+      const { error } = await db.from("nutrition_plans").insert({
         farmer_id: form.farmer_id || null,
         species: form.species,
         status: form.status,
@@ -139,7 +139,7 @@ export function AddHealthCaseDialog({ trigger, presetFarmerId }: { trigger: Reac
 
   const m = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("health_cases").insert({
+      const { error } = await db.from("health_cases").insert({
         farmer_id: form.farmer_id || null,
         severity: form.severity,
         diagnosis: form.diagnosis.trim() || null,
@@ -218,7 +218,7 @@ export function AddKnowledgeArticleDialog({ trigger }: { trigger: ReactNode }) {
 
   const m = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("knowledge_articles").insert({
+      const { error } = await db.from("knowledge_articles").insert({
         title: form.title.trim(),
         category: form.category.trim() || null,
         tags: form.tags.trim() ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : null,

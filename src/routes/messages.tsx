@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Bell, CheckCheck } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { useAllNotifications } from "@/hooks/useDashboard";
 import { relativeTime } from "@/lib/dashboard/queries";
 
@@ -17,7 +17,7 @@ function MessagesPage() {
     mutationFn: async () => {
       const ids = (data ?? []).filter((n: any) => !n.read_at).map((n: any) => n.id);
       if (ids.length === 0) return;
-      const { error } = await supabase.from("notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
+      const { error } = await db.from("notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications-all"] }); qc.invalidateQueries({ queryKey: ["notifications-unread"] }); toast.success("All caught up"); },

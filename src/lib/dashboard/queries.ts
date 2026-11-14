@@ -1,13 +1,14 @@
-import { supabase } from "@/integrations/supabase/client";
-import { intellifeed } from "@/lib/intellifeed/api";
+import { mockDb as db } from "@/lib/mock/db";
 import * as knowledgeApi from "@/lib/api/knowledge";
 import * as supportApi from "@/lib/api/support";
 import * as farmersApi from "@/lib/api/farmers";
 
 export type CountResult = number;
 
-async function count(table: string, filter?: (q: ReturnType<typeof supabase.from>) => any): Promise<CountResult> {
-  let q: any = supabase.from(table as any).select("*", { count: "exact", head: true });
+type Query = ReturnType<typeof db.from>;
+
+async function count(table: string, filter?: (q: Query) => Query): Promise<CountResult> {
+  let q = db.from(table).select("*", { count: "exact", head: true });
   if (filter) q = filter(q);
   const { count: c, error } = await q;
   if (error) throw error;
@@ -33,8 +34,8 @@ export async function fetchAdminKpis() {
     count("user_roles"),
     count("nutrition_plans"),
     count("health_cases", (q) => q.in("status", ["open", "in_progress"])),
-    count("visit_reports", (q) => q.eq("follow_up_needed", true)),
-    count("feed_orders", (q) => q.in("status", ["pending", "processing", "out_for_delivery"])),
+    count("visit_reports", (q) => q.in("status", ["pending", "under_review"])),
+    count("feed_orders", (q) => q.in("status", ["placed", "pending", "processing", "out_for_delivery"])),
     count("inventory_items"),
     supportApi.countOpenSupportTickets(),
   ]);
@@ -52,7 +53,7 @@ export async function fetchAdminKpis() {
 }
 
 export async function fetchUserDistribution() {
-  const { data, error } = await supabase.from("user_roles").select("role");
+  const { data, error } = await db.from("user_roles").select("role");
   if (error) throw error;
   const counts: Record<string, number> = {};
   for (const r of data ?? []) {
@@ -66,10 +67,11 @@ export async function fetchPlatformSeries() {
   const since = new Date();
   since.setDate(since.getDate() - 6);
   since.setHours(0, 0, 0, 0);
-  const [{ data: farmers }, { data: orders }] = await Promise.all([
-    supabase.from("farmers").select("created_at").gte("created_at", since.toISOString()),
-    supabase.from("feed_orders").select("placed_at").gte("placed_at", since.toISOString()),
+  const [{ data: farmers, error: e1 }, { data: orders, error: e2 }] = await Promise.all([
+    db.from("farmers").select("created_at").gte("created_at", since.toISOString()),
+    db.from("feed_orders").select("placed_at").gte("placed_at", since.toISOString()),
   ]);
+  if (e1 ?? e2) throw e1 ?? e2;
   const days: { day: string; users: number; orders: number }[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(since);
@@ -87,20 +89,14 @@ export async function fetchPlatformSeries() {
 /* --------------------------------- Agent (Admin Agent) --------------------------------- */
 
 export async function fetchAgentKpis() {
-  const [farms, assignments, visits, cases, plans] = await Promise.all([
-    intellifeed.farms(),
-    intellifeed.assignments(),
-    intellifeed.visits(),
-    intellifeed.healthCases(),
-    intellifeed.nutritionPlans(),
+  const [activeFarms, plans, cases, tasks, reports] = await Promise.all([
+    count("farmers", (q) => q.eq("status", "active")),
+    count("nutrition_plans", (q) => q.eq("status", "active")),
+    count("health_cases", (q) => q.in("status", ["open", "in_progress", "monitoring"])),
+    count("tasks", (q) => q.eq("status", "open")),
+    count("visit_reports", (q) => q.in("status", ["pending", "under_review"])),
   ]);
-  return {
-    activeFarms: farms.length,
-    plans: plans.length,
-    cases: cases.filter((c: any) => !["resolved", "closed"].includes(c.status)).length,
-    tasks: assignments.filter((a: any) => !["completed", "closed"].includes(a.status)).length,
-    reports: visits.filter((v: any) => v.follow_up_needed || v.status === "pending").length,
-  };
+  return { activeFarms, plans, cases, tasks, reports };
 }
 
 export type ReportRow = {
@@ -114,22 +110,28 @@ export type ReportRow = {
 };
 
 export async function fetchPendingReports(limit = 8): Promise<ReportRow[]> {
-  const visits = await intellifeed.visits({ page_size: limit });
-  return visits.filter((r: any) => r.follow_up_needed || r.status === "pending").map((r: any) => ({
-    id: String(r.id),
-    farmer: r.farmer_name ?? r.farmer?.name ?? "Farmer",
-    farm: r.farm_name ?? r.farm?.name ?? "—",
-    species: r.species ?? r.livestock_type ?? r.visit_type ?? null,
-    submitted: relativeTime(r.created_at ?? r.visit_date),
-    priority: r.priority ?? (r.follow_up_needed ? "High" : "Normal"),
-    status: r.status ?? "Pending",
+  const { data, error } = await db
+    .from("visit_reports")
+    .select("id, species, priority, status, submitted_at, farmers(name, farm_name)")
+    .in("status", ["pending", "under_review"])
+    .order("submitted_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    farmer: r.farmers?.name ?? "Farmer",
+    farm: r.farmers?.farm_name ?? "—",
+    species: r.species,
+    submitted: relativeTime(r.submitted_at),
+    priority: formatPriority(r.priority ?? "normal"),
+    status: formatReportStatus(r.status),
   }));
 }
 
 export async function fetchFarmerHealth(limit = 8) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("farmers")
-    .select("id, farm_name, primary_livestock_type, updated_at, health_cases(case_type, status)")
+    .select("id, farm_name, livestock_type, updated_at, health_cases(severity, status)")
     .order("updated_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -140,7 +142,7 @@ export async function fetchFarmerHealth(limit = 8) {
     return {
       id: f.id,
       farm: f.farm_name ?? "—",
-      species: f.primary_livestock_type ?? "—",
+      species: f.livestock_type ?? "—",
       score,
       risk: openCases.length === 0 ? "Low" : worst === "critical" || worst === "high" ? "High" : "Medium",
       lastReview: relativeTime(f.updated_at),
@@ -149,10 +151,11 @@ export async function fetchFarmerHealth(limit = 8) {
 }
 
 export async function fetchCriticalAlerts(limit = 6) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("health_cases")
-    .select("id, case_type, status, diagnosis, created_at, farmers(farm_name)")
+    .select("id, severity, status, diagnosis, created_at, farmers(farm_name)")
     .neq("status", "resolved")
+    .in("severity", ["high", "critical"])
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -160,7 +163,7 @@ export async function fetchCriticalAlerts(limit = 6) {
     id: c.id,
     title: c.diagnosis ?? "Health alert",
     farm: c.farmers?.farm_name ?? "—",
-    priority: c.case_type === "respiratory_disease" ? "Critical" : "High",
+    priority: c.severity === "critical" ? "Critical" : "High",
   }));
 }
 
@@ -172,12 +175,13 @@ export async function fetchKnowledgeArticles(limit = 6) {
 
 export async function fetchFeedOpsKpis() {
   const [inventoryRows, ordersToday, pendingOrders, lowStock, production] = await Promise.all([
-    supabase.from("inventory_items").select("quantity, reorder_level"),
+    db.from("inventory_items").select("quantity, reorder_level"),
     count("feed_orders", (q) => q.gte("placed_at", startOfDay())),
-    count("feed_orders", (q) => q.in("status", ["pending", "processing"])),
-    supabase.from("inventory_items").select("id, quantity, reorder_level"),
+    count("feed_orders", (q) => q.in("status", ["placed", "pending", "processing"])),
+    db.from("inventory_items").select("id, quantity, reorder_level"),
     count("production_runs", (q) => q.in("status", ["queued", "running"])),
   ]);
+  if (inventoryRows.error ?? lowStock.error) throw inventoryRows.error ?? lowStock.error;
   const totalInv = (inventoryRows.data ?? []).reduce((s, r: any) => s + Number(r.quantity ?? 0), 0);
   const lowCount = (lowStock.data ?? []).filter((r: any) => Number(r.quantity) <= Number(r.reorder_level)).length;
   return {
@@ -190,7 +194,7 @@ export async function fetchFeedOpsKpis() {
 }
 
 export async function fetchInventoryRows(limit = 8) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("inventory_items")
     .select("id, quantity, reorder_level, warehouse, feed_products(name, unit)")
     .order("quantity", { ascending: true })
@@ -214,7 +218,7 @@ export async function fetchProductionSeries() {
   const since = new Date();
   since.setDate(since.getDate() - 6);
   since.setHours(0, 0, 0, 0);
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("production_runs")
     .select("quantity, started_at")
     .gte("started_at", since.toISOString());
@@ -236,7 +240,7 @@ export async function fetchProductionSeries() {
 }
 
 export async function fetchRecentOrders(limit = 6) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("feed_orders")
     .select("id, order_no, status, placed_at, farmers(farm_name)")
     .order("placed_at", { ascending: false })
@@ -256,25 +260,33 @@ export async function fetchFieldKpis(userId: string | undefined) {
   if (!userId) return { assigned: 0, todayVisits: 0, pendingReports: 0, completedThisWeek: 0, urgentAlerts: 0 };
   const startWeek = new Date();
   startWeek.setDate(startWeek.getDate() - 7);
-  const [assigned, todayReports, pending, weekReports, alerts] = await Promise.all([
-    count("farmers", (q) => q.eq("user_id", userId)),
-    count("visit_reports", (q) => q.eq("visitor_id", userId).gte("visit_date", new Date().toISOString().slice(0, 10))),
-    count("visit_reports", (q) => q.eq("visitor_id", userId).eq("follow_up_needed", true)),
-    count("visit_reports", (q) => q.eq("visitor_id", userId).gte("visit_date", startWeek.toISOString().slice(0, 10))),
+  const [assigned, todayVisits, pendingReports, completedThisWeek, urgentAlerts] = await Promise.all([
+    count("farmers", (q) => q.eq("assigned_agent_id", userId)),
+    count("visit_reports", (q) => q.eq("agent_id", userId).gte("submitted_at", startOfDay())),
+    count("visit_reports", (q) => q.eq("agent_id", userId).in("status", ["pending", "under_review"])),
+    count("visit_reports", (q) => q.eq("agent_id", userId).gte("submitted_at", startWeek.toISOString())),
     count("health_cases", (q) => q.in("severity", ["critical", "high"]).neq("status", "resolved")),
   ]);
-  return { assigned, todayVisits: todayReports, pendingReports: pending, completedThisWeek: weekReports, urgentAlerts: alerts };
+  return { assigned, todayVisits, pendingReports, completedThisWeek, urgentAlerts };
 }
 
 export async function fetchTodaysSchedule(userId: string | undefined, limit = 6) {
   if (!userId) return [];
-  const visits = await intellifeed.visits({ page_size: limit, visitor: userId, visit_date: new Date().toISOString().slice(0, 10) });
-  return visits.map((r: any) => ({
-    id: String(r.id),
-    farm: r.farm_name ?? r.farm?.name ?? "—",
-    category: r.visit_type ?? r.visit_category ?? "Visit",
-    time: new Date(r.created_at ?? r.visit_date).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
-    status: r.follow_up_needed ? "Pending" : r.status === "completed" ? "Completed" : "Upcoming",
+  const { data, error } = await db
+    .from("visit_reports")
+    .select("id, species, status, submitted_at, farmers(farm_name)")
+    .eq("agent_id", userId)
+    .gte("submitted_at", startOfDay())
+    .order("submitted_at", { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  const now = Date.now();
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    farm: r.farmers?.farm_name ?? "—",
+    category: r.species ? `${r.species[0].toUpperCase()}${r.species.slice(1)} visit` : "Visit",
+    time: new Date(r.submitted_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
+    status: new Date(r.submitted_at).getTime() > now ? "Upcoming" : r.status === "pending" ? "Pending" : "Completed",
   }));
 }
 
@@ -282,24 +294,41 @@ export async function fetchTodaysSchedule(userId: string | undefined, limit = 6)
 
 export async function fetchActivities(limit = 20) {
   const [visits, cases, plans] = await Promise.all([
-    intellifeed.visits({ page_size: limit }),
-    intellifeed.healthCases({ page_size: limit }),
-    intellifeed.nutritionPlans({ page_size: limit }),
+    db.from("visit_reports").select("id, species, summary, submitted_at, farmers(farm_name)").order("submitted_at", { ascending: false }).limit(limit),
+    db.from("health_cases").select("id, diagnosis, created_at, farmers(farm_name)").order("created_at", { ascending: false }).limit(limit),
+    db.from("nutrition_plans").select("id, plan_name, created_at, farmers(farm_name)").order("created_at", { ascending: false }).limit(limit),
   ]);
-  return [...visits, ...cases, ...plans]
-    .map((item: any) => ({
-      id: String(item.id),
-      activity_type: item.visit_type ? "visit_report_submitted" : item.diagnosis ? "health_case_created" : "nutrition_plan_created",
-      description: item.description ?? item.diagnosis ?? item.plan_name ?? item.visit_type ?? "IntelliFeed360 update",
-      metadata: item,
-      created_at: item.created_at ?? item.updated_at,
-    }))
-    .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())
+  const err = visits.error ?? cases.error ?? plans.error;
+  if (err) throw err;
+  return [
+    ...(visits.data ?? []).map((v) => ({
+      id: v.id,
+      activity_type: "visit_report_submitted",
+      description: `Visit report — ${v.farmers?.farm_name ?? "farm"}`,
+      metadata: v,
+      created_at: v.submitted_at as string,
+    })),
+    ...(cases.data ?? []).map((c) => ({
+      id: c.id,
+      activity_type: "health_case_created",
+      description: `${c.diagnosis ?? "Health case"} — ${c.farmers?.farm_name ?? "farm"}`,
+      metadata: c,
+      created_at: c.created_at as string,
+    })),
+    ...(plans.data ?? []).map((p) => ({
+      id: p.id,
+      activity_type: "nutrition_plan_created",
+      description: p.plan_name ?? "Nutrition plan",
+      metadata: p,
+      created_at: p.created_at as string,
+    })),
+  ]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, limit);
 }
 
 export async function fetchUnreadNotifications() {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("notifications")
     .select("id, title, body, type, read_at, created_at")
     .is("read_at", null)
@@ -310,7 +339,7 @@ export async function fetchUnreadNotifications() {
 }
 
 export async function fetchAllNotifications(limit = 20) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("notifications")
     .select("id, title, body, type, read_at, created_at")
     .order("created_at", { ascending: false })
@@ -320,7 +349,7 @@ export async function fetchAllNotifications(limit = 20) {
 }
 
 export async function markNotificationRead(id: string) {
-  const { error } = await supabase
+  const { error } = await db
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("id", id);
@@ -333,7 +362,7 @@ export async function fetchSupportTickets(limit = 6) {
 }
 
 export async function fetchSystemLogs(limit = 8) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("system_logs")
     .select("id, action, entity, meta, created_at")
     .order("created_at", { ascending: false })
@@ -373,7 +402,7 @@ export function relativeTime(iso: string | null | undefined): string {
 
 export function formatOrderStatus(s: string): "Pending" | "Processing" | "Out for Delivery" | "Delivered" {
   const key = s.toLowerCase();
-  if (key === "pending") return "Pending";
+  if (key === "pending" || key === "placed") return "Pending";
   if (key === "processing") return "Processing";
   if (key === "out_for_delivery" || key === "out for delivery") return "Out for Delivery";
   return "Delivered";
@@ -404,7 +433,7 @@ export type NutritionPlanRow = {
 };
 
 export async function fetchNutritionPlans(limit = 50): Promise<NutritionPlanRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("nutrition_plans")
     .select("id, plan_name, status, created_at, assigned_to, farmers(farm_name)")
     .order("created_at", { ascending: false })
@@ -421,7 +450,7 @@ export async function fetchNutritionPlans(limit = 50): Promise<NutritionPlanRow[
 }
 
 export async function fetchNutritionPlanDetail(id: string) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("nutrition_plans")
     .select("id, plan_name, status, description, created_at, updated_at, assigned_to, farmer_id, farmers(farm_name, name)")
     .eq("id", id)
@@ -443,7 +472,7 @@ export type HealthCaseRow = {
 };
 
 export async function fetchHealthCases(limit = 50): Promise<HealthCaseRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("health_cases")
     .select("id, diagnosis, severity, status, created_at, assigned_to, farmers(farm_name)")
     .order("created_at", { ascending: false })
@@ -461,7 +490,7 @@ export async function fetchHealthCases(limit = 50): Promise<HealthCaseRow[]> {
 }
 
 export async function fetchHealthCaseDetail(id: string) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("health_cases")
     .select("id, diagnosis, severity, status, description, created_at, updated_at, assigned_to, farmer_id, farmers(farm_name, name)")
     .eq("id", id)
@@ -482,7 +511,7 @@ export type RescuePlanRow = {
 };
 
 export async function fetchRescuePlans(limit = 50): Promise<RescuePlanRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("health_cases")
     .select("id, diagnosis, severity, status, created_at, farmers(farm_name)")
     .in("severity", ["high", "critical"])
@@ -513,7 +542,7 @@ export type ReviewReportRow = {
 };
 
 export async function fetchVisitReportsForReview(limit = 50): Promise<ReviewReportRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("visit_reports")
     .select("id, species, status, submitted_at, priority, agent_id, farmers(farm_name, name)")
     .in("status", ["pending", "under_review"])
@@ -532,7 +561,7 @@ export async function fetchVisitReportsForReview(limit = 50): Promise<ReviewRepo
 }
 
 export async function fetchReportDetail(id: string) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("visit_reports")
     .select("id, species, notes, status, submitted_at, priority, agent_id, farmer_id, farmers(farm_name, name)")
     .eq("id", id)
@@ -567,18 +596,13 @@ export async function fetchFarmersWithReportSummary(limit = 50): Promise<FarmerR
 }
 
 export async function fetchFarmerReviewDetail(farmerId: string) {
-  // Base farmer record now comes from the real /farmers/{id}/ endpoint.
-  // Nested visit_reports / health_cases / nutrition_plans live in their own
-  // apps per MIGRATION_PLAN.md's endpoint map — fetched here in parallel
-  // rather than via a Supabase-style join, filtered by farmer id.
-  // NOTE: confirm each of these endpoints actually supports `?farmer=` —
-  // flagged in backend-additions/apps/farmers/serializers.py.
   const [farmer, visits, healthCases, nutritionPlans] = await Promise.all([
     farmersApi.getFarmer(farmerId),
-    supabase.from("visit_reports").select("id, species, status").eq("farmer_id", farmerId), // TODO: swap to GET /farms/visits/?farmer=<id> once confirmed
-    supabase.from("health_cases").select("id, diagnosis, status").eq("farmer_id", farmerId), // TODO: swap to GET /intelligence/signals/?farmer=<id>
-    supabase.from("nutrition_plans").select("id, plan_name, status").eq("farmer_id", farmerId), // TODO: swap to GET /ration/plans/?farmer=<id>
+    db.from("visit_reports").select("id, species, status").eq("farmer_id", farmerId),
+    db.from("health_cases").select("id, diagnosis, status").eq("farmer_id", farmerId),
+    db.from("nutrition_plans").select("id, plan_name, status").eq("farmer_id", farmerId),
   ]);
+  if (visits.error ?? healthCases.error ?? nutritionPlans.error) throw visits.error ?? healthCases.error ?? nutritionPlans.error;
   return {
     ...farmer,
     visit_reports: visits.data ?? [],
@@ -648,10 +672,11 @@ export type InsightData = {
 
 export async function fetchResearchInsights(): Promise<InsightData> {
   const [healthCases, nutritionPlans] = await Promise.all([
-    supabase.from("health_cases").select("diagnosis, severity, status, created_at"),
-    supabase.from("nutrition_plans").select("status, created_at"),
+    db.from("health_cases").select("diagnosis, severity, status, created_at"),
+    db.from("nutrition_plans").select("status, created_at, plan"),
   ]);
 
+  if (healthCases.error ?? nutritionPlans.error) throw healthCases.error ?? nutritionPlans.error;
   const cases = healthCases.data ?? [];
   const plans = nutritionPlans.data ?? [];
 
@@ -662,8 +687,13 @@ export async function fetchResearchInsights(): Promise<InsightData> {
   });
   const most_common_diagnosis = Object.entries(diagnosisCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
 
-  // Most common nutrition issue (placeholder)
-  const top_nutrition_issue = "Feed Deficiency";
+  // Most common nutrition issue, from each plan's focus
+  const focusCounts: Record<string, number> = {};
+  plans.forEach((p) => {
+    const focus = p.plan?.focus;
+    if (focus) focusCounts[focus] = (focusCounts[focus] ?? 0) + 1;
+  });
+  const top_nutrition_issue = Object.entries(focusCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
 
   // Case resolution rate
   const resolved = cases.filter((c: any) => c.status === "resolved").length;
@@ -728,11 +758,12 @@ export async function fetchAnalyticsSeries(): Promise<AnalyticsData> {
   const week = new Date();
   week.setDate(week.getDate() - 7);
   const [farmers, cases, reports] = await Promise.all([
-    supabase.from("farmers").select("id, farm_name, health_cases(status)"),
-    supabase.from("health_cases").select("severity, status"),
-    supabase.from("visit_reports").select("created_at").gte("created_at", week.toISOString()),
+    db.from("farmers").select("id, farm_name, health_cases(status)"),
+    db.from("health_cases").select("severity, status"),
+    db.from("visit_reports").select("submitted_at").gte("submitted_at", week.toISOString()),
   ]);
 
+  if (farmers.error ?? cases.error ?? reports.error) throw farmers.error ?? cases.error ?? reports.error;
   const farmerCount = (farmers.data ?? []).length;
   const activeCases = (cases.data ?? []).filter((c: any) => c.status !== "resolved").length;
   const totalScore = (farmers.data ?? []).reduce((sum: number, f: any) => {
@@ -740,7 +771,7 @@ export async function fetchAnalyticsSeries(): Promise<AnalyticsData> {
     const score = Math.max(50, 95 - openCases * 10);
     return sum + score;
   }, 0);
-  const avgHealthScore = farmerCount > 0 ? Math.round(totalScore / farmerCount) : 90;
+  const avgHealthScore = farmerCount > 0 ? Math.round(totalScore / farmerCount) : 0;
 
   const severityCounts: Record<string, number> = {};
   (cases.data ?? []).forEach((c: any) => {
@@ -762,7 +793,7 @@ export async function fetchAnalyticsSeries(): Promise<AnalyticsData> {
 
   const reportsByDay: Record<string, number> = {};
   (reports.data ?? []).forEach((r: any) => {
-    const day = new Date(r.created_at).toISOString().slice(0, 10);
+    const day = new Date(r.submitted_at).toISOString().slice(0, 10);
     reportsByDay[day] = (reportsByDay[day] ?? 0) + 1;
   });
 

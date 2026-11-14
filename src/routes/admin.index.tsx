@@ -30,7 +30,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminDashboardPage() {
-  const { data, isLoading } = useAdminKpis();
+  const { data, isLoading, isError } = useAdminKpis();
   return (
     <>
       <AdminHeader
@@ -39,11 +39,11 @@ function AdminDashboardPage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
-        <KpiCard title="Total Farmers" value={data?.totalFarmers ?? 0} icon={Users} tone="primary" loading={isLoading} />
-        <KpiCard title="Platform Users" value={data?.totalUsers ?? 0} icon={UserCheck} tone="info" loading={isLoading} />
-        <KpiCard title="Active Farmers" value={data?.activeFarmers ?? 0} icon={Warehouse} tone="accent" loading={isLoading} />
-        <KpiCard title="Pending Orders" value={data?.pendingOrders ?? 0} icon={ShoppingCart} tone="destructive" loading={isLoading} />
-        <KpiCard title="Open Health Cases" value={data?.openCases ?? 0} icon={HeartPulse} tone="warning" loading={isLoading} />
+        <KpiCard title="Total Farmers" value={data?.totalFarmers ?? 0} icon={Users} tone="primary" loading={isLoading} error={isError} />
+        <KpiCard title="Platform Users" value={data?.totalUsers ?? 0} icon={UserCheck} tone="info" loading={isLoading} error={isError} />
+        <KpiCard title="Active Farmers" value={data?.activeFarmers ?? 0} icon={Warehouse} tone="accent" loading={isLoading} error={isError} />
+        <KpiCard title="Pending Orders" value={data?.pendingOrders ?? 0} icon={ShoppingCart} tone="destructive" loading={isLoading} error={isError} />
+        <KpiCard title="Open Health Cases" value={data?.openCases ?? 0} icon={HeartPulse} tone="warning" loading={isLoading} error={isError} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">

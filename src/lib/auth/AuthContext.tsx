@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { AuthUser, Session, UserRole } from "./types";
 import { ROLE_LABEL } from "./types";
+import { bindCurrentUser } from "@/lib/mock/db";
 
 // --- DEMO MODE: mock auth, no backend. ---
 // Any well-formed email + a password of 6+ characters signs in. The role is
@@ -98,7 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setSession(readStored());
+    const stored = readStored();
+    bindCurrentUser(stored?.user.id);
+    setSession(stored);
     setHydrated(true);
   }, []);
 
@@ -116,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       initials: computeInitials(name),
     };
     const s: Session = { user, loggedInAt: Date.now() };
+    bindCurrentUser(user.id);
     writeStored(s);
     setSession(s);
     return { ok: true, user };

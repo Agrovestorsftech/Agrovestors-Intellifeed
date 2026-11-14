@@ -5,7 +5,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { AddReportDialog } from "@/components/field/dialogs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { relativeTime } from "@/lib/dashboard/queries";
 
@@ -25,7 +25,7 @@ function ReportsPage() {
     queryKey: ["my-reports", session?.user.id],
     enabled: !!session?.user.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("visit_reports")
         .select("id, species, priority, status, summary, submitted_at, farmers(name, farm_name)")
         .eq("agent_id", session!.user.id)

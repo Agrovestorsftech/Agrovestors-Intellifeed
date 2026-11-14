@@ -1,13 +1,8 @@
-// Farmers — list/detail. Registration already existed (POST /farmers/register,
-// see ./auth.ts's registerFarmer). This adds the read side the frontend needs
-// for the farmer directory/review screens.
-// Backend: /api/v1/farmers/ (read-only list/detail).
-// See backend-additions/apps/farmers/ for the server-side implementation
-// this client assumes — that file is NOT self-contained (depends on
-// whatever Farmer model backs the existing register endpoint), so field
-// names here may need a one-line adjustment once confirmed.
+// Farmers. DEMO MODE: backed by the in-memory mock store (src/lib/mock).
+// Swap the bodies back to `api.get(...)` calls once the backend exposes
+// a farmers list endpoint; the exported types/signatures are the contract.
 
-import { api, unwrapPage } from "./client";
+import { mockDb as db } from "@/lib/mock/db";
 
 export interface FarmerListItem {
   id: string;
@@ -31,21 +26,44 @@ export interface FarmerDetail {
 }
 
 export async function listFarmers(params: { search?: string; page_size?: number } = {}): Promise<FarmerListItem[]> {
-  const query = new URLSearchParams();
-  query.set("page_size", String(params.page_size ?? 50));
-  if (params.search) query.set("search", params.search);
-  const page = await api.get<any>(`/farmers/?${query}`);
-  return unwrapPage(page);
+  const { data, error } = await db
+    .from("farmers")
+    .select("id, name, farm_name, livestock_type, updated_at, visit_reports(id), health_cases(status)")
+    .order("updated_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  const q = params.search?.toLowerCase();
+  return (data ?? [])
+    .filter((f) => !q || `${f.name} ${f.farm_name}`.toLowerCase().includes(q))
+    .slice(0, params.page_size ?? 50)
+    .map((f) => ({
+      id: f.id,
+      farm_name: f.farm_name ?? "—",
+      name: f.name,
+      livestock_type: f.livestock_type ?? "—",
+      updated_at: f.updated_at,
+      report_count: f.visit_reports.length,
+      open_health_cases: f.health_cases.filter((c: { status: string }) => c.status !== "resolved").length,
+    }));
 }
 
 export async function getFarmer(id: string): Promise<FarmerDetail> {
-  return api.get<FarmerDetail>(`/farmers/${id}/`);
+  const { data, error } = await db.from("farmers").select("*").eq("id", id).single();
+  if (error || !data) throw new Error(error?.message ?? "Farmer not found");
+  return {
+    id: data.id,
+    farm_name: data.farm_name ?? "—",
+    name: data.name,
+    livestock_type: data.livestock_type ?? "—",
+    contact_info: data.phone ?? "—",
+    status: data.status,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  };
 }
 
-// KPI-tile helper — uses the pagination envelope's `count` directly.
 export async function countFarmers(params: { status?: string } = {}): Promise<number> {
-  const query = new URLSearchParams({ page_size: "1" });
-  if (params.status) query.set("status", params.status);
-  const page = await api.get<{ count: number }>(`/farmers/?${query}`);
-  return page.count ?? 0;
+  let q = db.from("farmers").select("*", { count: "exact", head: true });
+  if (params.status) q = q.eq("status", params.status);
+  const { count } = await q;
+  return count ?? 0;
 }
