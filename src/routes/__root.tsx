@@ -82,10 +82,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "IntelliFeed360 — Field Agent Dashboard" },
+      { title: "IntelliFeed360" },
       { name: "description", content: "IntelliFeed360 by Agrovestors — Smart Feed. Healthy Farms. Better Profits. Field agent dashboard for managing farm visits, reports, and daily activities." },
       { name: "author", content: "Agrovestors" },
-      { property: "og:title", content: "IntelliFeed360 — Field Agent Dashboard" },
+      { property: "og:title", content: "IntelliFeed360" },
       { property: "og:description", content: "Smart Feed. Healthy Farms. Better Profits." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

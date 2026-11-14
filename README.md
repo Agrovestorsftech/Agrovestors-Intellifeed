@@ -1,40 +1,29 @@
-# Agro Field Agent
+# IntelliFeed360
 
-A TanStack Start (React) frontend for IntelliFeed360 — field agents, feed
-operations, and admin dashboards for an agri-feed business.
+A TanStack Start (React) frontend for IntelliFeed360 — field agent, admin
+agent (nutrition/vet), feed operations, and system admin dashboards for an
+agri-feed business.
 
-## ⚠️ Backend migration in progress
+## ⚠️ Demo mode
 
-This app is mid-migration from a Supabase backend to the real backend,
-**IntelliFeed360** (Django REST API). See **[MIGRATION_PLAN.md](./MIGRATION_PLAN.md)**
-for:
+The app currently runs **entirely on local dummy data**. There are no calls
+to Supabase or the IntelliFeed360 API:
 
-- the full endpoint mapping (which Supabase table → which API endpoint)
-- known gaps where the API spec doesn't cover a feature yet
-- the phase-by-phase checklist and how to resume it in a new session
+- **Login:** any well-formed email + any password of 6+ characters. The role
+  comes from the portal you sign in on (`/login/admin`, `/login/agent`,
+  `/login/feedops`; the agent portal lets you pick Field Agent or Admin Agent).
+- **Data:** every screen reads from an in-memory store seeded in
+  `src/lib/mock/`. Creating records works but resets on page reload.
 
-**tl;dr of where things stand:** Auth (login) is fully migrated to the API.
-Most data screens (farmers, health cases, nutrition plans, finance,
-notifications, etc.) still read from Supabase and will keep failing until
-their phase lands — check the plan file's checklist for current status.
+Reconnecting the real backend is tracked in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
 
 ## Setup
 
 ```bash
 npm install
-cp env.example .env
-# then edit .env — at minimum set VITE_API_BASE_URL
+cp env.example .env   # optional in demo mode
 npm run dev
 ```
-
-### Environment variables
-
-| Variable | Required | Purpose |
-|---|---|---|
-| `VITE_API_BASE_URL` | Yes | IntelliFeed360 API base, e.g. `https://api-testing-intellifeed360.onrender.com/api/v1` |
-| `VITE_SUPABASE_URL` | Temporary | Still read by not-yet-migrated screens. Removed in migration Phase 9. |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Temporary | Same as above. |
-| `VITE_SHOW_TEST_OTP` | No | Set to `true` to show backend-returned OTP codes on the login screen (staging only; always on in dev). |
 
 ## Scripts
 
@@ -46,35 +35,14 @@ npm run dev
 | `npm run preview` | Preview a production build locally |
 | `npm run lint` | Run ESLint |
 
-There is no `npm start` — use `npm run dev` for local development.
-
-## Auth
-
-Login is phone-number + OTP (one-time code), against IntelliFeed360's
-`/auth/otp/send` and `/auth/otp/verify` endpoints. JWT access/refresh tokens
-are stored in `localStorage` and refreshed automatically on 401s — see
-`src/lib/api/client.ts`.
-
-Self-signup is currently disabled in the UI (`src/routes/signup.tsx`) because
-the backend doesn't expose a general account-creation endpoint yet. See
-MIGRATION_PLAN.md gap #6.
-
 ## Architecture notes
 
-- `src/lib/api/client.ts` — low-level fetch wrapper: base URL config, JWT
-  header injection, auto-refresh-on-401, typed `ApiError`.
-- `src/lib/api/auth.ts` — auth-specific calls (OTP, `/auth/me`, logout).
-- `src/lib/auth/AuthContext.tsx` — React context wrapping the above;
-  exposes `session`, `hydrated`, `requestOtp`, `verifyLogin`, `logout`,
-  `refresh`.
-- `src/integrations/supabase/*` — legacy, being phased out. Do not add new
-  Supabase calls; migrate the screen to the API client instead (see
-  MIGRATION_PLAN.md for the endpoint to use).
-
-## Contributing to the migration
-
-Each migration phase should land as its own commit
-(`feat: migrate <domain> to IntelliFeed360 API (Phase N)`) and update the
-checklist in `MIGRATION_PLAN.md`. If you're picking this up in a new
-session, read that file first — it has explicit "how to resume" instructions
-at the bottom.
+- `src/lib/auth/AuthContext.tsx` — mock auth; exposes `session`, `hydrated`,
+  `login`, `logout`. Session persists in `localStorage`.
+- `src/lib/mock/` — seed data and in-memory store used by all queries.
+- `src/lib/dashboard/queries.ts` + `src/hooks/useDashboard.ts` — data access
+  used by the screens.
+- `src/lib/api/client.ts` — fetch wrapper kept for when the real API is
+  reconnected (currently unused).
+- `src/integrations/supabase/*` — legacy, unused. Row types from
+  `types.ts` are still used to shape the mock data.
