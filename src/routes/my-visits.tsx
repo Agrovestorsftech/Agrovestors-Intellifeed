@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarDays } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { AddReportDialog } from "@/components/field/dialogs";
+import { WeekSchedule } from "@/components/field/WeekSchedule";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { mockDb as db } from "@/lib/mock/db";
@@ -50,9 +51,8 @@ function MyVisitsPage() {
   return (
     <>
       <DashboardHeader title="My Visits" subtitle="Everything you have visited and are planning to visit." />
-      <section className="rounded-2xl bg-card border border-border p-4 mb-4 flex justify-end">
-        <AddReportDialog trigger={<Button>Log a visit</Button>} />
-      </section>
+      <WeekSchedule action={<AddReportDialog trigger={<Button className="h-10">Log a visit</Button>} />} />
+      <h2 className="mt-8 mb-3 text-lg font-semibold text-foreground">Visit reports</h2>
       {isLoading ? <div className="rounded-2xl bg-card border border-border p-6 animate-pulse h-40" /> : (
         <div className="space-y-6">
           {(["today","week","older"] as const).map((k) => (

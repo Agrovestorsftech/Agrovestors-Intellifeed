@@ -70,6 +70,17 @@ export default defineConfig(({ command, mode }) => {
         "react-dom/client",
         "react/jsx-runtime",
         "react/jsx-dev-runtime",
+        // Pre-bundle UI deps so the dev server doesn't re-optimize mid-session
+        // (which can load two React copies and crash with an invalid hook call).
+        "@radix-ui/react-dropdown-menu",
+        "@radix-ui/react-popover",
+        "@radix-ui/react-select",
+        "@radix-ui/react-switch",
+        "@radix-ui/react-progress",
+        "@radix-ui/react-dialog",
+        "react-day-picker",
+        "recharts",
+        "sonner",
       ],
     },
   };

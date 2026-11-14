@@ -52,9 +52,15 @@ function FeedOpsDashboardPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <InventorySummary />
-        <ProductionOverview />
-        <RecentOrders />
+        <div id="inventory" className="scroll-mt-6 [&>section]:h-full">
+          <InventorySummary />
+        </div>
+        <div id="production" className="scroll-mt-6 [&>section]:h-full">
+          <ProductionOverview />
+        </div>
+        <div id="orders" className="scroll-mt-6 [&>section]:h-full">
+          <RecentOrders />
+        </div>
       </div>
 
       <div className="mt-6">

@@ -1,5 +1,6 @@
-import { todayLabel } from "@/lib/dates";
-import { Calendar, Plus } from "lucide-react";
+import { AddNutritionPlanDialog } from "@/components/agent/dialogs";
+import { HeaderCalendar } from "./HeaderCalendar";
+import { Plus } from "lucide-react";
 import { NotificationsBell } from "./NotificationsBell";
 
 type Props = {
@@ -17,18 +18,22 @@ export function AgentHeader({ title, subtitle, actionLabel = "Create Nutrition P
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        <button className="hidden md:inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-sm">
-          <span suppressHydrationWarning>{todayLabel()}</span>
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-        </button>
+        <HeaderCalendar className="max-md:hidden" />
 
         <NotificationsBell />
 
-        <button className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 sm:px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity shadow-md shadow-primary/30">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">{actionLabel}</span>
-          <span className="sm:hidden">New Plan</span>
-        </button>
+        <AddNutritionPlanDialog
+          trigger={
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 sm:px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity shadow-md shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">{actionLabel}</span>
+              <span className="sm:hidden">New Plan</span>
+            </button>
+          }
+        />
       </div>
     </header>
   );

@@ -63,27 +63,27 @@ export async function fetchUserDistribution() {
 }
 
 /* Platform performance: users added + orders placed per day, last 7 days */
-export async function fetchPlatformSeries() {
+export async function fetchPlatformSeries(days = 7) {
   const since = new Date();
-  since.setDate(since.getDate() - 6);
+  since.setDate(since.getDate() - (days - 1));
   since.setHours(0, 0, 0, 0);
   const [{ data: farmers, error: e1 }, { data: orders, error: e2 }] = await Promise.all([
     db.from("farmers").select("created_at").gte("created_at", since.toISOString()),
     db.from("feed_orders").select("placed_at").gte("placed_at", since.toISOString()),
   ]);
   if (e1 ?? e2) throw e1 ?? e2;
-  const days: { day: string; users: number; orders: number }[] = [];
-  for (let i = 0; i < 7; i++) {
+  const out: { day: string; users: number; orders: number }[] = [];
+  for (let i = 0; i < days; i++) {
     const d = new Date(since);
     d.setDate(since.getDate() + i);
-    const key = d.toISOString().slice(0, 10);
-    days.push({
+    const key = localDayKey(d);
+    out.push({
       day: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-      users: (farmers ?? []).filter((r) => r.created_at?.slice(0, 10) === key).length,
-      orders: (orders ?? []).filter((r) => r.placed_at?.slice(0, 10) === key).length,
+      users: (farmers ?? []).filter((r) => localDayKey(r.created_at) === key).length,
+      orders: (orders ?? []).filter((r) => localDayKey(r.placed_at) === key).length,
     });
   }
-  return days;
+  return out;
 }
 
 /* --------------------------------- Agent (Admin Agent) --------------------------------- */
@@ -257,37 +257,173 @@ export async function fetchRecentOrders(limit = 6) {
 /* --------------------------------- Field Agent --------------------------------- */
 
 export async function fetchFieldKpis(userId: string | undefined) {
-  if (!userId) return { assigned: 0, todayVisits: 0, pendingReports: 0, completedThisWeek: 0, urgentAlerts: 0 };
-  const startWeek = new Date();
-  startWeek.setDate(startWeek.getDate() - 7);
-  const [assigned, todayVisits, pendingReports, completedThisWeek, urgentAlerts] = await Promise.all([
+  if (!userId) return { assigned: 0, todayVisits: 0, doneToday: 0, pendingReports: 0, completedThisWeek: 0, urgentAlerts: 0 };
+  const today = periodRange("today");
+  const week = periodRange("week");
+  const [assigned, todaySched, weekSched, pendingReports, urgentAlerts] = await Promise.all([
     count("farmers", (q) => q.eq("assigned_agent_id", userId)),
-    count("visit_reports", (q) => q.eq("agent_id", userId).gte("submitted_at", startOfDay())),
+    fetchSchedule(userId, today.from, today.to),
+    fetchSchedule(userId, week.from, week.to),
     count("visit_reports", (q) => q.eq("agent_id", userId).in("status", ["pending", "under_review"])),
-    count("visit_reports", (q) => q.eq("agent_id", userId).gte("submitted_at", startWeek.toISOString())),
     count("health_cases", (q) => q.in("severity", ["critical", "high"]).neq("status", "resolved")),
   ]);
-  return { assigned, todayVisits, pendingReports, completedThisWeek, urgentAlerts };
+  return {
+    assigned,
+    todayVisits: todaySched.length,
+    doneToday: todaySched.filter((v) => v.status === "Completed").length,
+    pendingReports,
+    completedThisWeek: weekSched.filter((v) => v.status === "Completed").length,
+    urgentAlerts,
+  };
+}
+
+export type ScheduleItem = {
+  id: string;
+  farm: string;
+  region: string;
+  purpose: string;
+  at: string;
+  time: string;
+  status: "Completed" | "Missed" | "Upcoming" | "Due";
+};
+
+/** Planned visits for an agent between two instants (inclusive start, exclusive end). */
+export async function fetchSchedule(userId: string | undefined, from: Date, to: Date): Promise<ScheduleItem[]> {
+  if (!userId) return [];
+  const { data, error } = await db
+    .from("visit_schedule")
+    .select("id, purpose, status, scheduled_for, farmers(farm_name, region)")
+    .eq("agent_id", userId)
+    .gte("scheduled_for", from.toISOString())
+    .lt("scheduled_for", to.toISOString())
+    .order("scheduled_for", { ascending: true });
+  if (error) throw error;
+  const now = Date.now();
+  return (data ?? []).map((r) => {
+    const t = new Date(r.scheduled_for).getTime();
+    const status: ScheduleItem["status"] =
+      r.status === "completed" ? "Completed" : r.status === "missed" ? "Missed" : t <= now ? "Due" : "Upcoming";
+    return {
+      id: r.id,
+      farm: r.farmers?.farm_name ?? "—",
+      region: r.farmers?.region ?? "—",
+      purpose: r.purpose,
+      at: r.scheduled_for,
+      time: new Date(r.scheduled_for).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
+      status,
+    };
+  });
 }
 
 export async function fetchTodaysSchedule(userId: string | undefined, limit = 6) {
-  if (!userId) return [];
-  const { data, error } = await db
-    .from("visit_reports")
-    .select("id, species, status, submitted_at, farmers(farm_name)")
-    .eq("agent_id", userId)
-    .gte("submitted_at", startOfDay())
-    .order("submitted_at", { ascending: true })
-    .limit(limit);
-  if (error) throw error;
-  const now = Date.now();
-  return (data ?? []).map((r) => ({
-    id: r.id,
-    farm: r.farmers?.farm_name ?? "—",
-    category: r.species ? `${r.species[0].toUpperCase()}${r.species.slice(1)} visit` : "Visit",
-    time: new Date(r.submitted_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
-    status: new Date(r.submitted_at).getTime() > now ? "Upcoming" : r.status === "pending" ? "Pending" : "Completed",
-  }));
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return (await fetchSchedule(userId, start, end)).slice(0, limit);
+}
+
+export type SummaryPeriod = "today" | "week" | "month";
+
+export function periodRange(period: SummaryPeriod): { from: Date; to: Date } {
+  const from = new Date();
+  from.setHours(0, 0, 0, 0);
+  if (period === "week") from.setDate(from.getDate() - ((from.getDay() + 6) % 7)); // Monday
+  if (period === "month") from.setDate(1);
+  const to = new Date(from);
+  if (period === "today") to.setDate(to.getDate() + 1);
+  else if (period === "week") to.setDate(to.getDate() + 7);
+  else to.setMonth(to.getMonth() + 1);
+  return { from, to };
+}
+
+/** Visit completion for the field agent over a period, from the visit schedule. */
+export async function fetchVisitSummary(userId: string | undefined, period: SummaryPeriod) {
+  const { from, to } = periodRange(period);
+  const items = await fetchSchedule(userId, from, to);
+  const completed = items.filter((i) => i.status === "Completed").length;
+  const missed = items.filter((i) => i.status === "Missed").length;
+  return { total: items.length, completed, pending: items.length - completed - missed, missed };
+}
+
+export type CalendarEvent = {
+  id: string;
+  at: string;
+  title: string;
+  subtitle: string;
+  href: string;
+  tone: "primary" | "info" | "warning" | "destructive" | "success";
+};
+
+/** Role-specific events for the header calendar, within [from, to). */
+export async function fetchCalendarEvents(
+  role: string,
+  userId: string | undefined,
+  from: Date,
+  to: Date,
+): Promise<CalendarEvent[]> {
+  const f = from.toISOString();
+  const t = to.toISOString();
+  const events: CalendarEvent[] = [];
+  if (role === "field_agent") {
+    for (const v of await fetchSchedule(userId, from, to)) {
+      events.push({
+        id: v.id,
+        at: v.at,
+        title: v.farm,
+        subtitle: `${v.time} · ${v.purpose} · ${v.status}`,
+        href: "/my-visits",
+        tone: v.status === "Completed" ? "success" : v.status === "Missed" ? "destructive" : "primary",
+      });
+    }
+  } else if (role === "admin_agent") {
+    const [cases, reports] = await Promise.all([
+      db.from("health_cases").select("id, diagnosis, severity, created_at, farmers(farm_name)").gte("created_at", f).lt("created_at", t),
+      db.from("visit_reports").select("id, species, status, submitted_at, farmers(farm_name)").gte("submitted_at", f).lt("submitted_at", t),
+    ]);
+    for (const c of cases.data ?? [])
+      events.push({
+        id: c.id,
+        at: c.created_at,
+        title: `${c.diagnosis ?? "Health case"} · ${c.farmers?.farm_name ?? "—"}`,
+        subtitle: `Health case · ${c.severity}`,
+        href: "/agent/health-assessments",
+        tone: c.severity === "critical" || c.severity === "high" ? "destructive" : "warning",
+      });
+    for (const r of reports.data ?? [])
+      events.push({
+        id: r.id,
+        at: r.submitted_at,
+        title: `Visit report · ${r.farmers?.farm_name ?? "—"}`,
+        subtitle: `${r.species ?? "General"} · ${r.status.replace("_", " ")}`,
+        href: "/agent/reports-review",
+        tone: "primary",
+      });
+  } else if (role === "feedops") {
+    const [orders, runs] = await Promise.all([
+      db.from("feed_orders").select("id, order_no, quantity, status, placed_at, farmers(farm_name), feed_products(name)").gte("placed_at", f).lt("placed_at", t),
+      db.from("production_runs").select("id, batch_no, quantity, status, started_at, feed_products(name)").gte("started_at", f).lt("started_at", t),
+    ]);
+    for (const o of orders.data ?? [])
+      events.push({
+        id: o.id,
+        at: o.placed_at,
+        title: `${o.order_no} · ${o.feed_products?.name ?? "Feed"}`,
+        subtitle: `${o.quantity} bags · ${formatOrderStatus(o.status)} · ${o.farmers?.farm_name ?? "—"}`,
+        href: "/feedops#orders",
+        tone: "info",
+      });
+    for (const r of runs.data ?? [])
+      events.push({
+        id: r.id,
+        at: r.started_at,
+        title: `Batch ${r.batch_no} · ${r.feed_products?.name ?? "Feed"}`,
+        subtitle: `${(r.quantity / 1000).toFixed(1)} MT · ${r.status}`,
+        href: "/feedops#production",
+        tone: "warning",
+      });
+  }
+  return events.sort((a, b) => a.at.localeCompare(b.at));
 }
 
 /* --------------------------------- Shared --------------------------------- */
@@ -327,23 +463,20 @@ export async function fetchActivities(limit = 20) {
     .slice(0, limit);
 }
 
-export async function fetchUnreadNotifications() {
-  const { data, error } = await db
-    .from("notifications")
-    .select("id, title, body, type, read_at, created_at")
-    .is("read_at", null)
-    .order("created_at", { ascending: false })
-    .limit(20);
+const NOTIFICATION_COLS = "id, title, body, type, link, read_at, created_at";
+
+export async function fetchUnreadNotifications(role?: string) {
+  let q = db.from("notifications").select(NOTIFICATION_COLS).is("read_at", null);
+  if (role) q = q.contains("roles", [role]);
+  const { data, error } = await q.order("created_at", { ascending: false }).limit(20);
   if (error) throw error;
   return data ?? [];
 }
 
-export async function fetchAllNotifications(limit = 20) {
-  const { data, error } = await db
-    .from("notifications")
-    .select("id, title, body, type, read_at, created_at")
-    .order("created_at", { ascending: false })
-    .limit(limit);
+export async function fetchAllNotifications(role?: string, limit = 30) {
+  let q = db.from("notifications").select(NOTIFICATION_COLS);
+  if (role) q = q.contains("roles", [role]);
+  const { data, error } = await q.order("created_at", { ascending: false }).limit(limit);
   if (error) throw error;
   return data ?? [];
 }
@@ -353,6 +486,13 @@ export async function markNotificationRead(id: string) {
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("id", id);
+  if (error) throw error;
+}
+
+export async function markAllNotificationsRead(role?: string) {
+  let q = db.from("notifications").update({ read_at: new Date().toISOString() }).is("read_at", null);
+  if (role) q = q.contains("roles", [role]);
+  const { error } = await q;
   if (error) throw error;
 }
 
@@ -376,6 +516,13 @@ export async function fetchSystemLogs(limit = 8) {
 function severityRank(sev: string): number {
   const m: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
   return m[sev] ?? 0;
+}
+
+/** yyyy-mm-dd in the viewer's local time zone. */
+export function localDayKey(d: Date | string | null | undefined): string {
+  if (!d) return "";
+  const x = typeof d === "string" ? new Date(d) : d;
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
 }
 
 function startOfDay(): string {
@@ -816,5 +963,147 @@ export async function fetchAnalyticsSeries(): Promise<AnalyticsData> {
     case_severity_distribution,
     farm_health_trends,
     report_submission_pattern,
+  };
+}
+/* ================================ OFFLINE SYNC ================================ */
+
+export type SyncItem = { id: string; kind: string; label: string; detail: string; size_kb: number; created_at: string };
+export type SyncRun = { id: string; items: number; status: "success" | "partial"; duration_ms: number; created_at: string };
+
+export async function fetchSyncState(userId: string | undefined) {
+  if (!userId) return { queue: [] as SyncItem[], history: [] as SyncRun[] };
+  const [queue, history] = await Promise.all([
+    db.from("sync_queue").select("id, kind, label, detail, size_kb, created_at").eq("agent_id", userId).eq("status", "queued").order("created_at", { ascending: true }),
+    db.from("sync_history").select("id, items, status, duration_ms, created_at").eq("agent_id", userId).order("created_at", { ascending: false }).limit(8),
+  ]);
+  if (queue.error ?? history.error) throw queue.error ?? history.error;
+  return { queue: (queue.data ?? []) as unknown as SyncItem[], history: (history.data ?? []) as unknown as SyncRun[] };
+}
+
+export async function markSyncItemUploaded(id: string) {
+  const { error } = await db.from("sync_queue").update({ status: "synced" }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function recordSyncRun(userId: string, items: number, durationMs: number) {
+  const { error } = await db
+    .from("sync_history")
+    .insert({ agent_id: userId, items, status: "success", duration_ms: durationMs });
+  if (error) throw error;
+}
+
+/** Counts of locally cached records, for the storage panel. */
+export async function fetchCacheStats(userId: string | undefined) {
+  const [farmers, reports, visits, orders] = await Promise.all([
+    count("farmers", (q) => q.eq("assigned_agent_id", userId ?? "")),
+    count("visit_reports", (q) => q.eq("agent_id", userId ?? "")),
+    count("visit_schedule", (q) => q.eq("agent_id", userId ?? "")),
+    count("feed_orders", (q) => q.eq("agent_id", userId ?? "")),
+  ]);
+  return { farmers, reports, visits, orders };
+}
+
+/* ================================ FIELD PERFORMANCE ================================ */
+
+export const WEEKLY_VISIT_TARGET = 10;
+
+const AGENT_NAMES: Record<string, string> = {
+  "agent-0002": "Tunde Adeyemi",
+  "agent-0003": "Halima Musa",
+};
+
+export async function fetchPerformance(userId: string | undefined, weeks = 8) {
+  if (!userId) return null;
+  const thisMonday = periodRange("week").from;
+  const from = new Date(thisMonday);
+  from.setDate(from.getDate() - (weeks - 1) * 7);
+  const now = new Date();
+  const since30 = new Date(now.getTime() - 30 * 86_400_000);
+
+  const [sched, reports, assigned, allReports] = await Promise.all([
+    db
+      .from("visit_schedule")
+      .select("id, status, scheduled_for, farmer_id, farmers(livestock_type, region)")
+      .eq("agent_id", userId)
+      .gte("scheduled_for", from.toISOString())
+      .lt("scheduled_for", now.toISOString()),
+    db.from("visit_reports").select("status").eq("agent_id", userId),
+    count("farmers", (q) => q.eq("assigned_agent_id", userId)),
+    db.from("visit_reports").select("agent_id").gte("submitted_at", since30.toISOString()),
+  ]);
+  const err = sched.error ?? reports.error ?? allReports.error;
+  if (err) throw err;
+  const visits = sched.data ?? [];
+
+  // Weekly completed vs missed
+  const weekly = Array.from({ length: weeks }, (_, i) => {
+    const start = new Date(from);
+    start.setDate(from.getDate() + i * 7);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+    const inWeek = visits.filter((v) => {
+      const t = new Date(v.scheduled_for);
+      return t >= start && t < end;
+    });
+    return {
+      week: start.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      completed: inWeek.filter((v) => v.status === "completed").length,
+      missed: inWeek.filter((v) => v.status === "missed").length,
+    };
+  });
+
+  const last30 = visits.filter((v) => new Date(v.scheduled_for) >= since30);
+  const done30 = last30.filter((v) => v.status === "completed");
+  const missed30 = last30.filter((v) => v.status === "missed").length;
+  const completionRate = done30.length + missed30 ? Math.round((done30.length / (done30.length + missed30)) * 100) : 0;
+
+  const reviewed = (reports.data ?? []).filter((r) => r.status === "approved" || r.status === "rejected");
+  const approvalRate = reviewed.length
+    ? Math.round((reviewed.filter((r) => r.status === "approved").length / reviewed.length) * 100)
+    : 0;
+
+  const farmsCovered = new Set(done30.map((v) => v.farmer_id)).size;
+
+  const tally = (key: "livestock_type" | "region") => {
+    const m: Record<string, number> = {};
+    for (const v of done30) {
+      const k = v.farmers?.[key] ?? "Other";
+      m[k] = (m[k] ?? 0) + 1;
+    }
+    return Object.entries(m)
+      .map(([name, value]) => ({ name: name[0]!.toUpperCase() + name.slice(1), value }))
+      .sort((a, b) => b.value - a.value);
+  };
+
+  // Streak: consecutive days (back from today) with at least one completed visit; today can still be in progress.
+  const doneDays = new Set(visits.filter((v) => v.status === "completed").map((v) => localDayKey(v.scheduled_for)));
+  let streak = 0;
+  const cursor = new Date();
+  if (!doneDays.has(localDayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  while (doneDays.has(localDayKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  // Leaderboard: reports submitted in the last 30 days.
+  const perAgent: Record<string, number> = {};
+  for (const r of allReports.data ?? []) if (r.agent_id) perAgent[r.agent_id] = (perAgent[r.agent_id] ?? 0) + 1;
+  const leaderboard = Object.entries(perAgent)
+    .map(([id, value]) => ({ id, name: id === userId ? "You" : (AGENT_NAMES[id] ?? "Field agent"), value, me: id === userId }))
+    .sort((a, b) => b.value - a.value);
+
+  return {
+    weekly,
+    thisWeek: weekly[weekly.length - 1]?.completed ?? 0,
+    target: WEEKLY_VISIT_TARGET,
+    completionRate,
+    approvalRate,
+    reviewedCount: reviewed.length,
+    farmsCovered,
+    assigned,
+    bySpecies: tally("livestock_type"),
+    byRegion: tally("region"),
+    streak,
+    leaderboard,
   };
 }

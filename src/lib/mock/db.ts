@@ -180,7 +180,13 @@ class MockQuery implements PromiseLike<Result> {
     this.filters.push((r) => (v === null ? r[col] == null : r[col] === v));
     return this;
   }
+  /** Array column contains every given value (Supabase `.contains`). */
+  contains(col: string, vs: unknown[]) {
+    this.filters.push((r) => Array.isArray(r[col]) && vs.every((v) => r[col].includes(v)));
+    return this;
+  }
   gte(col: string, v: string | number) {
+
     this.filters.push((r) => r[col] != null && r[col] >= v);
     return this;
   }

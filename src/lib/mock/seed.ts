@@ -261,25 +261,99 @@ export function buildSeed(): Record<string, Row[]> {
     };
   });
 
-  /* notifications */
-  const NOTES = [
-    ["New report awaiting review", "Visit report from Okafor Farms needs review.", "report"],
-    ["Low stock: Broiler Finisher", "Ibadan Depot is out of Broiler Finisher.", "inventory"],
-    ["Critical health alert", "Suspected Newcastle disease at Bello Poultry.", "alert"],
-    ["Order dispatched", "ORD-10455 is out for delivery.", "order"],
-    ["Ticket updated", "Your ticket 'Cannot sync offline visits' was updated.", "support"],
-    ["Nutrition plan approved", "Plan for Eze Ranch is now active.", "plan"],
-    ["Weekly summary ready", "Your field activity summary is available.", "system"],
-  ] as const;
-  const notifications: Row[] = NOTES.map(([title, body, type], i) => ({
+  /* notifications — targeted per role, each with a link to the screen it is about */
+  type Note = { roles: string[]; title: string; body: string; type: string; link: string; hoursAgo: number; read?: boolean };
+  const firstFarm = (i: number) => farmers[i]!.farm_name as string;
+  const NOTES: Note[] = [
+    // Field agent
+    { roles: ["field_agent"], type: "schedule", title: "Visit starting soon", body: `Routine health check at ${firstFarm(1)} in 1 hour.`, link: "/my-visits", hoursAgo: 0.3 },
+    { roles: ["field_agent"], type: "report", title: "Report reviewed", body: `Your visit report for ${firstFarm(2)} was approved.`, link: "/reports", hoursAgo: 2 },
+    { roles: ["field_agent"], type: "order", title: "Order out for delivery", body: "ORD-10455 (Layer Mash 18%) is on its way.", link: "/feed-orders", hoursAgo: 5 },
+    { roles: ["field_agent"], type: "task", title: "New task assigned", body: "Follow up on the Coccidiosis case at Musa Agro.", link: "/tasks", hoursAgo: 8 },
+    { roles: ["field_agent"], type: "support", title: "Ticket updated", body: "Support replied to 'Cannot sync offline visits'.", link: "/support", hoursAgo: 26, read: true },
+    { roles: ["field_agent"], type: "performance", title: "80% of weekly target", body: "You're 4 visits away from this week's goal.", link: "/performance", hoursAgo: 30, read: true },
+    // Admin agent (nutrition / vet)
+    { roles: ["admin_agent"], type: "report", title: "Report awaiting review", body: `New visit report from ${firstFarm(3)} needs review.`, link: "/agent/reports-review", hoursAgo: 0.5 },
+    { roles: ["admin_agent"], type: "alert", title: "Critical health alert", body: `Suspected Newcastle disease at ${firstFarm(4)}.`, link: "/agent/health-assessments", hoursAgo: 1.5 },
+    { roles: ["admin_agent"], type: "rescue", title: "Rescue plan needed", body: "2 high-severity cases have no intervention yet.", link: "/agent/rescue-plans", hoursAgo: 4 },
+    { roles: ["admin_agent"], type: "plan", title: "Nutrition plan activated", body: `Ration plan for ${firstFarm(5)} is now active.`, link: "/agent/nutrition-plans", hoursAgo: 20, read: true },
+    { roles: ["admin_agent"], type: "knowledge", title: "New article published", body: "'Heat stress: signs and mitigation' is live.", link: "/agent/knowledge-base", hoursAgo: 28, read: true },
+    { roles: ["admin_agent"], type: "support", title: "Ticket updated", body: "Support replied to 'Need access to analytics page'.", link: "/agent/support", hoursAgo: 50, read: true },
+    // Feed operations
+    { roles: ["feedops"], type: "inventory", title: "Out of stock", body: "Broiler Finisher is out of stock at Ibadan Depot.", link: "/feedops#inventory", hoursAgo: 0.4 },
+    { roles: ["feedops"], type: "order", title: "New order placed", body: "ORD-10471: 40 bags of Dairy Concentrate.", link: "/feedops#orders", hoursAgo: 1 },
+    { roles: ["feedops"], type: "production", title: "Batch finished", body: "Production batch B-2403 completed (6.2 MT).", link: "/feedops#production", hoursAgo: 6 },
+    { roles: ["feedops"], type: "inventory", title: "Low stock warning", body: "Layer Mash 18% is below reorder level in Kaduna.", link: "/feedops#inventory", hoursAgo: 22, read: true },
+    // System admin
+    { roles: ["system_admin"], type: "order", title: "Pending orders rising", body: "22 orders are waiting to be fulfilled.", link: "/admin#overview", hoursAgo: 0.6 },
+    { roles: ["system_admin"], type: "support", title: "New support ticket", body: "'App crashes on report upload' was opened.", link: "/admin#support", hoursAgo: 2.5 },
+    { roles: ["system_admin"], type: "growth", title: "New farmers this week", body: "5 farmers were onboarded in the last 7 days.", link: "/admin#performance", hoursAgo: 9 },
+    { roles: ["system_admin"], type: "security", title: "Repeated login failures", body: "Several failed sign-ins from 10.0.0.42.", link: "/admin#logs", hoursAgo: 30, read: true },
+  ];
+  const notifications: Row[] = NOTES.map((n) => ({
     id: id("ntf"),
     recipient_id: ME,
-    title,
-    body,
-    type,
-    link: null,
-    read_at: i < 4 ? null : ago(i - 3),
-    created_at: ago(i < 3 ? 0 : i - 2, i * 2 + 1),
+    roles: n.roles,
+    title: n.title,
+    body: n.body,
+    type: n.type,
+    link: n.link,
+    read_at: n.read ? ago(0, n.hoursAgo - 0.1) : null,
+    created_at: new Date(now - n.hoursAgo * 3_600_000).toISOString(),
+  }));
+
+  /* visit schedule — planned visits for the signed-in field agent, 12 weeks back to 1 week ahead */
+  const PURPOSES = ["Routine health check", "Vaccination follow-up", "Feed trial review", "Mortality investigation", "New farmer onboarding", "Water & housing audit"];
+  const myFarmers = farmers.slice(0, 10);
+  const visit_schedule: Row[] = [];
+  for (let day = -84; day <= 7; day++) {
+    const date = new Date();
+    date.setDate(date.getDate() + day);
+    const weekend = date.getDay() === 0 || date.getDay() === 6;
+    const count = day === 0 ? 4 : weekend ? int(0, 1) : int(1, 3);
+    const hours = [8, 10, 12, 14, 16].sort(() => rand() - 0.5).slice(0, count).sort((a, b) => a - b);
+    for (const h of hours) {
+      const at = new Date(date);
+      at.setHours(h, pick([0, 15, 30, 45]), 0, 0);
+      const past = at.getTime() < now;
+      visit_schedule.push({
+        id: id("sched"),
+        agent_id: ME,
+        farmer_id: pick(myFarmers).id,
+        purpose: pick(PURPOSES),
+        scheduled_for: at.toISOString(),
+        status: past ? (rand() < 0.85 ? "completed" : "missed") : "scheduled",
+        created_at: ago(Math.max(0, -day) + 3),
+      });
+    }
+  }
+
+  /* offline sync — items captured offline and waiting to upload, plus past sync runs */
+  const QUEUE = [
+    ["visit_report", "Visit report", `${firstFarm(0)} · routine health check`, 18],
+    ["visit_report", "Visit report", `${firstFarm(3)} · vaccination follow-up`, 22],
+    ["photo", "3 photos", `Pen 2 litter condition · ${firstFarm(3)}`, 4_620],
+    ["farmer_update", "Farmer profile", `${farmers[6]!.name} · phone number changed`, 2],
+    ["photo", "1 photo", `Feed sample label · ${firstFarm(7)}`, 1_280],
+    ["order", "Feed order draft", "20 bags Layer Mash 18%", 3],
+  ] as const;
+  const sync_queue: Row[] = QUEUE.map(([kind, label, detail, size_kb], i) => ({
+    id: id("sync"),
+    agent_id: ME,
+    kind,
+    label,
+    detail,
+    size_kb,
+    status: "queued",
+    created_at: ago(0, 5 - i * 0.7),
+  }));
+  const sync_history: Row[] = Array.from({ length: 6 }, (_, i) => ({
+    id: id("synh"),
+    agent_id: ME,
+    items: int(2, 14),
+    status: i === 2 ? "partial" : "success",
+    duration_ms: int(1_200, 9_000),
+    created_at: ago(i, 2 + i * 3),
   }));
 
   /* tasks */
@@ -346,6 +420,9 @@ export function buildSeed(): Record<string, Row[]> {
     support_tickets,
     knowledge_articles,
     notifications,
+    visit_schedule,
+    sync_queue,
+    sync_history,
     tasks,
     user_roles,
     system_logs,
