@@ -7,26 +7,19 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { sendOtp, verifyOtp, fetchMe, logout as apiLogout, type IntellifeedUser } from "@/lib/api/auth";
-import { tokenStore } from "@/lib/api/client";
-import type { AuthUser, Session } from "./types";
-import { ROLE_LABEL, mapApiRoleToUserRole } from "./types";
+import type { AuthUser, Session, UserRole } from "./types";
+import { ROLE_LABEL } from "./types";
 
-// --- Login is a two-step OTP flow (phone -> code), not password. ---
-// CONFIRMED against the live server (2026-08-23), from the Django view
-// source: /auth/otp/send takes ONLY `phone` (required) — there's no email
-// field on this endpoint at all, it's silently ignored if sent. This
-// environment also has SHOW_RANDOM_OTP=True, so a successful send returns
-// the actual code in the body; requestOtp surfaces that as `testCode` so
-// the UI can show it directly instead of waiting on SMS/email delivery.
+// --- DEMO MODE: mock auth, no backend. ---
+// Any well-formed email + a password of 6+ characters signs in. The role is
+// chosen by the portal (or the signup form), not looked up anywhere. The
+// session is kept in localStorage so a reload stays signed in.
 
-interface RequestOtpResult {
-  ok: boolean;
-  error?: string;
-  testCode?: string;
-}
+const STORAGE_KEY = "if360.mockSession";
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+export const MIN_PASSWORD_LENGTH = 6;
 
-interface VerifyOtpResult {
+interface LoginResult {
   ok: boolean;
   user?: AuthUser;
   error?: string;
@@ -35,10 +28,8 @@ interface VerifyOtpResult {
 interface AuthContextValue {
   session: Session | null;
   hydrated: boolean;
-  requestOtp: (phone: string) => Promise<RequestOtpResult>;
-  verifyLogin: (phone: string, otp: string) => Promise<VerifyOtpResult>;
+  login: (email: string, password: string, role: UserRole, displayName?: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
-  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -47,89 +38,95 @@ function computeInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "";
   const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
   return (first + last).toUpperCase();
 }
 
-function toSession(apiUser: IntellifeedUser): Session {
-  const role = mapApiRoleToUserRole(apiUser.role);
-  const name = `${apiUser.first_name} ${apiUser.last_name}`.trim() || apiUser.phone;
-  const user: AuthUser = {
-    id: apiUser.id,
-    identifier: apiUser.phone,
-    name,
-    role,
-    roleLabel: ROLE_LABEL[role],
-    initials: computeInitials(name),
-  };
-  return { user, loggedInAt: Date.now() };
+/** "jane.doe_99@x.com" → "Jane Doe" */
+function nameFromEmail(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  const words = local
+    .replace(/[0-9]+/g, " ")
+    .split(/[._\-+\s]+/)
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase() + w.slice(1).toLowerCase());
+  return words.join(" ") || "Demo User";
+}
+
+/** Stable, UUID-shaped id derived from the email so "my" records persist across logins. */
+function idFromEmail(email: string): string {
+  let h1 = 0x811c9dc5;
+  let h2 = 0x01000193;
+  for (let i = 0; i < email.length; i++) {
+    const c = email.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
+    h2 = Math.imul(h2 ^ c, 2246822519) >>> 0;
+  }
+  const hex = (h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0")).repeat(2);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
+export function validateCredentials(email: string, password: string): string | null {
+  if (!EMAIL_RE.test(email.trim())) return "Enter a valid email address.";
+  if (password.length < MIN_PASSWORD_LENGTH)
+    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+  return null;
+}
+
+function readStored(): Session | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw) as Session;
+    return s?.user?.role && s.user.role in ROLE_LABEL ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(s: Session | null) {
+  try {
+    if (s) localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+    else localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Storage unavailable (private mode etc.) — session just won't survive reload.
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!tokenStore.getAccess()) {
-      setSession(null);
-      return;
-    }
-    try {
-      const me = await fetchMe();
-      setSession(toSession(me));
-    } catch {
-      // Access token invalid/expired and refresh failed (handled inside apiFetch).
-      tokenStore.clear();
-      setSession(null);
-    }
-  }, []);
-
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      await load();
-      if (mounted) setHydrated(true);
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [load]);
-
-  const requestOtp = useCallback<AuthContextValue["requestOtp"]>(async (phone) => {
-    try {
-      const result = await sendOtp(phone.trim());
-      return { ok: true, testCode: result?.otp_code };
-    } catch (err) {
-      return { ok: false, error: err instanceof Error ? err.message : "Failed to send code." };
-    }
+    setSession(readStored());
+    setHydrated(true);
   }, []);
 
-  const verifyLogin = useCallback<AuthContextValue["verifyLogin"]>(async (phone, otp) => {
-    try {
-      const result = await verifyOtp(phone.trim(), otp.trim());
-      tokenStore.set(result.access, result.refresh);
-      const s = toSession(result.user);
-      setSession(s);
-      return { ok: true, user: s.user };
-    } catch (err) {
-      return { ok: false, error: err instanceof Error ? err.message : "invalid" };
-    }
+  const login = useCallback<AuthContextValue["login"]>(async (email, password, role, displayName) => {
+    const error = validateCredentials(email, password);
+    if (error) return { ok: false, error };
+    const identifier = email.trim().toLowerCase();
+    const name = displayName?.trim() || nameFromEmail(identifier);
+    const user: AuthUser = {
+      id: idFromEmail(identifier),
+      identifier,
+      name,
+      role,
+      roleLabel: ROLE_LABEL[role],
+      initials: computeInitials(name),
+    };
+    const s: Session = { user, loggedInAt: Date.now() };
+    writeStored(s);
+    setSession(s);
+    return { ok: true, user };
   }, []);
 
   const logout = useCallback(async () => {
-    await apiLogout();
-    tokenStore.clear();
+    writeStored(null);
     setSession(null);
   }, []);
 
-  const refresh = useCallback(async () => {
-    await load();
-  }, [load]);
-
-  const value = useMemo(
-    () => ({ session, hydrated, requestOtp, verifyLogin, logout, refresh }),
-    [session, hydrated, requestOtp, verifyLogin, logout, refresh],
-  );
+  const value = useMemo(() => ({ session, hydrated, login, logout }), [session, hydrated, login, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

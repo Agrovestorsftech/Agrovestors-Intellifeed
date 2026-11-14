@@ -1,15 +1,13 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Sprout, Loader2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { useAuth } from "@/lib/auth/AuthContext";
-import { ROLE_HOME, type PortalId } from "@/lib/auth/types";
+import { useAuth, MIN_PASSWORD_LENGTH } from "@/lib/auth/AuthContext";
+import { ROLE_HOME, ROLE_LABEL, type PortalId, type UserRole } from "@/lib/auth/types";
 
 interface LoginCardProps {
   portal: PortalId;
   portalName: string; // "Admin Portal"
   tagline: string;
-  identifierLabel?: string;
-  identifierPlaceholder?: string;
   hint?: ReactNode;
   accent: "primary" | "info" | "warning";
 }
@@ -26,60 +24,36 @@ const accentIcon: Record<LoginCardProps["accent"], string> = {
   warning: "bg-warning/15 ring-warning/30 text-warning",
 };
 
-// Login is a two-step phone + OTP flow (IntelliFeed360 API). CONFIRMED
-// against the live server (2026-08-23), straight from the Django view
-// source: /auth/otp/send only accepts `phone` — there's no email field on
-// this endpoint at all. This test environment also has SHOW_RANDOM_OTP set,
-// so a successful send returns the code directly; it's shown below the form
-// so testing doesn't depend on SMS delivery.
-//
-// Only ever displayed in dev builds, or when a deployment explicitly opts in
-// via VITE_SHOW_TEST_OTP=true (e.g. staging). Never enable that in
-// production: if the backend leaks codes there, the UI must not surface them.
-const SHOW_TEST_OTP = import.meta.env.DEV || import.meta.env.VITE_SHOW_TEST_OTP === "true";
+/** Roles each portal can sign in as. The agent portal is shared. */
+const PORTAL_ROLES: Record<PortalId, UserRole[]> = {
+  admin: ["system_admin"],
+  agent: ["field_agent", "admin_agent"],
+  feedops: ["feedops"],
+};
 
-export function LoginCard({
-  portal,
-  portalName,
-  tagline,
-  identifierLabel = "Phone number",
-  identifierPlaceholder = "+234 800 000 0000",
-  hint,
-  accent,
-}: LoginCardProps) {
-  const { requestOtp, verifyLogin } = useAuth();
+const inputClass =
+  "mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60";
+
+// DEMO MODE: email + password, validated locally only (see AuthContext).
+export function LoginCard({ portal, portalName, tagline, hint, accent }: LoginCardProps) {
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState<"phone" | "otp">("phone");
-  const [phone, setPhone] = useState("+234 ");
-  const [otp, setOtp] = useState("");
-  const [testCode, setTestCode] = useState<string | null>(null);
+  const roles = PORTAL_ROLES[portal];
+  const [role, setRole] = useState<UserRole>(roles[0]!);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSendCode = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (submitting) return;
     setError(null);
     setSubmitting(true);
-    const result = await requestOtp(phone.replace(/\s+/g, ""));
-    setSubmitting(false);
-    if (!result.ok) {
-      setError(result.error ?? "Couldn't send code. Please try again.");
-      return;
-    }
-    setTestCode(SHOW_TEST_OTP ? (result.testCode ?? null) : null);
-    setStep("otp");
-  };
-
-  const handleVerify = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (submitting) return;
-    setError(null);
-    setSubmitting(true);
-    const result = await verifyLogin(phone.replace(/\s+/g, ""), otp.trim());
+    const result = await login(email, password, role);
     if (!result.ok || !result.user) {
       setSubmitting(false);
-      setError(result.error ?? "Invalid or expired code. Please try again.");
+      setError(result.error ?? "Couldn't sign in. Please try again.");
       return;
     }
     navigate({ to: ROLE_HOME[result.user.role], replace: true });
@@ -102,134 +76,102 @@ export function LoginCard({
           <h1 className="text-xl font-semibold text-foreground">{portalName}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{tagline}</p>
 
-          {step === "phone" ? (
-            <form onSubmit={handleSendCode} className="mt-6 space-y-4" noValidate>
-              <div>
-                <label htmlFor="phone" className="text-sm font-medium text-foreground">
-                  {identifierLabel}
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  required
-                  disabled={submitting}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder={identifierPlaceholder}
-                  className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Use the phone number from signup — it's the auto-generated one shown after you
-                  registered.
-                </p>
-              </div>
-
-              {error && (
-                <div
-                  role="alert"
-                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
-                >
-                  {error}
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
+            {roles.length > 1 && (
+              <fieldset>
+                <legend className="text-sm font-medium text-foreground">Sign in as</legend>
+                <div className="mt-1.5 grid grid-cols-2 gap-2">
+                  {roles.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      aria-pressed={role === r}
+                      onClick={() => setRole(r)}
+                      className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                        role === r
+                          ? "border-primary bg-primary/10 text-foreground"
+                          : "border-input text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {r === "admin_agent" ? "Admin Agent (Nutrition/Vet)" : ROLE_LABEL[r]}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </fieldset>
+            )}
 
-              <button
-                type="submit"
+            <div>
+              <label htmlFor="email" className="text-sm font-medium text-foreground">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                autoFocus
                 disabled={submitting}
-                className={`w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-70 ${accentButton[accent]}`}
-              >
-                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {submitting ? "Sending code…" : "Send code"}
-              </button>
-
-              <div className="flex items-center justify-between text-xs">
-                <Link
-                  to="/forgot-password"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Trouble signing in?
-                </Link>
-                <Link to="/signup" className="text-primary hover:underline">
-                  Create account
-                </Link>
-              </div>
-            </form>
-          ) : (
-            <form onSubmit={handleVerify} className="mt-6 space-y-4" noValidate>
-              <p className="text-sm text-muted-foreground">
-                Enter the code sent to <span className="font-medium text-foreground">{phone}</span>.
-              </p>
-              {testCode && (
-                <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3">
-                  <p className="text-xs text-muted-foreground">Test code (SHOW_RANDOM_OTP is on for this environment)</p>
-                  <p className="mt-1 font-mono text-lg font-semibold text-foreground select-all">{testCode}</p>
-                </div>
-              )}
-              <div>
-                <label htmlFor="otp" className="text-sm font-medium text-foreground">
-                  Verification code
-                </label>
-                <input
-                  id="otp"
-                  name="otp"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  required
-                  autoFocus
-                  disabled={submitting}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="123456"
-                  className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-                />
-              </div>
-
-              {error && (
-                <div
-                  role="alert"
-                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
-                >
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-70 ${accentButton[accent]}`}
-              >
-                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {submitting ? "Verifying…" : "Verify & sign in"}
-              </button>
-
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => {
-                  setStep("phone");
-                  setOtp("");
-                  setTestCode(null);
-                  setError(null);
-                }}
-                className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Use a different phone number
-              </button>
-            </form>
-          )}
-
-          {hint && (
-            <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-              {hint}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className={inputClass}
+              />
             </div>
-          )}
+
+            <div>
+              <label htmlFor="password" className="text-sm font-medium text-foreground">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                disabled={submitting}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className={inputClass}
+              />
+            </div>
+
+            {error && (
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
+              >
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className={`w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-70 ${accentButton[accent]}`}
+            >
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {submitting ? "Signing in…" : "Sign in"}
+            </button>
+
+            <div className="flex items-center justify-between text-xs">
+              <Link to="/forgot-password" className="text-muted-foreground hover:text-foreground transition-colors">
+                Forgot password?
+              </Link>
+              <Link to="/signup" className="text-primary hover:underline">
+                Create account
+              </Link>
+            </div>
+          </form>
+
+          <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Demo mode:</span> any valid email and a password
+            of {MIN_PASSWORD_LENGTH}+ characters will sign you in. All data is sample data.
+            {hint && <div className="mt-2">{hint}</div>}
+          </div>
         </div>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          IntelliFeed360 · {portalName}
-        </p>
+        <p className="mt-4 text-center text-xs text-muted-foreground">IntelliFeed360 · {portalName}</p>
       </div>
     </div>
   );

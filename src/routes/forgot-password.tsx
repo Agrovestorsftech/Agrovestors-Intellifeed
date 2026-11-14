@@ -30,7 +30,7 @@ function ForgotPasswordPage() {
           </div>
           <h1 className="mt-4 text-xl font-semibold text-foreground">Password recovery</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Password recovery will be available in a future update.
+            The app is in demo mode, so there are no real passwords. Sign in with any email and a password of 6+ characters.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Link
