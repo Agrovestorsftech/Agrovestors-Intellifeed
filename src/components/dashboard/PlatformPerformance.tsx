@@ -1,4 +1,5 @@
-import { ChevronDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RANGE_OPTIONS, useAdminRange, type RangeDays } from "@/lib/dashboard/admin-range";
 import {
   ResponsiveContainer,
   XAxis,
@@ -11,15 +12,25 @@ import {
 import { usePlatformSeries } from "@/hooks/useDashboard";
 
 export function PlatformPerformance() {
-  const { data: series } = usePlatformSeries();
+  const [days, setDays] = useAdminRange();
+  const { data: series } = usePlatformSeries(days);
   const data = series ?? [];
   return (
     <section className="rounded-2xl bg-card border border-border p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold text-foreground">Platform Performance</h2>
-        <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
-          Last 7 days <ChevronDown className="h-3.5 w-3.5" />
-        </button>
+        <Select value={String(days)} onValueChange={(v) => setDays(Number(v) as RangeDays)}>
+          <SelectTrigger className="h-8 w-[124px] rounded-lg text-xs" aria-label="Chart period">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {RANGE_OPTIONS.map((d) => (
+              <SelectItem key={d} value={String(d)}>
+                Last {d} days
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex items-center gap-5 mb-2">

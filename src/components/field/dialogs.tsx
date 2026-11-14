@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 /* ------------------------------------------------------------------ */
@@ -29,7 +29,7 @@ export function AddFarmerDialog({ trigger, onCreated }: { trigger: ReactNode; on
 
   const m = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("farmers").insert({
+      const { error } = await db.from("farmers").insert({
         name: form.name.trim(),
         farm_name: form.farm_name.trim() || null,
         region: form.region.trim() || null,
@@ -101,7 +101,7 @@ function useMyFarmers() {
     queryKey: ["my-farmers-picker", session?.user.id],
     enabled: !!session?.user.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("farmers").select("id, name, farm_name").order("name").limit(200);
+      const { data, error } = await db.from("farmers").select("id, name, farm_name").order("name").limit(200);
       if (error) throw error;
       return data ?? [];
     },
@@ -122,7 +122,7 @@ export function AddReportDialog({ trigger, presetFarmerId }: { trigger: ReactNod
 
   const m = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("visit_reports").insert({
+      const { error } = await db.from("visit_reports").insert({
         farmer_id: form.farmer_id || null,
         agent_id: session?.user.id ?? null,
         species: form.species,
@@ -213,7 +213,7 @@ export function CreateOrderDialog({ trigger }: { trigger: ReactNode }) {
   const products = useQuery({
     queryKey: ["feed-products-picker"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("feed_products").select("id, name, sku, unit").order("name");
+      const { data, error } = await db.from("feed_products").select("id, name, sku, unit").order("name");
       if (error) throw error;
       return data ?? [];
     },
@@ -222,7 +222,7 @@ export function CreateOrderDialog({ trigger }: { trigger: ReactNode }) {
 
   const m = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("feed_orders").insert({
+      const { error } = await db.from("feed_orders").insert({
         farmer_id: form.farmer_id || null,
         product_id: form.product_id || null,
         agent_id: session?.user.id ?? null,
@@ -295,7 +295,7 @@ export function OpenTicketDialog({ trigger }: { trigger: ReactNode }) {
 
   const m = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("support_tickets").insert({
+      const { error } = await db.from("support_tickets").insert({
         opened_by: session?.user.id,
         subject: form.subject.trim(),
         priority: form.priority,

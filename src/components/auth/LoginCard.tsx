@@ -1,230 +1,168 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Sprout, Loader2 } from "lucide-react";
-import { useState, type ReactNode } from "react";
-import { useAuth } from "@/lib/auth/AuthContext";
-import { ROLE_HOME, type PortalId } from "@/lib/auth/types";
+import { ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { useAuth, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth/AuthContext";
+import { ROLE_HOME, type UserRole } from "@/lib/auth/types";
+import { AuthLayout } from "./AuthLayout";
+import { Field, FormAlert, PasswordInput, ROLE_META, RolePicker, inputClass } from "./fields";
 
-interface LoginCardProps {
-  portal: PortalId;
-  portalName: string; // "Admin Portal"
-  tagline: string;
-  identifierLabel?: string;
-  identifierPlaceholder?: string;
-  hint?: ReactNode;
-  accent: "primary" | "info" | "warning";
-}
+const ALL_ROLES: UserRole[] = ["field_agent", "admin_agent", "feedops", "system_admin"];
 
-const accentButton: Record<LoginCardProps["accent"], string> = {
-  primary: "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30",
-  info: "bg-info hover:bg-info/90 text-info-foreground shadow-lg shadow-info/30",
-  warning: "bg-warning hover:bg-warning/90 text-warning-foreground shadow-lg shadow-warning/30",
+/** Sample credentials per role for the "fill demo account" shortcut. */
+const DEMO_EMAIL: Record<UserRole, string> = {
+  field_agent: "amina.yusuf@demo.intellifeed360.com",
+  admin_agent: "dr.ada.obi@demo.intellifeed360.com",
+  feedops: "tunde.ops@demo.intellifeed360.com",
+  system_admin: "admin@demo.intellifeed360.com",
 };
+const DEMO_PASSWORD = "demo1234";
 
-const accentIcon: Record<LoginCardProps["accent"], string> = {
-  primary: "bg-primary/15 ring-primary/30 text-primary",
-  info: "bg-info/15 ring-info/30 text-info",
-  warning: "bg-warning/15 ring-warning/30 text-warning",
-};
-
-// Login is a two-step phone + OTP flow (IntelliFeed360 API). CONFIRMED
-// against the live server (2026-08-23), straight from the Django view
-// source: /auth/otp/send only accepts `phone` — there's no email field on
-// this endpoint at all. This test environment also has SHOW_RANDOM_OTP set,
-// so a successful send returns the code directly; it's shown below the form
-// so testing doesn't depend on SMS delivery.
-export function LoginCard({
-  portal,
-  portalName,
-  tagline,
-  identifierLabel = "Phone number",
-  identifierPlaceholder = "+234 800 000 0000",
-  hint,
-  accent,
-}: LoginCardProps) {
-  const { requestOtp, verifyLogin } = useAuth();
+// DEMO MODE: email + password are validated locally only (see AuthContext).
+export function LoginCard({ defaultRole = "field_agent" }: { defaultRole?: UserRole }) {
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState<"phone" | "otp">("phone");
-  const [phone, setPhone] = useState("+234 ");
-  const [otp, setOtp] = useState("");
-  const [testCode, setTestCode] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [role, setRole] = useState<UserRole>(defaultRole);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [touched, setTouched] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSendCode = async (e: React.FormEvent<HTMLFormElement>) => {
+  const emailError = touched && !isValidEmail(email) ? (email ? "Enter a valid email, like name@example.com." : "Enter your email.") : null;
+  const passwordError =
+    touched && password.length < MIN_PASSWORD_LENGTH
+      ? password
+        ? `Use at least ${MIN_PASSWORD_LENGTH} characters.`
+        : "Enter your password."
+      : null;
+
+  const meta = ROLE_META[role];
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (submitting) return;
-    setError(null);
-    setSubmitting(true);
-    const result = await requestOtp(phone.replace(/\s+/g, ""));
-    setSubmitting(false);
-    if (!result.ok) {
-      setError(result.error ?? "Couldn't send code. Please try again.");
+    setTouched(true);
+    setFormError(null);
+    if (!isValidEmail(email) || password.length < MIN_PASSWORD_LENGTH) {
+      document.getElementById(!isValidEmail(email) ? "email" : "password")?.focus();
       return;
     }
-    setTestCode(result.testCode ?? null);
-    setStep("otp");
-  };
-
-  const handleVerify = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (submitting) return;
-    setError(null);
     setSubmitting(true);
-    const result = await verifyLogin(phone.replace(/\s+/g, ""), otp.trim());
+    const result = await login(email, password, role);
     if (!result.ok || !result.user) {
       setSubmitting(false);
-      setError(result.error ?? "Invalid or expired code. Please try again.");
+      setFormError(result.error ?? "Couldn't sign in. Please try again.");
       return;
     }
     navigate({ to: ROLE_HOME[result.user.role], replace: true });
   };
 
+  const fillDemo = () => {
+    setEmail(DEMO_EMAIL[role]);
+    setPassword(DEMO_PASSWORD);
+    setTouched(false);
+    setFormError(null);
+  };
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ${accentIcon[accent]}`}>
-            <Sprout className="h-5 w-5" />
-          </div>
-          <div className="flex items-baseline">
-            <span className="text-2xl font-semibold tracking-tight">IntelliFeed</span>
-            <span className="text-2xl font-semibold text-primary tracking-tight">360</span>
-          </div>
-        </div>
+    <AuthLayout>
+      <div className={meta.accent.scope ?? ""}>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">Sign in to your IntelliFeed360 workspace.</p>
 
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
-          <h1 className="text-xl font-semibold text-foreground">{portalName}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{tagline}</p>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
+          <RolePicker roles={ALL_ROLES} value={role} onChange={setRole} disabled={submitting} />
 
-          {step === "phone" ? (
-            <form onSubmit={handleSendCode} className="mt-6 space-y-4" noValidate>
-              <div>
-                <label htmlFor="phone" className="text-sm font-medium text-foreground">
-                  {identifierLabel}
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  required
-                  disabled={submitting}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder={identifierPlaceholder}
-                  className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Use the phone number from signup — it's the auto-generated one shown after you
-                  registered.
-                </p>
-              </div>
+          <Field id="email" label="Email" error={emailError}>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              spellCheck={false}
+              required
+              disabled={submitting}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              aria-invalid={!!emailError}
+              aria-describedby={emailError ? "email-error" : undefined}
+              className={inputClass}
+            />
+          </Field>
 
-              {error && (
-                <div
-                  role="alert"
-                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
-                >
-                  {error}
-                </div>
-              )}
+          <Field
+            id="password"
+            label="Password"
+            error={passwordError}
+            trailing={
+              <Link to="/forgot-password" className="rounded text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Forgot password?
+              </Link>
+            }
+          >
+            <PasswordInput
+              id="password"
+              name="password"
+              autoComplete="current-password"
+              required
+              disabled={submitting}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              aria-invalid={!!passwordError}
+              aria-describedby={passwordError ? "password-error" : undefined}
+            />
+          </Field>
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-70 ${accentButton[accent]}`}
-              >
-                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {submitting ? "Sending code…" : "Send code"}
-              </button>
+          {formError && <FormAlert>{formError}</FormAlert>}
 
-              <div className="flex items-center justify-between text-xs">
-                <Link
-                  to="/forgot-password"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Trouble signing in?
-                </Link>
-                <Link to="/signup" className="text-primary hover:underline">
-                  Create account
-                </Link>
-              </div>
-            </form>
-          ) : (
-            <form onSubmit={handleVerify} className="mt-6 space-y-4" noValidate>
-              <p className="text-sm text-muted-foreground">
-                Enter the code sent to <span className="font-medium text-foreground">{phone}</span>.
+          <button
+            type="submit"
+            disabled={submitting}
+            className={`group inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-70 ${meta.accent.button}`}
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Signing in…
+              </>
+            ) : (
+              <>
+                Sign in as {meta.label}
+                <ArrowRight className="h-4 w-4 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5" aria-hidden="true" />
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="mt-6 rounded-xl border border-dashed border-border bg-muted/40 p-4">
+          <div className="flex items-start gap-3">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <div className="min-w-0 flex-1 text-xs text-muted-foreground">
+              <p>
+                <span className="font-medium text-foreground">Demo mode.</span> Any valid email and a password of{" "}
+                {MIN_PASSWORD_LENGTH}+ characters signs you in with sample data.
               </p>
-              {testCode && (
-                <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3">
-                  <p className="text-xs text-muted-foreground">Test code (SHOW_RANDOM_OTP is on for this environment)</p>
-                  <p className="mt-1 font-mono text-lg font-semibold text-foreground select-all">{testCode}</p>
-                </div>
-              )}
-              <div>
-                <label htmlFor="otp" className="text-sm font-medium text-foreground">
-                  Verification code
-                </label>
-                <input
-                  id="otp"
-                  name="otp"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  required
-                  autoFocus
-                  disabled={submitting}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="123456"
-                  className="mt-1.5 block w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-                />
-              </div>
-
-              {error && (
-                <div
-                  role="alert"
-                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
-                >
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-70 ${accentButton[accent]}`}
-              >
-                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {submitting ? "Verifying…" : "Verify & sign in"}
-              </button>
-
               <button
                 type="button"
+                onClick={fillDemo}
                 disabled={submitting}
-                onClick={() => {
-                  setStep("phone");
-                  setOtp("");
-                  setTestCode(null);
-                  setError(null);
-                }}
-                className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="mt-2 inline-flex items-center gap-1 rounded font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                Use a different phone number
+                Fill in a {meta.label} demo account
               </button>
-            </form>
-          )}
-
-          {hint && (
-            <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-              {hint}
             </div>
-          )}
+          </div>
         </div>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          IntelliFeed360 · {portalName}
+
+        <p className="mt-8 text-center text-sm text-muted-foreground">
+          New to IntelliFeed360?{" "}
+          <Link to="/signup" className="rounded font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            Create an account
+          </Link>
         </p>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { relativeTime } from "@/lib/dashboard/queries";
 
 export const Route = createFileRoute("/agent/health-assessments")({ component: HealthAssessmentsPage });
@@ -37,7 +37,7 @@ function HealthAssessmentsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["health-cases"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("health_cases")
         .select("id, severity, status, diagnosis, treatment, created_at, farmers(name, farm_name, livestock_type)")
         .order("created_at", { ascending: false })
@@ -49,7 +49,7 @@ function HealthAssessmentsPage() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("health_cases").update({ status }).eq("id", id);
+      const { error } = await db.from("health_cases").update({ status }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

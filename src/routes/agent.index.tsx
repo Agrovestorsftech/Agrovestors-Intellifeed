@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { firstName } from "@/lib/dates";
 import {
   ClipboardList,
   Salad,
@@ -35,20 +37,21 @@ export const Route = createFileRoute("/agent/")({
 });
 
 function AgentDashboardPage() {
-  const { data, isLoading } = useAgentKpis();
+  const { session } = useAuth();
+  const { data, isLoading, isError } = useAgentKpis();
   return (
     <>
       <AgentHeader
-        title="Welcome, Dr. Jane 👋"
+        title={`Welcome, ${firstName(session?.user.name)} 👋`}
         subtitle="Manage nutrition plans, health cases & consultations."
       />
 
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-5">
-        <KpiCard title="Active Farms" value={data?.activeFarms ?? 0} description="Under your care" icon={HeartPulse} tone="primary" loading={isLoading} />
-        <KpiCard title="Nutrition Plans" value={data?.plans ?? 0} description="Active plans" icon={Salad} tone="primary" loading={isLoading} />
-        <KpiCard title="Health Cases" value={data?.cases ?? 0} description="Active cases" icon={MessageSquareText} tone="destructive" loading={isLoading} />
-        <KpiCard title="Pending Reports" value={data?.reports ?? 0} description="To review" icon={ClipboardList} tone="info" loading={isLoading} />
-        <KpiCard title="Pending Tasks" value={data?.tasks ?? 0} description="Assigned to you" icon={CheckSquare} tone="warning" loading={isLoading} />
+        <KpiCard title="Active Farms" value={data?.activeFarms ?? 0} description="Under your care" icon={HeartPulse} tone="primary" loading={isLoading} error={isError} />
+        <KpiCard title="Nutrition Plans" value={data?.plans ?? 0} description="Active plans" icon={Salad} tone="primary" loading={isLoading} error={isError} />
+        <KpiCard title="Health Cases" value={data?.cases ?? 0} description="Active cases" icon={MessageSquareText} tone="destructive" loading={isLoading} error={isError} />
+        <KpiCard title="Pending Reports" value={data?.reports ?? 0} description="To review" icon={ClipboardList} tone="info" loading={isLoading} error={isError} />
+        <KpiCard title="Pending Tasks" value={data?.tasks ?? 0} description="Assigned to you" icon={CheckSquare} tone="warning" loading={isLoading} error={isError} />
       </div>
 
       {/* Hero: Reports Awaiting Review */}

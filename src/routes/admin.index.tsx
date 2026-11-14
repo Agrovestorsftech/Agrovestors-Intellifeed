@@ -30,7 +30,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminDashboardPage() {
-  const { data, isLoading } = useAdminKpis();
+  const { data, isLoading, isError } = useAdminKpis();
   return (
     <>
       <AdminHeader
@@ -38,25 +38,29 @@ function AdminDashboardPage() {
         subtitle="Monitor platform health, users, and overall performance."
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
-        <KpiCard title="Total Farmers" value={data?.totalFarmers ?? 0} icon={Users} tone="primary" loading={isLoading} />
-        <KpiCard title="Platform Users" value={data?.totalUsers ?? 0} icon={UserCheck} tone="info" loading={isLoading} />
-        <KpiCard title="Active Farmers" value={data?.activeFarmers ?? 0} icon={Warehouse} tone="accent" loading={isLoading} />
-        <KpiCard title="Pending Orders" value={data?.pendingOrders ?? 0} icon={ShoppingCart} tone="destructive" loading={isLoading} />
-        <KpiCard title="Open Health Cases" value={data?.openCases ?? 0} icon={HeartPulse} tone="warning" loading={isLoading} />
+      <div id="overview" className="scroll-mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
+        <KpiCard title="Total Farmers" value={data?.totalFarmers ?? 0} icon={Users} tone="primary" loading={isLoading} error={isError} />
+        <KpiCard title="Platform Users" value={data?.totalUsers ?? 0} icon={UserCheck} tone="info" loading={isLoading} error={isError} />
+        <KpiCard title="Active Farmers" value={data?.activeFarmers ?? 0} icon={Warehouse} tone="accent" loading={isLoading} error={isError} />
+        <KpiCard title="Pending Orders" value={data?.pendingOrders ?? 0} icon={ShoppingCart} tone="destructive" loading={isLoading} error={isError} />
+        <KpiCard title="Open Health Cases" value={data?.openCases ?? 0} icon={HeartPulse} tone="warning" loading={isLoading} error={isError} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2">
+        <div id="performance" className="scroll-mt-6 xl:col-span-2">
           <PlatformPerformance />
         </div>
         <UserDistribution />
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <SystemLogs />
+        <div id="logs" className="scroll-mt-6 [&>section]:h-full">
+          <SystemLogs />
+        </div>
         <SystemHealth />
-        <SupportTickets />
+        <div id="support" className="scroll-mt-6 [&>section]:h-full">
+          <SupportTickets />
+        </div>
       </div>
 
       <div className="mt-6">

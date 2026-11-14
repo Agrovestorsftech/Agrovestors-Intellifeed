@@ -1,10 +1,8 @@
-// Tasks — replaces the old Supabase `tasks` table.
-// Backend: GET/POST /api/v1/tasks/, PATCH+POST toggle /api/v1/tasks/{id}/.
-// See backend-additions/apps/tasks/ for the server-side implementation
-// this client assumes.
+// Tasks. DEMO MODE: backed by the in-memory mock store (src/lib/mock).
+// Swap the bodies back to `api.*` calls once the backend exposes a tasks
+// endpoint; the exported types/signatures are the contract.
 
-import { api } from "./client";
-import { unwrapPage } from "./client";
+import { mockDb as db } from "@/lib/mock/db";
 
 export type TaskStatus = "open" | "done";
 export type TaskPriority = "low" | "medium" | "high";
@@ -27,22 +25,37 @@ export interface CreateTaskInput {
   description?: string;
   due_at?: string | null;
   priority?: TaskPriority;
-  assignee?: string; // defaults server-side to self if omitted
+  assignee?: string;
 }
 
+/** Tasks for the signed-in user (the store binds seeded tasks to them). */
 export async function listMyTasks(): Promise<Task[]> {
-  const page = await api.get<Task[] | { results: Task[] }>("/tasks/");
-  return unwrapPage(page as any);
+  const { data, error } = await db.from("tasks").select("*").order("due_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Task[];
 }
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
-  return api.post<Task>("/tasks/", input);
+  const { data } = await db
+    .from("tasks")
+    .insert({ status: "open", priority: "medium", description: "", due_at: null, assigned_by: null, updated_at: new Date().toISOString(), ...input })
+    .select("*")
+    .single();
+  return data as unknown as Task;
 }
 
 export async function toggleTask(id: string): Promise<Task> {
-  return api.post<Task>(`/tasks/${id}/toggle/`);
+  const { data: current } = await db.from("tasks").select("status").eq("id", id).single();
+  const { data } = await db
+    .from("tasks")
+    .update({ status: current?.status === "done" ? "open" : "done" })
+    .eq("id", id)
+    .select("*")
+    .single();
+  return data as unknown as Task;
 }
 
 export async function updateTask(id: string, patch: Partial<CreateTaskInput & { status: TaskStatus }>): Promise<Task> {
-  return api.patch<Task>(`/tasks/${id}/`, patch);
+  const { data } = await db.from("tasks").update(patch).eq("id", id).select("*").single();
+  return data as unknown as Task;
 }

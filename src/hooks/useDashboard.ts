@@ -42,8 +42,8 @@ export const useInventoryRows = () =>
 export const useProductionSeries = () =>
   useQuery({ queryKey: ["production-series"], queryFn: Q.fetchProductionSeries, refetchInterval: REFRESH_MS });
 
-export const usePlatformSeries = () =>
-  useQuery({ queryKey: ["platform-series"], queryFn: Q.fetchPlatformSeries, refetchInterval: REFRESH_MS });
+export const usePlatformSeries = (days = 7) =>
+  useQuery({ queryKey: ["platform-series", days], queryFn: () => Q.fetchPlatformSeries(days), refetchInterval: REFRESH_MS });
 
 export const useUserDistribution = () =>
   useQuery({ queryKey: ["user-distribution"], queryFn: Q.fetchUserDistribution, refetchInterval: REFRESH_MS });
@@ -65,11 +65,56 @@ export function useTodaysSchedule() {
 export const useActivities = (limit = 20) =>
   useQuery({ queryKey: ["activities", limit], queryFn: () => Q.fetchActivities(limit), refetchInterval: REFRESH_MS });
 
-export const useUnreadNotifications = () =>
-  useQuery({ queryKey: ["notifications-unread"], queryFn: Q.fetchUnreadNotifications, refetchInterval: 30_000 });
+export function useScheduleRange(from: Date, to: Date) {
+  const { session } = useAuth();
+  const userId = session?.user.id;
+  return useQuery({
+    queryKey: ["schedule", userId, from.toISOString(), to.toISOString()],
+    queryFn: () => Q.fetchSchedule(userId, from, to),
+    enabled: !!userId,
+  });
+}
 
-export const useAllNotifications = () =>
-  useQuery({ queryKey: ["notifications-all"], queryFn: () => Q.fetchAllNotifications(20) });
+export function useVisitSummary(period: Q.SummaryPeriod) {
+  const { session } = useAuth();
+  const userId = session?.user.id;
+  return useQuery({
+    queryKey: ["visit-summary", userId, period],
+    queryFn: () => Q.fetchVisitSummary(userId, period),
+    enabled: !!userId,
+    refetchInterval: REFRESH_MS,
+  });
+}
+
+export function useCalendarEvents(from: Date, to: Date) {
+  const { session } = useAuth();
+  const role = session?.user.role;
+  return useQuery({
+    queryKey: ["calendar-events", role, from.toISOString(), to.toISOString()],
+    queryFn: () => Q.fetchCalendarEvents(role!, session?.user.id, from, to),
+    enabled: !!role,
+  });
+}
+
+/** Notifications for the signed-in user's role. Keys start with "notifications-" for easy invalidation. */
+export function useUnreadNotifications() {
+  const role = useAuth().session?.user.role;
+  return useQuery({
+    queryKey: ["notifications-unread", role],
+    queryFn: () => Q.fetchUnreadNotifications(role),
+    enabled: !!role,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useAllNotifications() {
+  const role = useAuth().session?.user.role;
+  return useQuery({
+    queryKey: ["notifications-all", role],
+    queryFn: () => Q.fetchAllNotifications(role),
+    enabled: !!role,
+  });
+}
 
 export const useSupportTickets = () =>
   useQuery({ queryKey: ["support-tickets"], queryFn: () => Q.fetchSupportTickets(6), refetchInterval: REFRESH_MS });

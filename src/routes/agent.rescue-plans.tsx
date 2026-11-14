@@ -7,7 +7,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { relativeTime } from "@/lib/dashboard/queries";
 
 export const Route = createFileRoute("/agent/rescue-plans")({ component: RescuePlansPage });
@@ -30,7 +30,7 @@ function RescuePlansPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["rescue-plans"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("health_cases")
         .select("id, severity, status, diagnosis, treatment, created_at, farmers(name, farm_name, livestock_type)")
         .in("severity", ["high", "critical"])
@@ -43,7 +43,7 @@ function RescuePlansPage() {
 
   const saveTreatment = useMutation({
     mutationFn: async ({ id, treatment }: { id: string; treatment: string }) => {
-      const { error } = await supabase.from("health_cases").update({ treatment, status: "in_progress" }).eq("id", id);
+      const { error } = await db.from("health_cases").update({ treatment, status: "in_progress" }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: (_, { id }) => {
@@ -57,7 +57,7 @@ function RescuePlansPage() {
 
   const resolve = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("health_cases").update({ status: "resolved" }).eq("id", id);
+      const { error } = await db.from("health_cases").update({ status: "resolved" }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

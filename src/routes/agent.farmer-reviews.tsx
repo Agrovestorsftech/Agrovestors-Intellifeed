@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CardGridSkeleton, FilterHeaderSkeleton } from "@/components/ui/lazy-loader";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { relativeTime } from "@/lib/dashboard/queries";
 
 export const Route = createFileRoute("/agent/farmer-reviews")({ component: FarmerReviewsPage });
@@ -25,7 +25,7 @@ function FarmerReviewsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["farmer-reviews"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("farmers")
         .select(`
           id, name, farm_name, region, livestock_type, status, avatar_url, updated_at,

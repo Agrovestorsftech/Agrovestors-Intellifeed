@@ -4,21 +4,9 @@ import { LoginCard } from "@/components/auth/LoginCard";
 export const Route = createFileRoute("/login/feedops")({
   head: () => ({
     meta: [
-      { title: "FeedOps Portal Login — IntelliFeed360" },
-      { name: "description", content: "Sign in to the IntelliFeed360 FeedOps Portal." },
+      { title: "Sign in — IntelliFeed360" },
+      { name: "description", content: "Sign in to IntelliFeed360." },
     ],
   }),
-  component: FeedOpsLoginPage,
+  component: () => <LoginCard defaultRole="feedops" />,
 });
-
-function FeedOpsLoginPage() {
-  return (
-    <LoginCard
-      portal="feedops"
-      portalName="FeedOps Portal"
-      tagline="Sign in to manage feed production, inventory and deliveries."
-      accent="warning"
-      hint={<>Feed Operations staff sign in here. No account? <a href="/signup" className="text-primary hover:underline">Create one</a>.</>}
-    />
-  );
-}

@@ -38,7 +38,7 @@ function createSupabaseClient() {
       ...(!VITE_SUPABASE_URL ? ['VITE_SUPABASE_URL'] : []),
       ...(!VITE_SUPABASE_PUBLISHABLE_KEY ? ['VITE_SUPABASE_PUBLISHABLE_KEY'] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
+    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Set them in your .env file (see env.example).`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }
