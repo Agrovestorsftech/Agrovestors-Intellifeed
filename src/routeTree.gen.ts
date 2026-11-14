@@ -59,6 +59,7 @@ import { Route as FeedopsReportsRouteImport } from './routes/feedops.reports'
 import { Route as FeedopsSettingsRouteImport } from './routes/feedops.settings'
 import { Route as FeedopsStockTransfersRouteImport } from './routes/feedops.stock-transfers'
 import { Route as FeedopsSuppliersRouteImport } from './routes/feedops.suppliers'
+import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as LoginAdminRouteImport } from './routes/login.admin'
 import { Route as LoginAgentRouteImport } from './routes/login.agent'
 import { Route as LoginFeedopsRouteImport } from './routes/login.feedops'
@@ -313,6 +314,11 @@ const FeedopsSuppliersRoute = FeedopsSuppliersRouteImport.update({
   path: '/suppliers',
   getParentRoute: () => FeedopsRoute,
 } as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginAdminRoute = LoginAdminRouteImport.update({
   id: '/login/admin',
   path: '/login/admin',
@@ -383,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/agent/': typeof AgentIndexRoute
   '/feedops/': typeof FeedopsIndexRoute
+  '/login/': typeof LoginIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -435,6 +442,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/agent': typeof AgentIndexRoute
   '/feedops': typeof FeedopsIndexRoute
+  '/login': typeof LoginIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -491,6 +499,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/agent/': typeof AgentIndexRoute
   '/feedops/': typeof FeedopsIndexRoute
+  '/login/': typeof LoginIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -548,6 +557,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/agent/'
     | '/feedops/'
+    | '/login/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -600,6 +610,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/agent'
     | '/feedops'
+    | '/login'
   id:
     | '__root__'
     | '/'
@@ -655,6 +666,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/agent/'
     | '/feedops/'
+    | '/login/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -677,6 +689,7 @@ export interface RootRouteChildren {
   LoginAdminRoute: typeof LoginAdminRoute
   LoginAgentRoute: typeof LoginAgentRoute
   LoginFeedopsRoute: typeof LoginFeedopsRoute
+  LoginIndexRoute: typeof LoginIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1031,6 +1044,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeedopsSuppliersRouteImport
       parentRoute: typeof FeedopsRoute
     }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login/admin': {
       id: '/login/admin'
       path: '/login/admin'
@@ -1168,6 +1188,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginAdminRoute: LoginAdminRoute,
   LoginAgentRoute: LoginAgentRoute,
   LoginFeedopsRoute: LoginFeedopsRoute,
+  LoginIndexRoute: LoginIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

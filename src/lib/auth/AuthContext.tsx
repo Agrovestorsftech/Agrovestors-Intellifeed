@@ -20,6 +20,10 @@ const STORAGE_KEY = "if360.mockSession";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const MIN_PASSWORD_LENGTH = 6;
 
+export function isValidEmail(email: string): boolean {
+  return EMAIL_RE.test(email.trim());
+}
+
 interface LoginResult {
   ok: boolean;
   user?: AuthUser;

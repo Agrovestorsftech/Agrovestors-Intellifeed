@@ -4,21 +4,9 @@ import { LoginCard } from "@/components/auth/LoginCard";
 export const Route = createFileRoute("/login/admin")({
   head: () => ({
     meta: [
-      { title: "Admin Portal Login — IntelliFeed360" },
-      { name: "description", content: "Sign in to the IntelliFeed360 Admin Portal." },
+      { title: "Sign in — IntelliFeed360" },
+      { name: "description", content: "Sign in to IntelliFeed360." },
     ],
   }),
-  component: AdminLoginPage,
+  component: () => <LoginCard defaultRole="system_admin" />,
 });
-
-function AdminLoginPage() {
-  return (
-    <LoginCard
-      portal="admin"
-      portalName="Admin Portal"
-      tagline="Sign in to manage the IntelliFeed360 platform."
-      accent="info"
-      hint={<>System Administrator access. Contact support if you need an account.</>}
-    />
-  );
-}
