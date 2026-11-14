@@ -1,3 +1,4 @@
+import { Logo } from "@/components/brand/Logo";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -13,7 +14,6 @@ import {
   LifeBuoy,
   History,
   Settings,
-  Sprout,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SidebarUser } from "./SidebarUser";
@@ -41,15 +41,7 @@ export function AdminSidebarInner({ onNavigate }: { onNavigate?: () => void } = 
   return (
     <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="px-6 pt-7 pb-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-primary/30">
-            <Sprout className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex items-baseline">
-            <span className="text-lg font-semibold text-white tracking-tight">IntelliFeed</span>
-            <span className="text-lg font-semibold text-primary tracking-tight">360</span>
-          </div>
-        </div>
+        <Logo tone="light" />
         <p className="mt-3 text-[11px] leading-relaxed text-sidebar-foreground/60">
           Smart Feed. Healthy Farms. Better Profits.
         </p>
