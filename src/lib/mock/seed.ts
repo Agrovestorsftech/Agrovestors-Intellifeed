@@ -387,24 +387,208 @@ export function buildSeed(): Record<string, Row[]> {
     role: ROLES[i % ROLES.length],
     created_at: ago(int(1, 200)),
   }));
+  /* ---------------------------- people & access ---------------------------- */
+  const STAFF: [string, string, string][] = [
+    // [id, name, role]
+    ["agent-0002", "Tunde Adeyemi", "field_agent"],
+    ["agent-0003", "Halima Musa", "field_agent"],
+    ["user-fa-04", "Chinedu Okafor", "field_agent"],
+    ["user-fa-05", "Blessing Eze", "field_agent"],
+    ["user-fa-06", "Musa Danladi", "field_agent"],
+    ["user-fa-07", "Kemi Ogunleye", "field_agent"],
+    ["user-fa-08", "Garba Lawal", "field_agent"],
+    ["user-aa-01", "Dr. Ada Obi", "admin_agent"],
+    ["user-aa-02", "Dr. Kunle Ade", "admin_agent"],
+    ["user-aa-03", "Dr. Hauwa Sule", "admin_agent"],
+    ["user-fo-01", "Tunde Bakare", "feedops"],
+    ["user-fo-02", "Ifeoma Nnaji", "feedops"],
+    ["user-fo-03", "Sani Bello", "feedops"],
+    ["user-fo-04", "Funke Adebayo", "feedops"],
+    ["user-sa-01", "Zainab Abubakar", "system_admin"],
+    ["user-sa-02", "Obinna Uche", "system_admin"],
+    ["user-in-01", "Aisha Lawal", "field_agent"],
+    ["user-in-02", "Emeka Obi", "feedops"],
+  ];
+  const users: Row[] = STAFF.map(([uid, name, role], i) => ({
+    id: uid,
+    name,
+    email: `${name.toLowerCase().replace(/^dr\. /, "").replace(/[^a-z]+/g, ".")}@agrovestors.com`,
+    phone: `+23480${int(10000000, 99999999)}`,
+    role,
+    region: role === "field_agent" ? REGIONS[i % REGIONS.length] : role === "feedops" ? pick(["Kaduna", "Oyo"]) : "HQ",
+    status: uid.startsWith("user-in") ? "invited" : i === 6 ? "suspended" : "active",
+    last_active_at: uid.startsWith("user-in") ? null : ago(int(0, 6), int(0, 20)),
+    created_at: ago(int(20, 400)),
+  }));
+  // Spread the field agents' farmers across the team (seeded farmers 10+ belong to others).
+  const fieldStaff = users.filter((u) => u.role === "field_agent" && u.status === "active").map((u) => u.id);
+  farmers.slice(10).forEach((f, i) => (f.assigned_agent_id = fieldStaff[i % fieldStaff.length]));
+
+  const PERMISSIONS = [
+    "farmers.view", "farmers.edit", "visits.create", "reports.submit", "reports.review", "plans.publish",
+    "cases.manage", "orders.create", "orders.manage", "inventory.manage", "production.manage",
+    "users.manage", "roles.manage", "billing.view", "settings.manage",
+  ];
+  const roles: Row[] = [
+    { key: "system_admin", name: "System Administrator", description: "Full access to the platform.", permissions: PERMISSIONS, system: true },
+    { key: "field_agent", name: "Field Agent", description: "Visits farms, submits reports and places orders.", permissions: ["farmers.view", "farmers.edit", "visits.create", "reports.submit", "orders.create"], system: true },
+    { key: "admin_agent", name: "Admin Agent (Nutrition / Vet)", description: "Reviews reports, manages cases and publishes plans.", permissions: ["farmers.view", "reports.review", "plans.publish", "cases.manage"], system: true },
+    { key: "feedops", name: "Feed Operations", description: "Runs inventory, production and fulfilment.", permissions: ["orders.manage", "inventory.manage", "production.manage"], system: true },
+    { key: "regional_supervisor", name: "Regional Supervisor", description: "Oversees field agents in a region.", permissions: ["farmers.view", "farmers.edit", "reports.review", "orders.manage"], system: false },
+  ].map((r) => ({ id: id("role"), created_at: ago(300), ...r }));
+
+  /* ------------------------------ feed operations ------------------------------ */
+  const DRIVERS = ["Yakubu Ali", "Peter Okon", "Ibrahim Sani", "Joseph Edet"];
+  const VEHICLES = ["KAD-482-XA", "LAG-119-KJ", "ABJ-730-MN", "IBD-044-PQ"];
+  const deliveries: Row[] = feed_orders
+    .filter((o) => o.status === "out_for_delivery" || o.status === "delivered")
+    .map((o) => {
+      const farmer = farmers.find((f) => f.id === o.farmer_id);
+      const scheduled = new Date(new Date(o.placed_at).getTime() + int(6, 30) * 3_600_000).toISOString();
+      return {
+        id: id("dlv"),
+        order_id: o.id,
+        driver: pick(DRIVERS),
+        vehicle: pick(VEHICLES),
+        region: farmer?.region ?? pick(REGIONS),
+        scheduled_for: scheduled,
+        delivered_at: o.status === "delivered" ? scheduled : null,
+        status: o.status === "delivered" ? "delivered" : pick(["scheduled", "in_transit"]),
+        created_at: o.placed_at,
+      };
+    });
+
+  const SUPPLIERS = [
+    ["Northern Grains Ltd", "Maize", "Kano"], ["SoyPro Nigeria", "Soybean meal", "Benue"], ["Premix Africa", "Vitamin premix", "Lagos"],
+    ["Coastal Fishmeal Co.", "Fishmeal", "Lagos"], ["Kaduna Millers", "Wheat offal", "Kaduna"], ["Agro Bags & Packaging", "Packaging", "Ogun"],
+    ["LimeStone Minerals", "Limestone", "Ogun"], ["Golden Palm Oils", "Vegetable oil", "Enugu"],
+  ];
+  const suppliers: Row[] = SUPPLIERS.map(([name, category, region], i) => ({
+    id: id("sup"),
+    name,
+    category,
+    region,
+    contact_name: `${pick(FIRST)} ${pick(LAST)}`,
+    phone: `+23481${int(10000000, 99999999)}`,
+    email: `orders@${name.toLowerCase().replace(/[^a-z]+/g, "")}.ng`,
+    rating: [4.8, 4.5, 4.2, 3.9, 4.6, 4.0, 3.6, 4.3][i],
+    status: i === 6 ? "inactive" : "active",
+    last_order_at: ago(int(1, 45)),
+    created_at: ago(int(100, 600)),
+  }));
+
+  const quality_checks: Row[] = production_runs
+    .filter((r) => r.status === "completed")
+    .map((r, i) => {
+      const moisture = Math.round((10 + rand() * 4.5) * 10) / 10;
+      const protein = Math.round((14 + rand() * 8) * 10) / 10;
+      const aflatoxin = int(2, 24);
+      const result = moisture > 13.5 || aflatoxin > 20 ? "fail" : "pass";
+      return {
+        id: id("qc"),
+        run_id: r.id,
+        batch_no: r.batch_no,
+        product_id: r.product_id,
+        inspector: pick(["Ifeoma Nnaji", "Sani Bello", "Tunde Bakare"]),
+        moisture,
+        protein,
+        aflatoxin,
+        result: i === 0 ? "pending" : result,
+        notes: result === "fail" ? "Hold batch; re-test after drying." : null,
+        checked_at: r.finished_at,
+        created_at: r.finished_at,
+      };
+    });
+
+  const stock_transfers: Row[] = Array.from({ length: 9 }, (_, i) => {
+    const from = WAREHOUSES[i % 2]!;
+    return {
+      id: id("trf"),
+      ref: `TRF-${3100 + i}`,
+      product_id: pick(feed_products).id,
+      from_warehouse: from,
+      to_warehouse: WAREHOUSES[(i + 1) % 2]!,
+      quantity: int(20, 180),
+      status: i < 2 ? "requested" : i < 4 ? "in_transit" : "received",
+      requested_by: pick(["Tunde Bakare", "Ifeoma Nnaji", "Sani Bello"]),
+      requested_at: ago(i < 4 ? int(0, 2) : int(3, 30)),
+      created_at: ago(i < 4 ? int(0, 2) : int(3, 30)),
+    };
+  });
+
+  /* --------------------------------- billing --------------------------------- */
+  const invoices: Row[] = Array.from({ length: 8 }, (_, i) => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - i);
+    const users_billed = 14 + Math.max(0, 6 - i);
+    return {
+      id: id("inv"),
+      number: `INV-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`,
+      period: d.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+      seats: users_billed,
+      amount: users_billed * 15_000 + 120_000,
+      status: i === 0 ? "due" : "paid",
+      issued_at: d.toISOString(),
+      created_at: d.toISOString(),
+    };
+  });
+
+  /* ------------------------------ logs & audit ------------------------------ */
   const LOGS = [
-    ["user.login", "auth"],
-    ["farmer.create", "farmer"],
-    ["order.update", "feed_order"],
-    ["report.review", "visit_report"],
-    ["inventory.adjust", "inventory_item"],
-    ["plan.publish", "nutrition_plan"],
+    ["info", "user.login", "auth", "Signed in"],
+    ["info", "farmer.create", "farmer", "Farmer registered"],
+    ["info", "order.update", "feed_order", "Order status changed"],
+    ["info", "report.review", "visit_report", "Report reviewed"],
+    ["info", "inventory.adjust", "inventory_item", "Stock adjusted"],
+    ["info", "plan.publish", "nutrition_plan", "Plan published"],
+    ["warn", "auth.failed", "auth", "Failed sign-in attempt"],
+    ["warn", "sync.retry", "sync", "Offline sync retried"],
+    ["error", "sync.failed", "sync", "Upload failed: network timeout"],
+    ["error", "payment.failed", "billing", "Card declined for invoice"],
   ] as const;
-  const system_logs: Row[] = Array.from({ length: 14 }, (_, i) => {
-    const [action, entity] = pick(LOGS);
+  const people = users.map((u) => u.name as string);
+  const system_logs: Row[] = Array.from({ length: 70 }, (_, i) => {
+    const [level, action, entity, message] = rand() < 0.75 ? pick(LOGS.slice(0, 6)) : pick(LOGS.slice(6));
     return {
       id: id("log"),
+      level,
       action,
       entity,
+      message,
       entity_id: null,
       actor_id: pick(AGENTS),
-      meta: { ip: `10.0.0.${int(2, 250)}` },
-      created_at: ago(0, i * 3 + int(0, 2)),
+      actor_name: pick(people),
+      meta: { ip: `10.0.${int(0, 3)}.${int(2, 250)}` },
+      created_at: ago(Math.floor(i / 8), (i % 8) * 3 + int(0, 2)),
+    };
+  });
+
+  const AUDIT = [
+    ["updated", "user", "role", "field_agent", "regional_supervisor"],
+    ["updated", "farmer", "status", "active", "inactive"],
+    ["created", "user", null, null, null],
+    ["updated", "role", "permissions", "4 permissions", "5 permissions"],
+    ["updated", "settings", "session_timeout", "60 min", "30 min"],
+    ["deleted", "supplier", null, null, null],
+    ["updated", "feed_order", "status", "processing", "out_for_delivery"],
+    ["updated", "inventory_item", "quantity", "420", "380"],
+  ] as const;
+  const audit_events: Row[] = Array.from({ length: 40 }, (_, i) => {
+    const [action, entity, field, from, to] = pick(AUDIT);
+    const target =
+      entity === "user" ? pick(users).name : entity === "farmer" ? pick(farmers).name : entity === "supplier" ? pick(suppliers).name : entity === "feed_order" ? pick(feed_orders).order_no : entity === "role" ? "Regional Supervisor" : entity === "inventory_item" ? pick(feed_products).name : "Platform settings";
+    return {
+      id: id("aud"),
+      actor_name: pick(["Zainab Abubakar", "Obinna Uche", "Tunde Bakare", "Dr. Ada Obi"]),
+      action,
+      entity,
+      target,
+      field,
+      from,
+      to,
+      ip: `10.0.${int(0, 3)}.${int(2, 250)}`,
+      created_at: ago(Math.floor(i / 4), (i % 4) * 5 + int(0, 3)),
     };
   });
 
@@ -426,6 +610,14 @@ export function buildSeed(): Record<string, Row[]> {
     tasks,
     user_roles,
     system_logs,
+    users,
+    roles,
+    deliveries,
+    suppliers,
+    quality_checks,
+    stock_transfers,
+    invoices,
+    audit_events,
     activities: [],
     profiles: [],
   };
