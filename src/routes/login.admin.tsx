@@ -8,5 +8,5 @@ export const Route = createFileRoute("/login/admin")({
       { name: "description", content: "Sign in to IntelliFeed360." },
     ],
   }),
-  component: () => <LoginCard defaultRole="system_admin" />,
+  component: () => <LoginCard role="system_admin" />,
 });

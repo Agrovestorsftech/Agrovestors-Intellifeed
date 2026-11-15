@@ -72,7 +72,7 @@ export function AppSidebarInner({ onNavigate }: { onNavigate?: () => void } = {}
           fallbackRole="Field Agent"
           fallbackInitials="JF"
           avatarGradient="from-primary to-info"
-          portal="agent"
+          portal="field"
         />
       </div>
     </div>

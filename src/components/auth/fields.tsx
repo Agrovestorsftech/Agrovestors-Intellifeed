@@ -1,13 +1,11 @@
-import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react";
+import { useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { Eye, EyeOff, Factory, ShieldCheck, Stethoscope, Tractor, AlertCircle, type LucideIcon } from "lucide-react";
 import type { UserRole } from "@/lib/auth/types";
 
 /* ---------------------------------- roles ---------------------------------- */
 
 type Accent = {
-  /** Selected role card. */
-  card: string;
-  /** Icon tile on the role card. */
+  /** Icon tile on the portal badge. */
   tile: string;
   /** Primary submit button. */
   button: string;
@@ -21,7 +19,6 @@ export const ROLE_META: Record<UserRole, { label: string; short: string; icon: L
     short: "Visits, farmers & orders",
     icon: Tractor,
     accent: {
-      card: "has-[:checked]:border-primary has-[:checked]:bg-primary/5",
       tile: "bg-primary-soft text-primary",
       button: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/30",
     },
@@ -31,7 +28,6 @@ export const ROLE_META: Record<UserRole, { label: string; short: string; icon: L
     short: "Nutrition & vet review",
     icon: Stethoscope,
     accent: {
-      card: "has-[:checked]:border-primary has-[:checked]:bg-primary/5",
       tile: "bg-primary-soft text-primary",
       button: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/30",
       scope: "theme-agent",
@@ -42,7 +38,6 @@ export const ROLE_META: Record<UserRole, { label: string; short: string; icon: L
     short: "Inventory & production",
     icon: Factory,
     accent: {
-      card: "has-[:checked]:border-warning has-[:checked]:bg-warning/10",
       tile: "bg-warning-soft text-warning-foreground",
       button: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-warning/30",
     },
@@ -52,62 +47,11 @@ export const ROLE_META: Record<UserRole, { label: string; short: string; icon: L
     short: "Users, roles & platform",
     icon: ShieldCheck,
     accent: {
-      card: "has-[:checked]:border-info has-[:checked]:bg-info/5",
       tile: "bg-info-soft text-info",
       button: "bg-info text-info-foreground hover:bg-info/90 shadow-info/30",
     },
   },
 };
-
-/** Card-style radio group. Real radios underneath → arrow keys + screen readers work. */
-export function RolePicker({
-  roles,
-  value,
-  onChange,
-  legend = "Sign in as",
-  disabled,
-}: {
-  roles: UserRole[];
-  value: UserRole;
-  onChange: (r: UserRole) => void;
-  legend?: string;
-  disabled?: boolean;
-}) {
-  const name = useId();
-  return (
-    <fieldset disabled={disabled}>
-      <legend className="text-sm font-medium text-foreground">{legend}</legend>
-      <div className="mt-2 grid grid-cols-2 gap-2.5">
-        {roles.map((r) => {
-          const meta = ROLE_META[r];
-          const Icon = meta.icon;
-          return (
-            <label
-              key={r}
-              className={`group relative flex min-h-14 cursor-pointer items-center gap-2.5 rounded-xl border border-input bg-card p-2.5 sm:gap-3 sm:p-3 transition-colors hover:bg-muted/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-background ${meta.accent.card} ${meta.accent.scope ?? ""}`}
-            >
-              <input
-                type="radio"
-                name={name}
-                value={r}
-                checked={value === r}
-                onChange={() => onChange(r)}
-                className="sr-only"
-              />
-              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg sm:h-9 sm:w-9 ${meta.accent.tile}`}>
-                <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-medium leading-tight text-foreground">{meta.label}</span>
-                <span className="hidden truncate text-xs text-muted-foreground sm:block">{meta.short}</span>
-              </span>
-            </label>
-          );
-        })}
-      </div>
-    </fieldset>
-  );
-}
 
 /* ---------------------------------- inputs --------------------------------- */
 
@@ -204,5 +148,21 @@ export function FormAlert({ children }: { children: ReactNode }) {
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
       <span>{children}</span>
     </div>
+  );
+}
+
+/* ------------------------------- portal badge ------------------------------ */
+
+/** Read-only label showing which portal this auth page belongs to (set by the URL). */
+export function PortalBadge({ role }: { role: UserRole }) {
+  const meta = ROLE_META[role];
+  const Icon = meta.icon;
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card py-1 pl-1 pr-3 text-xs font-medium text-foreground">
+      <span className={`grid h-6 w-6 place-items-center rounded-full ${meta.accent.tile}`}>
+        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      </span>
+      {meta.label}
+    </span>
   );
 }

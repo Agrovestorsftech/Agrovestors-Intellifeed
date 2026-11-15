@@ -41,7 +41,7 @@ export function mapApiRoleToUserRole(role: ApiRole): UserRole {
   }
 }
 
-export type PortalId = "admin" | "agent" | "feedops";
+export type PortalId = "admin" | "agent" | "feedops" | "field";
 
 export interface AuthUser {
   id: string;
@@ -67,6 +67,7 @@ export const ROLE_HOME: Record<UserRole, string> = {
 
 /** Which portal login page a given portal uses. */
 export const PORTAL_LOGIN: Record<PortalId, string> = {
+  field: "/login",
   admin: "/login/admin",
   agent: "/login/agent",
   feedops: "/login/feedops",
@@ -79,9 +80,17 @@ export const ROLE_LABEL: Record<UserRole, string> = {
   feedops: "Feed Operations",
 };
 
-/** Roles a visitor can self-assign at signup. system_admin is intentionally omitted. */
-export const SIGNUP_ROLES: { value: Exclude<UserRole,"system_admin">; label: string; description: string }[] = [
-  { value: "field_agent", label: "Field Agent", description: "Farm visits, farmer support, on-the-ground reports." },
-  { value: "admin_agent", label: "Admin Agent (Nutrition / Vet)", description: "Nutritionists & veterinarians reviewing reports and plans." },
-  { value: "feedops",     label: "Feed Operations",              description: "Inventory, production, warehouse and fulfilment." },
-];
+/** Login page for each role — the URL decides the role, there is no picker. */
+export const ROLE_LOGIN: Record<UserRole, string> = {
+  field_agent: "/login",
+  admin_agent: "/login/agent",
+  feedops: "/login/feedops",
+  system_admin: "/login/admin",
+};
+
+/** Signup page for each self-registrable role. system_admin is intentionally omitted. */
+export const ROLE_SIGNUP: Partial<Record<UserRole, string>> = {
+  field_agent: "/signup",
+  admin_agent: "/signup/agent",
+  feedops: "/signup/feedops",
+};

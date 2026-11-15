@@ -8,5 +8,5 @@ export const Route = createFileRoute("/login/agent")({
       { name: "description", content: "Sign in to IntelliFeed360." },
     ],
   }),
-  component: () => <LoginCard defaultRole="field_agent" />,
+  component: () => <LoginCard role="admin_agent" />,
 });

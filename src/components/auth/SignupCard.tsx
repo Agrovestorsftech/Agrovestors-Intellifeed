@@ -1,33 +1,20 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth/AuthContext";
-import { ROLE_HOME, type UserRole } from "@/lib/auth/types";
-import { AuthLayout } from "@/components/auth/AuthLayout";
-import { Field, FormAlert, PasswordInput, ROLE_META, RolePicker, StrengthMeter, inputClass } from "@/components/auth/fields";
+import { ROLE_HOME, ROLE_LOGIN, type UserRole } from "@/lib/auth/types";
+import { AuthLayout } from "./AuthLayout";
+import { Field, FormAlert, PasswordInput, PortalBadge, ROLE_META, StrengthMeter, inputClass } from "./fields";
 
-export const Route = createFileRoute("/signup")({
-  head: () => ({
-    meta: [
-      { title: "Create your account — IntelliFeed360" },
-      { name: "description", content: "Create an IntelliFeed360 account." },
-    ],
-  }),
-  component: SignupPage,
-});
-
-// system_admin is intentionally not self-assignable.
-const SIGNUP_ROLE_OPTIONS: UserRole[] = ["field_agent", "admin_agent", "feedops"];
-
-// DEMO MODE: no backend. "Signing up" signs you in with the chosen role.
-function SignupPage() {
+// DEMO MODE: no backend. "Signing up" signs you in with the route's role
+// (/signup → Field Agent, /signup/agent → Admin Agent, /signup/feedops → Feed Ops).
+export function SignupCard({ role }: { role: Exclude<UserRole, "system_admin"> }) {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("field_agent");
   const [touched, setTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -71,12 +58,11 @@ function SignupPage() {
   return (
     <AuthLayout>
       <div className={meta.accent.scope ?? ""}>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create your account</h1>
+        <PortalBadge role={role} />
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Create your account</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">Set up your workspace in under a minute.</p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
-          <RolePicker roles={SIGNUP_ROLE_OPTIONS} value={role} onChange={setRole} legend="I'm joining as" disabled={submitting} />
-
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field id="firstName" label="First name" error={errors.firstName}>
               <input
@@ -146,7 +132,7 @@ function SignupPage() {
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link to="/login/agent" className="rounded font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Link to={ROLE_LOGIN[role]} className="rounded font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Sign in
           </Link>
         </p>

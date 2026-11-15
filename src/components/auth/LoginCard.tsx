@@ -2,11 +2,9 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useAuth, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth/AuthContext";
-import { ROLE_HOME, type UserRole } from "@/lib/auth/types";
+import { ROLE_HOME, ROLE_SIGNUP, type UserRole } from "@/lib/auth/types";
 import { AuthLayout } from "./AuthLayout";
-import { Field, FormAlert, PasswordInput, ROLE_META, RolePicker, inputClass } from "./fields";
-
-const ALL_ROLES: UserRole[] = ["field_agent", "admin_agent", "feedops", "system_admin"];
+import { Field, FormAlert, PasswordInput, PortalBadge, ROLE_META, inputClass } from "./fields";
 
 /** Sample credentials per role for the "fill demo account" shortcut. */
 const DEMO_EMAIL: Record<UserRole, string> = {
@@ -18,10 +16,10 @@ const DEMO_EMAIL: Record<UserRole, string> = {
 const DEMO_PASSWORD = "demo1234";
 
 // DEMO MODE: email + password are validated locally only (see AuthContext).
-export function LoginCard({ defaultRole = "field_agent" }: { defaultRole?: UserRole }) {
+// The role comes from the route (/login, /login/agent, /login/feedops, /login/admin).
+export function LoginCard({ role }: { role: UserRole }) {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [role, setRole] = useState<UserRole>(defaultRole);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [touched, setTouched] = useState(false);
@@ -67,12 +65,11 @@ export function LoginCard({ defaultRole = "field_agent" }: { defaultRole?: UserR
   return (
     <AuthLayout>
       <div className={meta.accent.scope ?? ""}>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h1>
+        <PortalBadge role={role} />
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Welcome back</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">Sign in to your IntelliFeed360 workspace.</p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
-          <RolePicker roles={ALL_ROLES} value={role} onChange={setRole} disabled={submitting} />
-
           <Field id="email" label="Email" error={emailError}>
             <input
               id="email"
@@ -129,7 +126,7 @@ export function LoginCard({ defaultRole = "field_agent" }: { defaultRole?: UserR
               </>
             ) : (
               <>
-                Sign in as {meta.label}
+                Sign in
                 <ArrowRight className="h-4 w-4 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5" aria-hidden="true" />
               </>
             )}
@@ -156,12 +153,14 @@ export function LoginCard({ defaultRole = "field_agent" }: { defaultRole?: UserR
           </div>
         </div>
 
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          New to IntelliFeed360?{" "}
-          <Link to="/signup" className="rounded font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            Create an account
-          </Link>
-        </p>
+        {ROLE_SIGNUP[role] && (
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            New to IntelliFeed360?{" "}
+            <Link to={ROLE_SIGNUP[role]} className="rounded font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              Create an account
+            </Link>
+          </p>
+        )}
       </div>
     </AuthLayout>
   );

@@ -6,6 +6,7 @@ export function isPublicPath(pathname: string): boolean {
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
     pathname === "/signup" ||
+    pathname.startsWith("/signup/") ||
     pathname === "/forgot-password"
   );
 }
@@ -27,9 +28,10 @@ export function portalForPath(pathname: string): PortalId {
       return "admin";
     case "feedops":
       return "feedops";
-    case "field_agent":
     case "admin_agent":
-    default:
       return "agent";
+    case "field_agent":
+    default:
+      return "field";
   }
 }
