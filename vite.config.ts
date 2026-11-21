@@ -1,4 +1,4 @@
-import { defineConfig, type PluginOption } from "vite";
+import { defineConfig, loadEnv, type PluginOption } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -9,6 +9,10 @@ export default defineConfig(({ command, mode }) => {
   const isBuild = command === "build";
   // `npm run build:dev` (vite build --mode development): unminified-name dev build.
   const isDevBuild = isBuild && mode === "development";
+  // Dev only: backend that /api is forwarded to (see `server.proxy` below).
+  const apiTarget =
+    loadEnv(mode, process.cwd(), "").VITE_API_PROXY_TARGET ||
+    "https://api-testing-intellifeed360.onrender.com";
 
   const plugins: PluginOption[] = [
     tailwindcss(),
@@ -51,6 +55,27 @@ export default defineConfig(({ command, mode }) => {
     server: {
       host: "::",
       port: 8080,
+      // The backend's dashboard login uses a SameSite=Lax session cookie, which
+      // browsers won't send from localhost to another site. Forwarding /api
+      // through this dev server makes the cookie first-party. Origin/Referer are
+      // rewritten to the backend's own address so Django's CSRF origin check
+      // passes. Deployed builds call VITE_API_BASE_URL directly instead.
+      proxy: {
+        "/api": {
+          target: apiTarget,
+          changeOrigin: true,
+          cookieDomainRewrite: "",
+          configure(proxy) {
+            proxy.on("proxyReq", (proxyReq) => {
+              if (proxyReq.getHeader("origin")) proxyReq.setHeader("origin", apiTarget);
+              const referer = proxyReq.getHeader("referer");
+              if (typeof referer === "string") {
+                proxyReq.setHeader("referer", `${apiTarget}${new URL(referer).pathname}`);
+              }
+            });
+          },
+        },
+      },
     },
     resolve: {
       // Guard against duplicate React / TanStack Query copies in the bundle.
