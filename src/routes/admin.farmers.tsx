@@ -13,7 +13,7 @@ import { useAction, useRefresh } from "@/components/data/useAction";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { relativeTime } from "@/lib/dashboard/queries";
-import { audit, listFarmers, listUsers, staffNamer, updateRow, useActorName } from "@/lib/ops/api";
+import { audit, hasPortalRole, IS_API, listFarmers, listUsers, staffNamer, updateRow, useActorName } from "@/lib/ops/api";
 import { REGION_OPTIONS } from "@/lib/ops/people";
 
 export const Route = createFileRoute("/admin/farmers")({
@@ -36,7 +36,7 @@ function AdminFarmersPage() {
   const data = q.data ?? [];
   const agentName = staffNamer(users.data ?? [], me);
   const agentOptions = (users.data ?? [])
-    .filter((u) => u.role === "field_agent" && u.status === "active")
+    .filter((u) => hasPortalRole(u, "field_agent") && u.status === "active")
     .map((u) => ({ value: u.id as string, label: `${u.name} · ${u.region}` }));
   const openCases = (r: Row) =>
     (r.health_cases ?? []).filter((c: Row) => c.status !== "resolved").length;
@@ -258,14 +258,15 @@ function AdminFarmersPage() {
             required: true,
             full: true,
           },
-          {
+          // The backend has no farmer region; a farm's state comes from the farmer app.
+          ...(IS_API ? [] : [{
             name: "region",
             label: "Region",
-            type: "select",
+            type: "select" as const,
             options: REGION_OPTIONS.filter((o) => o.value !== "HQ"),
             required: true,
             full: true,
-          },
+          }]),
         ]}
         onSubmit={async (v) => {
           const r = editing!;

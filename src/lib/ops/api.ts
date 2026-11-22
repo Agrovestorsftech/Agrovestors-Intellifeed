@@ -3,6 +3,7 @@ import { mockDb as db } from "@/lib/mock/db";
 import { useQuery } from "@tanstack/react-query";
 import { AUTH_MODE, useAuth } from "@/lib/auth/AuthContext";
 import * as be from "./backend";
+import * as adminBe from "@/lib/admin/backend";
 
 /** api mode: FeedOps data comes from the backend (./backend.ts). */
 export const IS_API = AUTH_MODE === "api";
@@ -28,9 +29,9 @@ export const BAG_KG = 25;
 /* --------------------------------- lookups --------------------------------- */
 
 export const listProducts = () => IS_API ? be.listProducts() : rows(db.from("feed_products").select("*").order("name"));
-export const listUsers = () => rows(db.from("users").select("*").order("name"));
+export const listUsers = () => (IS_API ? adminBe.listUsers() : rows(db.from("users").select("*").order("name")));
 export const listFarmers = () =>
-  rows(db.from("farmers").select("*, visit_reports(id), health_cases(status)").order("name"));
+  IS_API ? adminBe.listFarmers() : rows(db.from("farmers").select("*, visit_reports(id), health_cases(status)").order("name"));
 
 /* --------------------------------- inventory -------------------------------- */
 
@@ -328,7 +329,7 @@ export const cancelTransfer = (id: string) =>
 
 /* ----------------------------------- admin ---------------------------------- */
 
-export const listRoles = () => rows(db.from("roles").select("*").order("created_at"));
+export const listRoles = () => (IS_API ? adminBe.listRoles() : rows(db.from("roles").select("*").order("created_at")));
 export const listInvoices = () =>
   rows(db.from("invoices").select("*").order("issued_at", { ascending: false }));
 export const listSystemLogs = () =>
@@ -336,26 +337,26 @@ export const listSystemLogs = () =>
 export const listAuditEvents = () =>
   rows(db.from("audit_events").select("*").order("created_at", { ascending: false }));
 export const listTickets = () =>
-  rows(db.from("support_tickets").select("*").order("created_at", { ascending: false }));
+  IS_API ? adminBe.listTickets() : rows(db.from("support_tickets").select("*").order("created_at", { ascending: false }));
 
 /* ------------------------------ field & clinical ------------------------------ */
 
 export const listVisits = () =>
-  rows(
+  IS_API ? adminBe.listVisits() : rows(
     db
       .from("visit_reports")
       .select("*, farmers(name, region)")
       .order("submitted_at", { ascending: false }),
   );
 export const listHealthCases = () =>
-  rows(
+  IS_API ? Promise.resolve([] as Row[]) : rows(
     db
       .from("health_cases")
       .select("*, farmers(name, region)")
       .order("created_at", { ascending: false }),
   );
 export const listNutritionPlans = () =>
-  rows(db.from("nutrition_plans").select("*").order("created_at", { ascending: false }));
+  IS_API ? Promise.resolve([] as Row[]) : rows(db.from("nutrition_plans").select("*").order("created_at", { ascending: false }));
 
 /** id → display name for staff, with a label for the demo account (seed rows bound to whoever signed in). */
 export function staffNamer(users: Row[], me?: { id: string; name: string } | null) {
@@ -365,9 +366,9 @@ export function staffNamer(users: Row[], me?: { id: string; name: string } | nul
 }
 
 export const updateRow = (table: string, id: string, patch: Row) =>
-  run(db.from(table).update(patch).eq("id", id));
-export const insertRow = (table: string, row: Row) => run(db.from(table).insert(row));
-export const deleteRow = (table: string, id: string) => run(db.from(table).delete().eq("id", id));
+  IS_API ? adminBe.updateRow(table, id, patch) : run(db.from(table).update(patch).eq("id", id));
+export const insertRow = (table: string, row: Row) => IS_API ? adminBe.insertRow(table, row) : run(db.from(table).insert(row));
+export const deleteRow = (table: string, id: string) => IS_API ? adminBe.deleteRow(table, id) : run(db.from(table).delete().eq("id", id));
 
 /** Record an admin action in the audit trail and system log. */
 export async function audit(
@@ -377,6 +378,7 @@ export async function audit(
   target: string,
   change?: { field: string; from: unknown; to: unknown },
 ) {
+  if (IS_API) return;
   await insertRow("audit_events", {
     actor_name: actor,
     action,
@@ -429,6 +431,20 @@ export const dateTime = (iso: string | null | undefined) =>
         minute: "2-digit",
       })
     : "—";
+
+/** Whether a user row belongs to a dashboard portal role. Demo rows use the
+ * portal keys; api rows use backend roles (admin agents are nutritionists
+ * or vets). */
+const PORTAL_BACKEND_ROLES: Record<string, string[]> = {
+  system_admin: ["admin", "super_admin"],
+  field_agent: ["agent"],
+  admin_agent: ["nutritionist", "veterinarian"],
+  feedops: ["feedops"],
+};
+
+export function hasPortalRole(user: Row, portalRole: string): boolean {
+  return IS_API ? (PORTAL_BACKEND_ROLES[portalRole] ?? [portalRole]).includes(user.role) : user.role === portalRole;
+}
 
 export const productOptions = (products: Row[]) =>
   products.map((p) => ({ value: p.id as string, label: `${p.name} (${p.sku})` }));

@@ -4,6 +4,7 @@ import * as supportApi from "@/lib/api/support";
 import * as farmersApi from "@/lib/api/farmers";
 import * as fieldApi from "@/lib/field/data";
 import * as opsBe from "@/lib/ops/backend";
+import * as adminBe from "@/lib/admin/backend";
 
 export type CountResult = number;
 
@@ -20,6 +21,7 @@ async function count(table: string, filter?: (q: Query) => Query): Promise<Count
 /* --------------------------------- Admin --------------------------------- */
 
 export async function fetchAdminKpis() {
+  if (fieldApi.IS_API) return adminBe.fetchAdminKpis();
   const [
     totalFarmers,
     activeFarmers,

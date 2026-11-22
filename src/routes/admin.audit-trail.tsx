@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SampleDataNotice } from "@/components/data/SampleDataNotice";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Download, FilePen, FilePlus2, FileX2, History } from "lucide-react";
 import { PageHeader } from "@/components/data/PageHeader";
@@ -115,6 +116,7 @@ function AuditTrailPage() {
 
   return (
     <>
+      <SampleDataNotice what="an audit trail feed" />
       <PageHeader
         title="Audit Trail"
         subtitle="Who changed what, and when. Every admin action is recorded here."

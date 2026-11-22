@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SampleDataNotice } from "@/components/data/SampleDataNotice";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClock, CreditCard, Download, Receipt, Users, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/data/PageHeader";
@@ -114,6 +115,7 @@ function BillingPage() {
 
   return (
     <>
+      <SampleDataNotice what="subscriptions or billing" />
       <PageHeader
         title="Subscription & Billing"
         subtitle="Your plan, seats, invoices and payment method."

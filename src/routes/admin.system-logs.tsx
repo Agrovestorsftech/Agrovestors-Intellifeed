@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SampleDataNotice } from "@/components/data/SampleDataNotice";
 import { useQuery } from "@tanstack/react-query";
 import { AlertOctagon, AlertTriangle, Download, Info, ScrollText } from "lucide-react";
 import { PageHeader } from "@/components/data/PageHeader";
@@ -95,6 +96,7 @@ function SystemLogsPage() {
 
   return (
     <>
+      <SampleDataNotice what="system logs" />
       <PageHeader
         title="System Logs"
         subtitle="Platform events: sign-ins, data changes, sync and payment errors."
