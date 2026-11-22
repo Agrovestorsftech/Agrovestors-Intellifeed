@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SampleDataNotice } from "@/components/data/SampleDataNotice";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, BookOpen, PlusCircle } from "lucide-react";
@@ -38,6 +39,7 @@ function KnowledgeBasePage() {
 
   return (
     <>
+      <SampleDataNotice what="knowledge articles (it has feed formulas and specifications)" />
       <DashboardHeader title="Knowledge Base" subtitle="Guidelines, protocols, and reference material." />
       <section className="rounded-2xl bg-card border border-border p-4 shadow-sm mb-4 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">

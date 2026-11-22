@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import * as agentApi from "@/lib/agent/data";
+import { IS_API } from "@/lib/field/data";
 import { mockDb as db } from "@/lib/mock/db";
 import { relativeTime } from "@/lib/dashboard/queries";
 
@@ -30,7 +32,9 @@ function NutritionPlansPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["nutrition-plans"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = IS_API
+        ? { data: await agentApi.fetchNutritionPlans(), error: null }
+        : await db
         .from("nutrition_plans")
         .select("id, species, status, effective_from, created_at, plan, farmers(name, farm_name)")
         .order("created_at", { ascending: false })
@@ -42,6 +46,7 @@ function NutritionPlansPage() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      if (IS_API) return agentApi.setPlanStatus(id, status);
       const { error } = await db.from("nutrition_plans").update({ status }).eq("id", id);
       if (error) throw error;
     },
@@ -78,7 +83,7 @@ function NutritionPlansPage() {
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
         </Select>
-        <AddNutritionPlanDialog trigger={<Button><Salad className="h-4 w-4 mr-2" />New plan</Button>} />
+        {!IS_API && <AddNutritionPlanDialog trigger={<Button><Salad className="h-4 w-4 mr-2" />New plan</Button>} />}
       </section>
 
       <section className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">

@@ -5,6 +5,7 @@ import * as farmersApi from "@/lib/api/farmers";
 import * as fieldApi from "@/lib/field/data";
 import * as opsBe from "@/lib/ops/backend";
 import * as adminBe from "@/lib/admin/backend";
+import * as agentApi from "@/lib/agent/data";
 
 export type CountResult = number;
 
@@ -93,6 +94,7 @@ export async function fetchPlatformSeries(days = 7) {
 /* --------------------------------- Agent (Admin Agent) --------------------------------- */
 
 export async function fetchAgentKpis() {
+  if (fieldApi.IS_API) return agentApi.fetchAgentKpis();
   const [activeFarms, plans, cases, tasks, reports] = await Promise.all([
     count("farmers", (q) => q.eq("status", "active")),
     count("nutrition_plans", (q) => q.eq("status", "active")),
@@ -114,7 +116,9 @@ export type ReportRow = {
 };
 
 export async function fetchPendingReports(limit = 8): Promise<ReportRow[]> {
-  const { data, error } = await db
+  const { data, error } = fieldApi.IS_API
+    ? { data: (await agentApi.fetchReviewReports()).filter((r) => r.status === "pending").slice(0, limit), error: null }
+    : await db
     .from("visit_reports")
     .select("id, species, priority, status, submitted_at, farmers(name, farm_name)")
     .in("status", ["pending", "under_review"])
@@ -133,7 +137,9 @@ export async function fetchPendingReports(limit = 8): Promise<ReportRow[]> {
 }
 
 export async function fetchFarmerHealth(limit = 8) {
-  const { data, error } = await db
+  const { data, error } = fieldApi.IS_API
+    ? { data: (await agentApi.fetchFarmerReviews()).slice(0, limit), error: null }
+    : await db
     .from("farmers")
     .select("id, farm_name, livestock_type, updated_at, health_cases(severity, status)")
     .order("updated_at", { ascending: false })
@@ -155,7 +161,12 @@ export async function fetchFarmerHealth(limit = 8) {
 }
 
 export async function fetchCriticalAlerts(limit = 6) {
-  const { data, error } = await db
+  const { data, error } = fieldApi.IS_API
+    ? {
+        data: (await agentApi.fetchHealthSignals()).filter((s) => s.status !== "resolved" && s.severity === "high").slice(0, limit),
+        error: null,
+      }
+    : await db
     .from("health_cases")
     .select("id, severity, status, diagnosis, created_at, farmers(farm_name)")
     .neq("status", "resolved")
@@ -172,6 +183,7 @@ export async function fetchCriticalAlerts(limit = 6) {
 }
 
 export async function fetchKnowledgeArticles(limit = 6) {
+  if (fieldApi.IS_API) return [];
   return knowledgeApi.listArticles({ limit });
 }
 

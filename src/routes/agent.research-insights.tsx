@@ -5,6 +5,8 @@ import {
   Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import * as agentApi from "@/lib/agent/data";
+import { IS_API } from "@/lib/field/data";
 import { mockDb as db } from "@/lib/mock/db";
 
 export const Route = createFileRoute("/agent/research-insights")({ component: ResearchInsightsPage });
@@ -21,7 +23,9 @@ function ResearchInsightsPage() {
   const severityQuery = useQuery({
     queryKey: ["research-severity"],
     queryFn: async () => {
-      const { data, error } = await db.from("health_cases").select("severity");
+      const { data, error } = IS_API
+        ? { data: (await agentApi.fetchInsightInputs()).severities, error: null }
+        : await db.from("health_cases").select("severity");
       if (error) throw error;
       const counts: Record<string, number> = { low: 0, medium: 0, high: 0, critical: 0 };
       for (const r of data ?? []) counts[r.severity] = (counts[r.severity] ?? 0) + 1;
@@ -32,7 +36,9 @@ function ResearchInsightsPage() {
   const speciesQuery = useQuery({
     queryKey: ["research-species"],
     queryFn: async () => {
-      const { data, error } = await db.from("farmers").select("livestock_type");
+      const { data, error } = IS_API
+        ? { data: (await agentApi.fetchInsightInputs()).livestock, error: null }
+        : await db.from("farmers").select("livestock_type");
       if (error) throw error;
       const counts: Record<string, number> = {};
       for (const r of data ?? []) {
@@ -46,7 +52,9 @@ function ResearchInsightsPage() {
   const planStatusQuery = useQuery({
     queryKey: ["research-plan-status"],
     queryFn: async () => {
-      const { data, error } = await db.from("nutrition_plans").select("status");
+      const { data, error } = IS_API
+        ? { data: (await agentApi.fetchInsightInputs()).planStatuses, error: null }
+        : await db.from("nutrition_plans").select("status");
       if (error) throw error;
       const counts: Record<string, number> = { draft: 0, active: 0, archived: 0 };
       for (const r of data ?? []) counts[r.status] = (counts[r.status] ?? 0) + 1;

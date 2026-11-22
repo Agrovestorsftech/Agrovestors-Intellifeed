@@ -5,6 +5,8 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { OpenTicketDialog } from "@/components/field/dialogs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import * as agentApi from "@/lib/agent/data";
+import { IS_API } from "@/lib/field/data";
 import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { relativeTime } from "@/lib/dashboard/queries";
@@ -24,7 +26,9 @@ function AgentSupportPage() {
     queryKey: ["my-tickets", session?.user.id],
     enabled: !!session?.user.id,
     queryFn: async () => {
-      const { data, error } = await db.from("support_tickets")
+      const { data, error } = IS_API
+        ? { data: await agentApi.fetchMyTickets(session!.user.id), error: null }
+        : await db.from("support_tickets")
         .select("id, subject, status, priority, created_at")
         .eq("opened_by", session!.user.id).order("created_at", { ascending: false });
       if (error) throw error;
