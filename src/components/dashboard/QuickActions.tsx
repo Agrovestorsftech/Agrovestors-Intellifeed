@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AddFarmerDialog, AddReportDialog, CreateOrderDialog, OpenTicketDialog } from "@/components/field/dialogs";
+import { IS_API } from "@/lib/field/data";
 
 type Tone = "primary" | "info" | "warning" | "destructive" | "accent";
 
@@ -39,12 +40,13 @@ export function QuickActions() {
           </button>
         } />
 
-        <AddFarmerDialog trigger={
+        {/* Farmers register in the farmer app; the dashboard can't add them on the backend. */}
+        {!IS_API && <AddFarmerDialog trigger={
           <button className="group flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-3 py-5 hover:border-primary/40 hover:bg-primary-soft/40 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
             <span className={`h-12 w-12 grid place-items-center rounded-2xl ${toneStyles.accent} group-hover:scale-110 transition-transform`}><UserPlus className="h-5 w-5" /></span>
             <span className="text-sm font-medium">Add Farmer</span>
           </button>
-        } />
+        } />}
 
         <CreateOrderDialog trigger={
           <button className="group flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-3 py-5 hover:border-primary/40 hover:bg-primary-soft/40 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">

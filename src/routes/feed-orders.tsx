@@ -29,11 +29,7 @@ function FeedOrdersPage() {
     <>
       <DashboardHeader title="Feed Orders" subtitle={IS_API ? "Feed orders for the farms assigned to you." : "Feed requests raised for the farmers you support."} />
       <section className="rounded-2xl bg-card border border-border p-4 mb-4 flex justify-end">
-        {IS_API ? (
-          <p className="text-sm text-muted-foreground">Placing orders for farmers isn't available on the live system yet.</p>
-        ) : (
-          <CreateOrderDialog trigger={<Button>New order</Button>} />
-        )}
+        <CreateOrderDialog trigger={<Button>New order</Button>} />
       </section>
       <section className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
         {isError ? (
