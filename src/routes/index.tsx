@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { IS_API } from "@/lib/field/data";
 import { useFieldKpis } from "@/hooks/useDashboard";
 import { TodaysSchedule } from "@/components/dashboard/TodaysSchedule";
 import { VisitSummary } from "@/components/dashboard/VisitSummary";
@@ -35,7 +36,7 @@ function DashboardPage() {
         <StatCard title="Completed" value={data?.completedThisWeek ?? 0} description="This week" icon={CheckCircle2} tone="accent" loading={isLoading} error={isError} />
         <StatCard title="Pending Reports" value={data?.pendingReports ?? 0} description="Awaiting review" icon={Clock} tone="warning" loading={isLoading} error={isError} />
         <StatCard title="Assigned Farmers" value={data?.assigned ?? 0} description="Total farmers" icon={FileText} tone="info" loading={isLoading} error={isError} />
-        <StatCard title="Urgent Alerts" value={data?.urgentAlerts ?? 0} description="Critical/high" icon={Mail} tone="destructive" loading={isLoading} error={isError} />
+        <StatCard title="Urgent Alerts" value={data?.urgentAlerts ?? 0} description={IS_API ? "Flagged farmer reports" : "Critical/high"} icon={Mail} tone="destructive" loading={isLoading} error={isError} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">

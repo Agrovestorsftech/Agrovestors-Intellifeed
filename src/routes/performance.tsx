@@ -126,9 +126,9 @@ function PerformancePage() {
           icon={BadgeCheck}
           tone="bg-success-soft text-success"
           label="Report approval"
-          value={`${data?.approvalRate ?? 0}%`}
+          value={data && data.approvalRate === null ? "—" : `${data?.approvalRate ?? 0}%`}
           loading={isLoading}
-          foot={`Of ${data?.reviewedCount ?? 0} reviewed reports`}
+          foot={data && data.approvalRate === null ? "Visits aren't reviewed on the live system" : `Of ${data?.reviewedCount ?? 0} reviewed reports`}
         />
         <Stat
           icon={MapPinned}
