@@ -554,8 +554,9 @@ export function relativeTime(iso: string | null | undefined): string {
   return new Date(iso).toLocaleDateString();
 }
 
-export function formatOrderStatus(s: string): "Pending" | "Processing" | "Out for Delivery" | "Delivered" {
+export function formatOrderStatus(s: string): "Pending" | "Processing" | "Out for Delivery" | "Delivered" | "Cancelled" {
   const key = s.toLowerCase();
+  if (key === "cancelled" || key === "canceled") return "Cancelled";
   if (key === "pending" || key === "placed") return "Pending";
   if (key === "processing") return "Processing";
   if (key === "out_for_delivery" || key === "out for delivery") return "Out for Delivery";

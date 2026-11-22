@@ -408,3 +408,84 @@ export async function fetchFarmerRows(currentUserId?: string): Promise<FarmerRow
     assigned_agent_id: currentUserId ?? null,
   }));
 }
+
+// --- Feed orders --------------------------------------------------------------
+// GET /products/orders/ returns orders on the agent's assigned farms. The list
+// has no line items, so details are fetched for the most recent orders shown.
+// Agents can't place orders yet: the backend gives them view/fulfil rights
+// only (see the dashboard backend requirements).
+
+interface ApiOrderListItem {
+  id: string;
+  order_code: string;
+  farm?: { id: string; name: string } | null;
+  status: string;
+  order_date: string;
+  total_ngn: string;
+  created_at: string;
+}
+
+interface ApiOrderDetail extends ApiOrderListItem {
+  items: { product: { name: string; bag_size_kg: string } | null; quantity_bags: number }[];
+}
+
+export interface OrderRow {
+  id: string;
+  order_no: string;
+  quantity: number | string;
+  status: string;
+  placed_at: string;
+  farmers: { farm_name: string | null } | null;
+  feed_products: { name: string | null; unit: string | null } | null;
+}
+
+/** Backend order status -> the status words the page already understands. */
+const ORDER_STATUS: Record<string, string> = {
+  draft: "pending",
+  placed: "pending",
+  confirmed: "processing",
+  dispatched: "out_for_delivery",
+  delivered: "delivered",
+  cancelled: "cancelled",
+};
+
+const MAX_ORDER_DETAILS = 20;
+
+export async function fetchMyOrderRows(userId: string): Promise<OrderRow[]> {
+  if (!IS_API) {
+    const { data, error } = await db
+      .from("feed_orders")
+      .select(
+        "id, order_no, quantity, status, placed_at, farmers(name, farm_name), feed_products(name, unit)",
+      )
+      .eq("agent_id", userId)
+      .order("placed_at", { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    return (data ?? []) as OrderRow[];
+  }
+
+  const page = await api.get<Page<ApiOrderListItem>>(
+    `/products/orders/?page_size=${MAX_ORDER_DETAILS}`,
+  );
+  const details = await Promise.all(
+    page.results.map((o) => api.get<ApiOrderDetail>(`/products/orders/${o.id}/`).catch(() => null)),
+  );
+  return page.results.map((o, i) => {
+    const items = details[i]?.items ?? [];
+    const first = items[0]?.product?.name ?? null;
+    const bags = items.reduce((n, it) => n + (it.quantity_bags ?? 0), 0);
+    return {
+      id: o.id,
+      order_no: o.order_code,
+      quantity: details[i] ? bags : "—",
+      status: ORDER_STATUS[o.status] ?? o.status,
+      placed_at: o.created_at,
+      farmers: { farm_name: o.farm?.name ?? null },
+      feed_products: {
+        name: first ? (items.length > 1 ? `${first} +${items.length - 1} more` : first) : null,
+        unit: details[i] ? "bags" : "",
+      },
+    };
+  });
+}
