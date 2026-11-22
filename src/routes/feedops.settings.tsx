@@ -4,7 +4,7 @@ import { SaveBar, SettingRow, SettingsSection, useStoredSettings } from "@/compo
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { QC_LIMITS, WAREHOUSES } from "@/lib/ops/api";
+import { QC_LIMITS, WAREHOUSES, useWarehouses } from "@/lib/ops/api";
 
 export const Route = createFileRoute("/feedops/settings")({
   head: () => ({ meta: [{ title: "FeedOps Settings — IntelliFeed360" }] }),
@@ -26,6 +26,7 @@ const DEFAULTS = {
 };
 
 function FeedOpsSettingsPage() {
+  const warehouses = useWarehouses();
   const s = useStoredSettings("feedops", DEFAULTS);
   const d = s.draft;
   return (
@@ -39,7 +40,7 @@ function FeedOpsSettingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {WAREHOUSES.map((w) => (
+                {warehouses.map((w) => (
                   <SelectItem key={w} value={w}>
                     {w}
                   </SelectItem>

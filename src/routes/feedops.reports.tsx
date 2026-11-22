@@ -8,7 +8,7 @@ import { downloadCsv } from "@/components/data/csv";
 import { humanize } from "@/components/data/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { listInventory, listOrders, listProduction, naira, WAREHOUSES } from "@/lib/ops/api";
+import { listInventory, listOrders, listProduction, naira, useWarehouses } from "@/lib/ops/api";
 
 export const Route = createFileRoute("/feedops/reports")({
   head: () => ({ meta: [{ title: "FeedOps Reports — IntelliFeed360" }] }),
@@ -23,6 +23,7 @@ function weekStart(d: Date) {
 }
 
 function FeedOpsReportsPage() {
+  const WAREHOUSES = useWarehouses();
   const [weeks, setWeeks] = useState(8);
   const prod = useQuery({ queryKey: ["ops-production"], queryFn: listProduction });
   const orders = useQuery({ queryKey: ["ops-orders"], queryFn: listOrders });

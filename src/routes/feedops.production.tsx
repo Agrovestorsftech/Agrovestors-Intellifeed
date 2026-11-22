@@ -10,7 +10,7 @@ import { StatCards } from "@/components/data/StatCards";
 import { StatusBadge } from "@/components/data/StatusBadge";
 import { useAction, useRefresh } from "@/components/data/useAction";
 import { Button } from "@/components/ui/button";
-import { BAG_KG, cancelBatch, completeBatch, dateTime, listProduction, startBatch, warehouseOptions } from "@/lib/ops/api";
+import { BAG_KG, cancelBatch, completeBatch, dateTime, IS_API, listProduction, startBatch, useWarehouseOptions } from "@/lib/ops/api";
 
 export const Route = createFileRoute("/feedops/production")({
   head: () => ({ meta: [{ title: "Feed Production — IntelliFeed360" }] }),
@@ -23,6 +23,7 @@ function ProductionPage() {
   const act = useAction();
   const refresh = useRefresh();
   const q = useQuery({ queryKey: ["ops-production"], queryFn: listProduction });
+  const warehouseOptions = useWarehouseOptions();
   const [completing, setCompleting] = useState<Row | null>(null);
   const data = q.data ?? [];
 
@@ -95,12 +96,14 @@ function ProductionPage() {
         title={`Complete ${completing?.batch_no ?? "batch"}`}
         description={
           completing
-            ? `${Math.round(Number(completing.quantity) / BAG_KG).toLocaleString()} bags of ${completing.feed_products?.name} will be added to stock and a quality check queued.`
+            ? IS_API
+              ? `${Number(completing.bags).toLocaleString()} bags of ${completing.feed_products?.name} go to ${completing.warehouse} once they pass a quality check.`
+              : `${Math.round(Number(completing.quantity) / BAG_KG).toLocaleString()} bags of ${completing.feed_products?.name} will be added to stock and a quality check queued.`
             : undefined
         }
         submitLabel="Complete batch"
-        successMessage="Batch completed and bagged into stock"
-        fields={[{ name: "warehouse", label: "Store in", type: "select", options: warehouseOptions, required: true }]}
+        successMessage={IS_API ? "Batch completed — record its quality check" : "Batch completed and bagged into stock"}
+        fields={IS_API ? [] : [{ name: "warehouse", label: "Store in", type: "select", options: warehouseOptions, required: true }]}
         onSubmit={async (v) => {
           await completeBatch(completing!, v.warehouse);
           await refresh();

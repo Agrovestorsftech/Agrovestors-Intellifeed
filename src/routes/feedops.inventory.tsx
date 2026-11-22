@@ -19,8 +19,8 @@ import {
   requestTransfer,
   setReorderLevel,
   stockStatus,
-  warehouseOptions,
-  WAREHOUSES,
+  useWarehouseOptions,
+  useWarehouses,
 } from "@/lib/ops/api";
 import { useAuth } from "@/lib/auth/AuthContext";
 
@@ -37,6 +37,8 @@ function InventoryPage() {
   const me = useAuth().session?.user.name ?? "FeedOps";
   const inv = useQuery({ queryKey: ["ops-inventory"], queryFn: listInventory });
   const products = useQuery({ queryKey: ["ops-products"], queryFn: listProducts });
+  const warehouses = useWarehouses();
+  const warehouseOptions = useWarehouseOptions();
   const [dialog, setDialog] = useState<Dialog>(null);
 
   const data = inv.data ?? [];
@@ -96,7 +98,7 @@ function InventoryPage() {
       <StatCards
         loading={inv.isLoading}
         stats={[
-          { label: "Bags on hand", value: units.toLocaleString(), hint: `${WAREHOUSES.length} warehouses`, icon: Boxes, tone: "primary" },
+          { label: "Bags on hand", value: units.toLocaleString(), hint: `${warehouses.length} warehouses`, icon: Boxes, tone: "primary" },
           { label: "Stock value", value: naira(value), hint: "At current list price", icon: Wallet, tone: "info" },
           { label: "Low stock", value: low, hint: "At or below reorder level", icon: AlertTriangle, tone: "warning" },
           { label: "Out of stock", value: out, hint: "Needs production or transfer", icon: PackageX, tone: "destructive" },
@@ -178,7 +180,7 @@ function InventoryPage() {
           await requestTransfer({
             product_id: r.product_id,
             from_warehouse: r.warehouse,
-            to_warehouse: WAREHOUSES.find((w) => w !== r.warehouse)!,
+            to_warehouse: warehouses.find((w) => w !== r.warehouse) ?? "",
             quantity: Number(v.quantity),
             requested_by: me,
           });
