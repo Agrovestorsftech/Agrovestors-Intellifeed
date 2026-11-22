@@ -4,7 +4,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { AddReportDialog } from "@/components/field/dialogs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockDb as db } from "@/lib/mock/db";
+import { IS_API, fetchMyVisitRows } from "@/lib/field/data";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 export const Route = createFileRoute("/farm-visits")({ component: FarmVisitsPage });
@@ -14,18 +14,12 @@ function FarmVisitsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["farm-visits", session?.user.id],
     enabled: !!session?.user.id,
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("visit_reports")
-        .select("id, species, priority, status, summary, submitted_at, farmers(name, farm_name)")
-        .eq("agent_id", session!.user.id)
-        .order("submitted_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: () => fetchMyVisitRows(session!.user.id),
   });
-  const active = (data ?? []).filter((r: any) => r.status === "pending" || r.status === "under_review");
-  const done = (data ?? []).filter((r: any) => r.status === "approved" || r.status === "reviewed");
+  // Demo reports have a review status; backend visits are upcoming or completed by date.
+  const active = (data ?? []).filter((r) => ["pending", "under_review", "upcoming"].includes(r.status));
+  const done = (data ?? []).filter((r) => ["approved", "reviewed", "completed"].includes(r.status));
+  const groupLabels = IS_API ? ["Upcoming", "Completed"] : ["Pending review", "Completed"];
   return (
     <>
       <DashboardHeader title="Farm Visits" subtitle="Inspection reports awaiting review and completed visits." />
@@ -36,7 +30,7 @@ function FarmVisitsPage() {
       {isLoading && <div className="rounded-2xl bg-card border border-border p-6 animate-pulse h-40" />}
       {!isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {[{ label: "Pending review", list: active }, { label: "Completed", list: done }].map((g) => (
+          {[{ label: groupLabels[0], list: active }, { label: groupLabels[1], list: done }].map((g) => (
             <section key={g.label} className="rounded-2xl bg-card border border-border p-6 shadow-sm">
               <h2 className="text-base font-semibold mb-3">{g.label}</h2>
               {g.list.length === 0 ? <p className="text-sm text-muted-foreground">Nothing here.</p> : (

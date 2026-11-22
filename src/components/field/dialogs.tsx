@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { IS_API, VISIT_TYPE_LABEL, createVisit, fetchMyFarms, type VisitType } from "@/lib/field/data";
 
 /* ------------------------------------------------------------------ */
 /*  Add Farmer                                                         */
@@ -108,7 +109,102 @@ function useMyFarmers() {
   });
 }
 
-export function AddReportDialog({ trigger, presetFarmerId }: { trigger: ReactNode; presetFarmerId?: string }) {
+/** Visit logging: a backend visit in api mode, a demo visit report otherwise.
+ * In api mode `presetFarmerId` is a farm id (the Farmers page lists farms). */
+export function AddReportDialog(props: { trigger: ReactNode; presetFarmerId?: string }) {
+  return IS_API ? <LogVisitDialog trigger={props.trigger} presetFarmId={props.presetFarmerId} /> : <DemoReportDialog {...props} />;
+}
+
+const todayIso = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+function LogVisitDialog({ trigger, presetFarmId }: { trigger: ReactNode; presetFarmId?: string }) {
+  const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+  const farms = useQuery({ queryKey: ["api-my-farms"], queryFn: fetchMyFarms, enabled: open });
+  const empty = { farmId: presetFarmId ?? "", visitType: "physical" as VisitType, visitDate: todayIso(), summary: "", nextVisitDate: "" };
+  const [form, setForm] = useState(empty);
+  const ready = !!form.farmId && !!form.visitDate && !!form.summary.trim();
+
+  const m = useMutation({
+    mutationFn: () => createVisit(form),
+    onSuccess: () => {
+      toast.success("Visit logged");
+      for (const key of ["my-visits", "farm-visits", "field-kpis", "todays-schedule"]) {
+        qc.invalidateQueries({ queryKey: [key] });
+      }
+      setForm(empty);
+      setOpen(false);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Couldn't log the visit"),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Log a farm visit</DialogTitle>
+          <DialogDescription>Record a visit to one of your assigned farms.</DialogDescription>
+        </DialogHeader>
+        <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (ready) m.mutate(); }}>
+          <div>
+            <Label htmlFor="visit-farm">Farm *</Label>
+            <Select value={form.farmId} onValueChange={(v) => setForm({ ...form, farmId: v })}>
+              <SelectTrigger id="visit-farm">
+                <SelectValue placeholder={farms.isLoading ? "Loading your farms…" : "Choose a farm"} />
+              </SelectTrigger>
+              <SelectContent>
+                {(farms.data ?? []).map((f) => (
+                  <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {farms.isSuccess && farms.data.length === 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">No farms are assigned to you yet. Ask an administrator to assign one.</p>
+            )}
+            {farms.isError && <p className="mt-1 text-xs text-destructive">Couldn't load your farms. Close this and try again.</p>}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="visit-type">Visit type</Label>
+              <Select value={form.visitType} onValueChange={(v) => setForm({ ...form, visitType: v as VisitType })}>
+                <SelectTrigger id="visit-type"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(VISIT_TYPE_LABEL) as VisitType[]).map((t) => (
+                    <SelectItem key={t} value={t}>{VISIT_TYPE_LABEL[t]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="visit-date">Visit date *</Label>
+              <Input id="visit-date" type="date" required value={form.visitDate} onChange={(e) => setForm({ ...form, visitDate: e.target.value })} />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="visit-summary">Summary *</Label>
+            <Textarea id="visit-summary" rows={4} required value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="What you checked, animal condition, advice given…" />
+          </div>
+          <div>
+            <Label htmlFor="visit-next">Next visit</Label>
+            <Input id="visit-next" type="date" min={form.visitDate} value={form.nextVisitDate} onChange={(e) => setForm({ ...form, nextVisitDate: e.target.value })} />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={m.isPending || !ready}>
+              {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Log visit
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DemoReportDialog({ trigger, presetFarmerId }: { trigger: ReactNode; presetFarmerId?: string }) {
   const [open, setOpen] = useState(false);
   const { session } = useAuth();
   const qc = useQueryClient();
