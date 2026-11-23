@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CardGridSkeleton, FilterHeaderSkeleton } from "@/components/ui/lazy-loader";
+import * as agentApi from "@/lib/agent/data";
+import { IS_API } from "@/lib/field/data";
 import { mockDb as db } from "@/lib/mock/db";
 import { relativeTime } from "@/lib/dashboard/queries";
 
@@ -25,7 +27,9 @@ function FarmerReviewsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["farmer-reviews"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = IS_API
+        ? { data: await agentApi.fetchFarmerReviews(), error: null }
+        : await db
         .from("farmers")
         .select(`
           id, name, farm_name, region, livestock_type, status, avatar_url, updated_at,
@@ -113,7 +117,7 @@ function FarmerReviewsPage() {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <AddHealthCaseDialog presetFarmerId={f.id} trigger={<Button size="sm" variant="outline" className="w-full">Open health case</Button>} />
+                  {!IS_API && <AddHealthCaseDialog presetFarmerId={f.id} trigger={<Button size="sm" variant="outline" className="w-full">Open health case</Button>} />}
                 </div>
               </article>
             );

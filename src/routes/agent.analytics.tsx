@@ -7,6 +7,8 @@ import { HeartPulse, Salad, ClipboardList, CheckSquare } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { FeedOpsKpiCard as KpiCard } from "@/components/dashboard/FeedOpsKpiCard";
 import { useAgentKpis } from "@/hooks/useDashboard";
+import * as agentApi from "@/lib/agent/data";
+import { IS_API } from "@/lib/field/data";
 import { mockDb as db } from "@/lib/mock/db";
 
 export const Route = createFileRoute("/agent/analytics")({ component: AnalyticsPage });
@@ -19,10 +21,12 @@ function useLast30DaysSeries() {
       since.setDate(since.getDate() - 29);
       since.setHours(0, 0, 0, 0);
 
-      const [{ data: reports, error: e1 }, { data: cases, error: e2 }] = await Promise.all([
-        db.from("visit_reports").select("submitted_at").gte("submitted_at", since.toISOString()),
-        db.from("health_cases").select("created_at").gte("created_at", since.toISOString()),
-      ]);
+      const [{ data: reports, error: e1 }, { data: cases, error: e2 }] = IS_API
+        ? await agentApi.fetchActivityDates().then((d) => [{ data: d.reports, error: null }, { data: d.cases, error: null }])
+        : await Promise.all([
+            db.from("visit_reports").select("submitted_at").gte("submitted_at", since.toISOString()),
+            db.from("health_cases").select("created_at").gte("created_at", since.toISOString()),
+          ]);
       if (e1) throw e1;
       if (e2) throw e2;
 

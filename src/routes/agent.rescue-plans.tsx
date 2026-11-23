@@ -7,6 +7,8 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import * as agentApi from "@/lib/agent/data";
+import { IS_API } from "@/lib/field/data";
 import { mockDb as db } from "@/lib/mock/db";
 import { relativeTime } from "@/lib/dashboard/queries";
 
@@ -30,7 +32,9 @@ function RescuePlansPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["rescue-plans"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = IS_API
+        ? { data: await agentApi.fetchRescuePlans(), error: null }
+        : await db
         .from("health_cases")
         .select("id, severity, status, diagnosis, treatment, created_at, farmers(name, farm_name, livestock_type)")
         .in("severity", ["high", "critical"])
@@ -43,6 +47,7 @@ function RescuePlansPage() {
 
   const saveTreatment = useMutation({
     mutationFn: async ({ id, treatment }: { id: string; treatment: string }) => {
+      if (IS_API) return void (await agentApi.saveRescueTreatment(id, treatment));
       const { error } = await db.from("health_cases").update({ treatment, status: "in_progress" }).eq("id", id);
       if (error) throw error;
     },
@@ -57,6 +62,7 @@ function RescuePlansPage() {
 
   const resolve = useMutation({
     mutationFn: async (id: string) => {
+      if (IS_API) return void (await agentApi.resolveRescue(id));
       const { error } = await db.from("health_cases").update({ status: "resolved" }).eq("id", id);
       if (error) throw error;
     },
