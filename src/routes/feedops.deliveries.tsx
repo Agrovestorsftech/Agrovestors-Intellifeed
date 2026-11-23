@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CalendarClock, CheckCheck, Plus, Truck } from "lucide-react";
 import { useState } from "react";
-import { ChangeDeliveryDateDialog, ScheduleDeliveryDialog } from "@/components/feedops/dialogs";
+import { EditDeliveryDialog, ScheduleDeliveryDialog } from "@/components/feedops/dialogs";
 import { PageHeader } from "@/components/data/PageHeader";
 import { DataTable, type Column } from "@/components/data/DataTable";
 import { StatCards } from "@/components/data/StatCards";
@@ -89,7 +89,7 @@ function DeliveriesPage() {
         rowLabel={(r) => r.order?.order_no ?? "delivery"}
         rowActions={(r) => [
           {
-            label: r.status === "failed" ? "Reschedule" : "Change date",
+            label: r.status === "failed" ? "Reschedule" : "Edit delivery",
             onSelect: () => setEditing(r),
             disabled: r.status !== "scheduled" && r.status !== "failed",
           },
@@ -106,7 +106,7 @@ function DeliveriesPage() {
         ]}
         empty={{ title: "No deliveries yet", hint: "Schedule a confirmed order for delivery.", action: schedule }}
       />
-      <ChangeDeliveryDateDialog delivery={editing} onOpenChange={(o) => !o && setEditing(null)} />
+      <EditDeliveryDialog delivery={editing} onOpenChange={(o) => !o && setEditing(null)} />
     </>
   );
 }

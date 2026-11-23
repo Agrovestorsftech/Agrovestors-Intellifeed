@@ -215,16 +215,37 @@ export async function setDeliveryStatus(d: Row, status: "in_transit" | "delivere
   if (status === "failed") await setOrderStatus(d.order_id, "processing");
 }
 
-/** Change a scheduled delivery's date, or reschedule a failed one (`date` is YYYY-MM-DD). */
-export async function changeDeliveryDate(d: Row, date: string) {
-  if (IS_API) return be.changeDeliveryDate(d, date);
+/** Edit a scheduled delivery's date (and, api mode, depot), or reschedule a
+ * failed one. `date` is YYYY-MM-DD. */
+export async function updateDelivery(d: Row, v: { date: string; warehouse?: string }) {
+  if (IS_API) return be.updateDelivery(d, v);
   await run(
     db
       .from("deliveries")
-      .update({ scheduled_for: new Date(`${date}T09:00:00`).toISOString(), ...(d.status === "failed" ? { status: "scheduled" } : {}) })
+      .update({ scheduled_for: new Date(`${v.date}T09:00:00`).toISOString(), ...(d.status === "failed" ? { status: "scheduled" } : {}) })
       .eq("id", d.id),
   );
   if (d.status === "failed") await setOrderStatus(d.order_id, "out_for_delivery");
+}
+
+/** api mode: why `warehouse` can't send this order's bags (null when it can).
+ * Dispatch takes the bags out of the depot's stock, so this is checked when a
+ * delivery is scheduled or moved, not only when it leaves. */
+export function stockShortfall(
+  items: { product?: string | null; bags: number }[] | undefined,
+  warehouse: string | undefined,
+  inventory: Row[] | undefined,
+): string | null {
+  if (!IS_API || !warehouse || !inventory) return null;
+  const short = (items ?? []).flatMap((i) => {
+    const have = inventory
+      .filter((r) => r.warehouse === warehouse && r.feed_products?.name === i.product)
+      .reduce((n, r) => n + Number(r.quantity ?? 0), 0);
+    return have < i.bags ? [`${i.product}: ${have} of ${i.bags} bags`] : [];
+  });
+  return short.length
+    ? `Not enough stock here (${short.join("; ")}). Pick another depot or transfer stock first.`
+    : null;
 }
 
 /* --------------------------------- suppliers -------------------------------- */

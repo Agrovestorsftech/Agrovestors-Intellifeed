@@ -8,9 +8,9 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { confirmOrder } from "@/lib/ops/backend";
 import {
   BAG_KG,
-  changeDeliveryDate,
   createBatch,
   listDeliveries,
+  listInventory,
   listOrders,
   listProduction,
   listProducts,
@@ -19,6 +19,8 @@ import {
   recordQualityCheck,
   requestTransfer,
   scheduleDelivery,
+  stockShortfall,
+  updateDelivery,
   IS_API,
   useWarehouseOptions,
   useWarehouses,
@@ -73,6 +75,7 @@ export function ScheduleDeliveryDialog({
   const refresh = useRefresh();
   const orders = useQuery({ queryKey: ["ops-orders"], queryFn: listOrders });
   const deliveries = useQuery({ queryKey: ["ops-deliveries"], queryFn: listDeliveries });
+  const inventory = useQuery({ queryKey: ["ops-inventory"], queryFn: listInventory, enabled: IS_API });
   const warehouseOptions = useWarehouseOptions();
   // An order gets one delivery; once it has one, change it on the Deliveries page.
   const scheduled = new Set((deliveries.data ?? []).map((d) => d.order?.id).filter(Boolean));
@@ -109,6 +112,10 @@ export function ScheduleDeliveryDialog({
         // api mode: the order's bags leave this warehouse when the delivery is dispatched.
         ...(IS_API ? [{ name: "warehouse", label: "Dispatch from", type: "select" as const, options: warehouseOptions, required: true, full: true }] : []),
       ]}
+      validate={(v) => ({
+        warehouse:
+          stockShortfall((orders.data ?? []).find((o) => o.id === v.order_id)?.items, v.warehouse, inventory.data) ?? undefined,
+      })}
       onSubmit={async (v) => {
         const order = (orders.data ?? []).find((o) => o.id === v.order_id);
         await scheduleDelivery({ order_id: v.order_id!, driver: v.driver!, vehicle: v.vehicle!, scheduled_for: v.scheduled_for!, region: order?.farmers?.region, warehouse: v.warehouse });
@@ -122,37 +129,47 @@ export function ScheduleDeliveryDialog({
 /** YYYY-MM-DD in the viewer's time zone. */
 const localDate = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 
-/** Change a scheduled delivery's date, or reschedule a failed one. */
-export function ChangeDeliveryDateDialog({
+/** Edit a scheduled delivery's date and depot, or reschedule a failed one
+ * (a failed delivery keeps its depot: the backend fixes it after dispatch). */
+export function EditDeliveryDialog({
   delivery,
   onOpenChange,
 }: {
-  delivery: Parameters<typeof changeDeliveryDate>[0] | null;
+  delivery: Parameters<typeof updateDelivery>[0] | null;
   onOpenChange: (o: boolean) => void;
 }) {
   const refresh = useRefresh();
+  const warehouseOptions = useWarehouseOptions();
+  const inventory = useQuery({ queryKey: ["ops-inventory"], queryFn: listInventory, enabled: IS_API && !!delivery });
   const failed = delivery?.status === "failed";
+  const pickDepot = IS_API && !failed;
   const current = delivery ? localDate(new Date(delivery.scheduled_for)) : "";
   const orderNo = delivery?.order?.order_no ?? "this order";
   return (
     <FormDialog
       open={!!delivery}
       onOpenChange={onOpenChange}
-      title={failed ? "Reschedule delivery" : "Change delivery date"}
+      title={failed ? "Reschedule delivery" : "Edit delivery"}
       description={
         failed
           ? `Pick a new day to try ${orderNo} again. The delivery goes back to Scheduled.`
-          : `Move ${orderNo} to another day. The driver, vehicle and depot stay the same.`
+          : `Change when ${orderNo} goes out${pickDepot ? " and which depot it leaves from" : ""}.`
       }
-      submitLabel={failed ? "Reschedule" : "Save date"}
-      successMessage={failed ? "Delivery rescheduled" : "Delivery date changed"}
-      initialValues={{ date: failed ? "" : current }}
-      fields={[{ name: "date", label: "Delivery date", type: "date", required: true, full: true }]}
+      submitLabel={failed ? "Reschedule" : "Save changes"}
+      successMessage={failed ? "Delivery rescheduled" : "Delivery updated"}
+      initialValues={{ date: failed ? "" : current, ...(pickDepot ? { warehouse: delivery?.warehouse ?? "" } : {}) }}
+      fields={[
+        { name: "date", label: "Delivery date", type: "date", required: true, full: true },
+        ...(pickDepot
+          ? [{ name: "warehouse", label: "Dispatch from", type: "select" as const, options: warehouseOptions, required: true, full: true }]
+          : []),
+      ]}
       validate={(v) => ({
         date: v.date && v.date < localDate(new Date()) ? "Pick today or a later day." : undefined,
+        warehouse: pickDepot ? (stockShortfall(delivery?.order?.items, v.warehouse, inventory.data) ?? undefined) : undefined,
       })}
       onSubmit={async (v) => {
-        await changeDeliveryDate(delivery!, v.date!);
+        await updateDelivery(delivery!, { date: v.date!, warehouse: pickDepot ? v.warehouse : undefined });
         await refresh();
       }}
     />
