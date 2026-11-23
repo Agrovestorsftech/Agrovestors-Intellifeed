@@ -182,3 +182,19 @@ export function unwrapPage<T>(payload: Page<T> | T[]): T[] {
   }
   return payload as T[];
 }
+
+/** Fetch every page of a list. `next` links are absolute, so only the part
+ * after /api/v1 is followed, which keeps dev requests on the proxy. */
+export async function fetchAllPages<T>(path: string, pageSize = 100): Promise<T[]> {
+  const out: T[] = [];
+  let next: string | null = `${path}${path.includes("?") ? "&" : "?"}page_size=${pageSize}`;
+  for (let guard = 0; next && guard < 50; guard++) {
+    const page: Page<T> | T[] = await api.get<Page<T> | T[]>(next);
+    if (Array.isArray(page)) return page;
+    out.push(...page.results);
+    if (!page.next) break;
+    const i = page.next.indexOf("/api/v1");
+    next = i >= 0 ? page.next.slice(i + "/api/v1".length) : null;
+  }
+  return out;
+}

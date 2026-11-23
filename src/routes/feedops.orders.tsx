@@ -9,8 +9,8 @@ import { StatusBadge } from "@/components/data/StatusBadge";
 import { useAction } from "@/components/data/useAction";
 import { Button } from "@/components/ui/button";
 import { downloadCsv } from "@/components/data/csv";
-import { dateTime, listOrders, naira, setOrderStatus } from "@/lib/ops/api";
-import { ScheduleDeliveryDialog } from "@/components/feedops/dialogs";
+import { dateTime, IS_API, listOrders, naira, setOrderStatus } from "@/lib/ops/api";
+import { ConfirmOrderDialog, ScheduleDeliveryDialog } from "@/components/feedops/dialogs";
 
 export const Route = createFileRoute("/feedops/orders")({
   head: () => ({ meta: [{ title: "Orders & Fulfillment — IntelliFeed360" }] }),
@@ -32,6 +32,7 @@ function OrdersPage() {
   const act = useAction();
   const q = useQuery({ queryKey: ["ops-orders"], queryFn: listOrders });
   const [delivering, setDelivering] = useState<Row | null>(null);
+  const [confirming, setConfirming] = useState<Row | null>(null);
   const data = q.data ?? [];
   const isNew = (r: Row) => r.status === "placed" || r.status === "pending";
   const weekAgo = Date.now() - 7 * 86_400_000;
@@ -112,7 +113,12 @@ function OrdersPage() {
         ]}
         rowLabel={(r) => r.order_no}
         rowActions={(r) => [
-          { label: "Confirm order", onSelect: () => act(() => setOrderStatus(r.id, "processing"), `${r.order_no} confirmed`), disabled: !isNew(r) },
+          {
+            label: "Confirm order",
+            // api mode: confirming sets prices, so it opens the pricing form.
+            onSelect: () => (IS_API ? setConfirming(r) : act(() => setOrderStatus(r.id, "processing"), `${r.order_no} confirmed`)),
+            disabled: !isNew(r),
+          },
           { label: "Schedule delivery", onSelect: () => setDelivering(r), disabled: r.status !== "processing" },
           { label: "Mark delivered", onSelect: () => act(() => setOrderStatus(r.id, "delivered"), `${r.order_no} delivered`), disabled: r.status !== "out_for_delivery" },
           {
@@ -126,6 +132,7 @@ function OrdersPage() {
         empty={{ title: "No orders yet", hint: "Orders placed by field agents appear here." }}
       />
       <ScheduleDeliveryDialog open={!!delivering} onOpenChange={(o) => !o && setDelivering(null)} presetOrderId={delivering?.id} />
+      <ConfirmOrderDialog order={confirming} onOpenChange={(o) => !o && setConfirming(null)} />
     </>
   );
 }

@@ -3,6 +3,7 @@ import * as knowledgeApi from "@/lib/api/knowledge";
 import * as supportApi from "@/lib/api/support";
 import * as farmersApi from "@/lib/api/farmers";
 import * as fieldApi from "@/lib/field/data";
+import * as opsBe from "@/lib/ops/backend";
 
 export type CountResult = number;
 
@@ -175,6 +176,17 @@ export async function fetchKnowledgeArticles(limit = 6) {
 /* --------------------------------- FeedOps --------------------------------- */
 
 export async function fetchFeedOpsKpis() {
+  if (fieldApi.IS_API) {
+    const [inv, orders, runs] = await Promise.all([opsBe.listInventory(), opsBe.listOrders(), opsBe.listProduction()]);
+    const today = startOfDay();
+    return {
+      totalInventory: inv.reduce((s, r) => s + Number(r.quantity ?? 0), 0),
+      deliveriesToday: orders.filter((o) => o.placed_at >= today).length,
+      pendingOrders: orders.filter((o) => o.status === "pending" || o.status === "processing").length,
+      lowStock: inv.filter((r) => Number(r.quantity) <= Number(r.reorder_level)).length,
+      productionQueue: runs.filter((r) => r.status === "queued" || r.status === "running").length,
+    };
+  }
   const [inventoryRows, ordersToday, pendingOrders, lowStock, production] = await Promise.all([
     db.from("inventory_items").select("quantity, reorder_level"),
     count("feed_orders", (q) => q.gte("placed_at", startOfDay())),
@@ -195,6 +207,16 @@ export async function fetchFeedOpsKpis() {
 }
 
 export async function fetchInventoryRows(limit = 8) {
+  if (fieldApi.IS_API) {
+    const inv = (await opsBe.listInventory()).sort((a, b) => Number(a.quantity) - Number(b.quantity)).slice(0, limit);
+    return inv.map((r) => ({
+      id: r.id as string,
+      feed: (r.feed_products?.name as string) ?? "—",
+      stock: Number(r.quantity ?? 0),
+      unit: "bags",
+      status: Number(r.quantity) === 0 ? "Critical" : Number(r.quantity) <= Number(r.reorder_level) ? "Low Stock" : "Good",
+    }));
+  }
   const { data, error } = await db
     .from("inventory_items")
     .select("id, quantity, reorder_level, warehouse, feed_products(name, unit)")
@@ -219,10 +241,9 @@ export async function fetchProductionSeries() {
   const since = new Date();
   since.setDate(since.getDate() - 6);
   since.setHours(0, 0, 0, 0);
-  const { data, error } = await db
-    .from("production_runs")
-    .select("quantity, started_at")
-    .gte("started_at", since.toISOString());
+  const { data, error } = fieldApi.IS_API
+    ? { data: (await opsBe.listProduction()).filter((r) => r.started_at && r.started_at >= since.toISOString()), error: null }
+    : await db.from("production_runs").select("quantity, started_at").gte("started_at", since.toISOString());
   if (error) throw error;
   const days: { day: string; mt: number }[] = [];
   for (let i = 0; i < 7; i++) {
@@ -241,6 +262,15 @@ export async function fetchProductionSeries() {
 }
 
 export async function fetchRecentOrders(limit = 6) {
+  if (fieldApi.IS_API) {
+    const orders = (await opsBe.listOrders()).sort((a, b) => String(b.placed_at).localeCompare(String(a.placed_at)));
+    return orders.slice(0, limit).map((o) => ({
+      id: o.id as string,
+      orderNo: o.order_no as string,
+      farm: (o.farmers?.farm_name as string) ?? "—",
+      status: formatOrderStatus(o.status),
+    }));
+  }
   const { data, error } = await db
     .from("feed_orders")
     .select("id, order_no, status, placed_at, farmers(farm_name)")
