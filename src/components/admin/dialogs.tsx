@@ -2,8 +2,23 @@
 import type { ReactNode } from "react";
 import { FormDialog } from "@/components/data/FormDialog";
 import { useRefresh } from "@/components/data/useAction";
-import { audit, insertRow, useActorName } from "@/lib/ops/api";
+import { audit, insertRow, IS_API, useActorName } from "@/lib/ops/api";
+import { API_ROLES } from "@/lib/admin/backend";
 import { PERMISSIONS, PERMISSION_LABELS, REGION_OPTIONS, ROLE_OPTIONS, roleLabel } from "@/lib/ops/people";
+
+/** Demo role keys -> backend roles, for pages that pre-select a role. */
+const API_ROLE_FOR: Record<string, string> = {
+  system_admin: "admin",
+  field_agent: "agent",
+  admin_agent: "nutritionist",
+  feedops: "feedops",
+};
+
+/** api mode: staff roles an admin can invite (farmers sign up in the app). */
+const API_INVITE_ROLES = API_ROLES.filter((r) => !["farmer", "researcher"].includes(r.key)).map((r) => ({
+  value: r.key as string,
+  label: r.name as string,
+}));
 
 export function InviteUserDialog({ trigger, defaultRole = "field_agent", title = "Invite user" }: { trigger: ReactNode; defaultRole?: string; title?: string }) {
   const refresh = useRefresh();
@@ -15,13 +30,22 @@ export function InviteUserDialog({ trigger, defaultRole = "field_agent", title =
       description="They'll get an email invite to set up their account."
       submitLabel="Send invite"
       successMessage="Invite sent"
-      initialValues={{ role: defaultRole, region: defaultRole === "system_admin" ? "HQ" : "Kaduna" }}
+      initialValues={
+        IS_API
+          ? { role: API_ROLE_FOR[defaultRole] ?? defaultRole }
+          : { role: defaultRole, region: defaultRole === "system_admin" ? "HQ" : "Kaduna" }
+      }
       fields={[
         { name: "name", label: "Full name", required: true, autoComplete: "name" },
         { name: "email", label: "Email", type: "email", required: true, autoComplete: "email" },
-        { name: "role", label: "Role", type: "select", options: ROLE_OPTIONS, required: true },
-        { name: "region", label: "Region", type: "select", options: REGION_OPTIONS, required: true },
-        { name: "phone", label: "Phone", type: "tel", autoComplete: "tel", full: true },
+        { name: "role", label: "Role", type: "select", options: IS_API ? API_INVITE_ROLES : ROLE_OPTIONS, required: true },
+        // The backend keeps no region or phone on staff accounts.
+        ...(IS_API
+          ? []
+          : [
+              { name: "region", label: "Region", type: "select" as const, options: REGION_OPTIONS, required: true },
+              { name: "phone", label: "Phone", type: "tel" as const, autoComplete: "tel", full: true },
+            ]),
       ]}
       onSubmit={async (v) => {
         await insertRow("users", { ...v, status: "invited", last_active_at: null });

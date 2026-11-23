@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { relativeTime } from "@/lib/dashboard/queries";
 import {
   audit,
+  hasPortalRole,
   listFarmers,
   listHealthCases,
   listNutritionPlans,
@@ -48,7 +49,7 @@ function AgentsPage() {
 
   const since = Date.now() - MONTH_MS;
   const field: Row[] = (users.data ?? [])
-    .filter((u) => u.role === "field_agent")
+    .filter((u) => hasPortalRole(u, "field_agent"))
     .map((u) => {
       const mine = (visits.data ?? []).filter((v) => v.agent_id === u.id);
       return {
@@ -59,7 +60,7 @@ function AgentsPage() {
       };
     });
   const clinical: Row[] = (users.data ?? [])
-    .filter((u) => u.role === "admin_agent")
+    .filter((u) => hasPortalRole(u, "admin_agent"))
     .map((u) => {
       const mine = (cases.data ?? []).filter((c) => c.assigned_to === u.name);
       return {

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SampleDataNotice } from "@/components/data/SampleDataNotice";
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { PageHeader } from "@/components/data/PageHeader";
@@ -160,6 +161,7 @@ function ConfigurationsPage() {
 
   return (
     <>
+      <SampleDataNotice what="platform configuration" />
       <PageHeader
         title="Configurations"
         subtitle="Research parameters, species, feed categories, alerts and AI guardrails used across the platform."

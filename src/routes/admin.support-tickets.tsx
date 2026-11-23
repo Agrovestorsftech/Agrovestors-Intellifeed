@@ -10,7 +10,7 @@ import { StatusBadge, humanize } from "@/components/data/StatusBadge";
 import { useAction, useRefresh } from "@/components/data/useAction";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { relativeTime } from "@/lib/dashboard/queries";
-import { audit, listTickets, listUsers, staffNamer, updateRow, useActorName } from "@/lib/ops/api";
+import { audit, IS_API, listTickets, listUsers, staffNamer, updateRow, useActorName } from "@/lib/ops/api";
 
 export const Route = createFileRoute("/admin/support-tickets")({
   head: () => ({ meta: [{ title: "Support Tickets — IntelliFeed360" }] }),
@@ -42,7 +42,7 @@ function TicketsPage() {
   const assignees = [
     { value: "Support Desk", label: "Support Desk" },
     ...(users.data ?? [])
-      .filter((u) => u.role === "system_admin" && u.status === "active")
+      .filter((u) => (IS_API ? ["admin", "nutritionist", "veterinarian"].includes(u.role) : u.role === "system_admin") && u.status === "active")
       .map((u) => ({ value: u.name as string, label: u.name as string })),
   ];
 

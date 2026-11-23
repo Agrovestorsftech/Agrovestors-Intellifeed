@@ -12,7 +12,7 @@ import { useAction, useRefresh } from "@/components/data/useAction";
 import { InviteUserDialog } from "@/components/admin/dialogs";
 import { Button } from "@/components/ui/button";
 import { relativeTime } from "@/lib/dashboard/queries";
-import { audit, deleteRow, listRoles, listUsers, updateRow, useActorName } from "@/lib/ops/api";
+import { audit, deleteRow, IS_API, listRoles, listUsers, updateRow, useActorName } from "@/lib/ops/api";
 import { REGION_OPTIONS, roleLabel } from "@/lib/ops/people";
 
 export const Route = createFileRoute("/admin/users")({
@@ -87,7 +87,8 @@ function UsersPage() {
         rowLabel={(r) => r.name}
         rowActions={(r) => [
           { label: "Edit role & region", onSelect: () => setEditing(r) },
-          ...(r.status === "invited" ? [{ label: "Resend invite", onSelect: () => act(async () => undefined, `Invite resent to ${r.email}`) }] : []),
+          // Demo only: the backend has no resend action yet.
+          ...(r.status === "invited" && !IS_API ? [{ label: "Resend invite", onSelect: () => act(async () => undefined, `Invite resent to ${r.email}`) }] : []),
           r.status === "suspended"
             ? { label: "Reactivate", onSelect: () => setStatus(r, "active", "reactivated"), separatorBefore: true }
             : { label: "Suspend access", onSelect: () => setStatus(r, "suspended", "suspended"), destructive: true, separatorBefore: true, disabled: r.status === "invited" },
@@ -116,7 +117,8 @@ function UsersPage() {
         initialValues={editing ? { role: editing.role, region: editing.region } : undefined}
         fields={[
           { name: "role", label: "Role", type: "select", options: roleOptions, required: true },
-          { name: "region", label: "Region", type: "select", options: REGION_OPTIONS, required: true },
+          // The backend keeps no region on staff accounts.
+          ...(IS_API ? [] : [{ name: "region", label: "Region", type: "select" as const, options: REGION_OPTIONS, required: true }]),
         ]}
         onSubmit={async (v) => {
           const r = editing!;
