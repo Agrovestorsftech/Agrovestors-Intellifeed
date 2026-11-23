@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { IS_API, fetchFarmerRows } from "@/lib/field/data";
 
 export const Route = createFileRoute("/farmers")({ component: FarmersPage });
 
@@ -22,16 +23,9 @@ const statusStyle: Record<string, string> = {
 function FarmersPage() {
   const { session } = useAuth();
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ["farmers"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("farmers")
-        .select("id, name, farm_name, region, phone, livestock_type, status, avatar_url, notes, assigned_agent_id")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["farmers", session?.user.id],
+    queryFn: () => fetchFarmerRows(session?.user.id),
   });
   const [q, setQ] = useState("");
 
@@ -46,7 +40,7 @@ function FarmersPage() {
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
-    return (data ?? []).filter((f: any) =>
+    return (data ?? []).filter((f) =>
       !t || f.name.toLowerCase().includes(t) ||
       (f.farm_name ?? "").toLowerCase().includes(t) ||
       (f.region ?? "").toLowerCase().includes(t) ||
@@ -56,14 +50,25 @@ function FarmersPage() {
 
   return (
     <>
-      <DashboardHeader title="Farmers" subtitle="Manage the farmers in your territory." />
+      <DashboardHeader title="Farmers" subtitle={IS_API ? "The farms assigned to you." : "Manage the farmers in your territory."} />
       <section className="rounded-2xl bg-card border border-border p-4 shadow-sm mb-4 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search farmers, farms, region…" className="pl-9" />
         </div>
-        <AddFarmerDialog trigger={<Button><UserPlus className="h-4 w-4 mr-2" />Add farmer</Button>} />
+        {/* Farmer registration isn't wired to the backend yet. */}
+        {!IS_API && <AddFarmerDialog trigger={<Button><UserPlus className="h-4 w-4 mr-2" />Add farmer</Button>} />}
       </section>
+      {isError && (
+        <p role="alert" className="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          Couldn't load your farms. Check your connection and reload the page.
+        </p>
+      )}
+      {IS_API && !isLoading && !isError && (data ?? []).length === 0 && (
+        <p className="mb-4 rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+          No farms are assigned to you yet. An administrator assigns farms to field agents.
+        </p>
+      )}
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {isLoading && Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="rounded-2xl border border-border bg-card p-5 h-40 animate-pulse" />

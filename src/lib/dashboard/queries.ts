@@ -2,6 +2,7 @@ import { mockDb as db } from "@/lib/mock/db";
 import * as knowledgeApi from "@/lib/api/knowledge";
 import * as supportApi from "@/lib/api/support";
 import * as farmersApi from "@/lib/api/farmers";
+import * as fieldApi from "@/lib/field/data";
 
 export type CountResult = number;
 
@@ -260,6 +261,7 @@ export async function fetchFieldKpis(userId: string | undefined) {
   if (!userId) return { assigned: 0, todayVisits: 0, doneToday: 0, pendingReports: 0, completedThisWeek: 0, urgentAlerts: 0 };
   const today = periodRange("today");
   const week = periodRange("week");
+  if (fieldApi.IS_API) return fieldApi.fetchApiFieldKpis(today, week);
   const [assigned, todaySched, weekSched, pendingReports, urgentAlerts] = await Promise.all([
     count("farmers", (q) => q.eq("assigned_agent_id", userId)),
     fetchSchedule(userId, today.from, today.to),
@@ -290,6 +292,11 @@ export type ScheduleItem = {
 /** Planned visits for an agent between two instants (inclusive start, exclusive end). */
 export async function fetchSchedule(userId: string | undefined, from: Date, to: Date): Promise<ScheduleItem[]> {
   if (!userId) return [];
+  if (fieldApi.IS_API) {
+    return (await fieldApi.fetchApiSchedule(from, to)).map(({ id, farm, region, purpose, at, time, status }) => ({
+      id, farm, region, purpose, at, time, status,
+    }));
+  }
   const { data, error } = await db
     .from("visit_schedule")
     .select("id, purpose, status, scheduled_for, farmers(farm_name, region)")
@@ -547,8 +554,9 @@ export function relativeTime(iso: string | null | undefined): string {
   return new Date(iso).toLocaleDateString();
 }
 
-export function formatOrderStatus(s: string): "Pending" | "Processing" | "Out for Delivery" | "Delivered" {
+export function formatOrderStatus(s: string): "Pending" | "Processing" | "Out for Delivery" | "Delivered" | "Cancelled" {
   const key = s.toLowerCase();
+  if (key === "cancelled" || key === "canceled") return "Cancelled";
   if (key === "pending" || key === "placed") return "Pending";
   if (key === "processing") return "Processing";
   if (key === "out_for_delivery" || key === "out for delivery") return "Out for Delivery";
@@ -1015,6 +1023,7 @@ const AGENT_NAMES: Record<string, string> = {
 export async function fetchPerformance(userId: string | undefined, weeks = 8) {
   if (!userId) return null;
   const thisMonday = periodRange("week").from;
+  if (fieldApi.IS_API) return fieldApi.fetchApiPerformance(thisMonday, weeks, WEEKLY_VISIT_TARGET);
   const from = new Date(thisMonday);
   from.setDate(from.getDate() - (weeks - 1) * 7);
   const now = new Date();

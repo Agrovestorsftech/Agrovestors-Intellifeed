@@ -6,7 +6,7 @@ import { AddReportDialog } from "@/components/field/dialogs";
 import { WeekSchedule } from "@/components/field/WeekSchedule";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockDb as db } from "@/lib/mock/db";
+import { fetchMyVisitRows } from "@/lib/field/data";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 export const Route = createFileRoute("/my-visits")({ component: MyVisitsPage });
@@ -16,15 +16,7 @@ function MyVisitsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["my-visits", session?.user.id],
     enabled: !!session?.user.id,
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("visit_reports")
-        .select("id, species, status, submitted_at, farmers(farm_name, region)")
-        .eq("agent_id", session!.user.id)
-        .order("submitted_at", { ascending: false }).limit(50);
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: () => fetchMyVisitRows(session!.user.id, 50),
   });
   const groups: { today: any[]; week: any[]; older: any[] } = { today: [], week: [], older: [] };
   const startToday = new Date(); startToday.setHours(0,0,0,0);
