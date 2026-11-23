@@ -49,7 +49,10 @@ interface SignedIn {
 
 export type DashboardLoginResult =
   | { kind: "signed_in"; user: BackendUser; client: DashboardClient }
-  | { kind: "step_up"; channel: string };
+  /** `devCode`: the backend hands back the code for test accounts
+   * (OTP_RETURN_CODE_FOR, e.g. @demo.com) and in development, never for
+   * real accounts. */
+  | { kind: "step_up"; channel: string; devCode?: string };
 
 export async function dashboardLogin(input: {
   email: string;
@@ -57,7 +60,9 @@ export async function dashboardLogin(input: {
   client: DashboardClient;
   deviceId: string;
 }): Promise<DashboardLoginResult> {
-  const data = await api.post<Partial<SignedIn> & { step_up_required?: boolean; channel?: string }>(
+  const data = await api.post<
+    Partial<SignedIn> & { step_up_required?: boolean; channel?: string; dev_code?: string }
+  >(
     "/auth/dashboard/login",
     {
       email: input.email,
@@ -67,7 +72,9 @@ export async function dashboardLogin(input: {
     },
   );
   resetCsrfToken();
-  if (data?.step_up_required) return { kind: "step_up", channel: data.channel ?? "email" };
+  if (data?.step_up_required) {
+    return { kind: "step_up", channel: data.channel ?? "email", devCode: data.dev_code || undefined };
+  }
   return { kind: "signed_in", user: data.user as BackendUser, client: data.client ?? input.client };
 }
 
