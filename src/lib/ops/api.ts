@@ -195,7 +195,8 @@ export async function scheduleDelivery(v: {
       driver: v.driver,
       vehicle: v.vehicle,
       region: v.region ?? null,
-      scheduled_for: new Date(v.scheduled_for).toISOString(),
+      // YYYY-MM-DD; local 09:00 keeps it on that day in any time zone.
+      scheduled_for: new Date(`${v.scheduled_for.slice(0, 10)}T09:00:00`).toISOString(),
       delivered_at: null,
       status: "scheduled",
     }),

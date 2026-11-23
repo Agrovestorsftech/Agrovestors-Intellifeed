@@ -9,7 +9,7 @@ import { StatCards } from "@/components/data/StatCards";
 import { StatusBadge } from "@/components/data/StatusBadge";
 import { useAction } from "@/components/data/useAction";
 import { Button } from "@/components/ui/button";
-import { dateTime, listDeliveries, setDeliveryStatus } from "@/lib/ops/api";
+import { listDeliveries, setDeliveryStatus, shortDate } from "@/lib/ops/api";
 
 export const Route = createFileRoute("/feedops/deliveries")({
   head: () => ({ meta: [{ title: "Deliveries — IntelliFeed360" }] }),
@@ -41,7 +41,7 @@ function DeliveriesPage() {
     { key: "load", header: "Load", hideBelow: "lg", cell: (r) => (r.order ? `${r.order.quantity} bags · ${r.order.feed_products?.name ?? ""}` : "—") },
     { key: "driver", header: "Driver", hideBelow: "md", sort: (r) => r.driver, cell: (r) => r.driver },
     { key: "vehicle", header: "Vehicle", hideBelow: "lg", cell: (r) => <span className="font-mono text-xs">{r.vehicle}</span> },
-    { key: "when", header: "Scheduled", hideBelow: "sm", sort: (r) => r.scheduled_for, cell: (r) => <span className="text-muted-foreground">{dateTime(r.scheduled_for)}</span> },
+    { key: "when", header: "Scheduled", hideBelow: "sm", sort: (r) => r.scheduled_for, cell: (r) => <span className="text-muted-foreground">{shortDate(r.scheduled_for)}</span> },
     { key: "status", header: "Status", sort: (r) => r.status, cell: (r) => <StatusBadge status={r.status} /> },
   ];
 

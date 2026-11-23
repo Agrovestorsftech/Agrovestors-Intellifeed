@@ -80,9 +80,8 @@ export function ScheduleDeliveryDialog({
   // An order gets one delivery; once it has one, change it on the Deliveries page.
   const scheduled = new Set((deliveries.data ?? []).map((d) => d.order?.id).filter(Boolean));
   const ready = (orders.data ?? []).filter((o) => (o.status === "processing" || o.id === presetOrderId) && !scheduled.has(o.id));
-  const tomorrow = new Date(Date.now() + 86_400_000);
-  tomorrow.setHours(9, 0, 0, 0);
-  const local = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  // A delivery is booked for a day; the backend doesn't store a time.
+  const tomorrow = localDate(new Date(Date.now() + 86_400_000));
   return (
     <FormDialog
       trigger={trigger}
@@ -96,7 +95,7 @@ export function ScheduleDeliveryDialog({
       }
       submitLabel="Schedule delivery"
       successMessage="Delivery scheduled"
-      initialValues={{ order_id: presetOrderId ?? ready[0]?.id ?? "", scheduled_for: local, driver: DRIVERS[0]!, vehicle: VEHICLES[0]! }}
+      initialValues={{ order_id: presetOrderId ?? ready[0]?.id ?? "", scheduled_for: tomorrow, driver: DRIVERS[0]!, vehicle: VEHICLES[0]! }}
       fields={[
         {
           name: "order_id",
@@ -108,11 +107,12 @@ export function ScheduleDeliveryDialog({
         },
         { name: "driver", label: "Driver", type: "select", options: DRIVERS.map((d) => ({ value: d, label: d })), required: true },
         { name: "vehicle", label: "Vehicle", type: "select", options: VEHICLES.map((d) => ({ value: d, label: d })), required: true },
-        { name: "scheduled_for", label: "Delivery time", type: "datetime-local", required: true, full: true },
+        { name: "scheduled_for", label: "Delivery date", type: "date", required: true, full: true },
         // api mode: the order's bags leave this warehouse when the delivery is dispatched.
         ...(IS_API ? [{ name: "warehouse", label: "Dispatch from", type: "select" as const, options: warehouseOptions, required: true, full: true }] : []),
       ]}
       validate={(v) => ({
+        scheduled_for: v.scheduled_for && v.scheduled_for < localDate(new Date()) ? "Pick today or a later day." : undefined,
         warehouse:
           stockShortfall((orders.data ?? []).find((o) => o.id === v.order_id)?.items, v.warehouse, inventory.data) ?? undefined,
       })}
