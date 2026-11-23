@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CalendarClock, CheckCheck, Plus, Truck } from "lucide-react";
-import { ScheduleDeliveryDialog } from "@/components/feedops/dialogs";
+import { useState } from "react";
+import { ChangeDeliveryDateDialog, ScheduleDeliveryDialog } from "@/components/feedops/dialogs";
 import { PageHeader } from "@/components/data/PageHeader";
 import { DataTable, type Column } from "@/components/data/DataTable";
 import { StatCards } from "@/components/data/StatCards";
@@ -20,6 +21,7 @@ type Row = Awaited<ReturnType<typeof listDeliveries>>[number];
 function DeliveriesPage() {
   const act = useAction();
   const q = useQuery({ queryKey: ["ops-deliveries"], queryFn: listDeliveries });
+  const [editing, setEditing] = useState<Row | null>(null);
   const data = q.data ?? [];
   const today = new Date().toDateString();
 
@@ -86,18 +88,25 @@ function DeliveriesPage() {
         defaultSort={{ key: "when", dir: "desc" }}
         rowLabel={(r) => r.order?.order_no ?? "delivery"}
         rowActions={(r) => [
+          {
+            label: r.status === "failed" ? "Reschedule" : "Change date",
+            onSelect: () => setEditing(r),
+            disabled: r.status !== "scheduled" && r.status !== "failed",
+          },
           { label: "Mark in transit", onSelect: () => act(() => setDeliveryStatus(r, "in_transit"), "Marked in transit"), disabled: r.status !== "scheduled" },
-          { label: "Mark delivered", onSelect: () => act(() => setDeliveryStatus(r, "delivered"), "Delivery completed"), disabled: r.status === "delivered" || r.status === "failed" },
+          // Only a delivery on the road can be completed or failed (same rule as the backend).
+          { label: "Mark delivered", onSelect: () => act(() => setDeliveryStatus(r, "delivered"), "Delivery completed"), disabled: r.status !== "in_transit" },
           {
             label: "Mark failed",
             onSelect: () => act(() => setDeliveryStatus(r, "failed"), "Delivery marked failed — order returned to processing"),
-            disabled: r.status === "delivered" || r.status === "failed",
+            disabled: r.status !== "in_transit",
             destructive: true,
             separatorBefore: true,
           },
         ]}
         empty={{ title: "No deliveries yet", hint: "Schedule a confirmed order for delivery.", action: schedule }}
       />
+      <ChangeDeliveryDateDialog delivery={editing} onOpenChange={(o) => !o && setEditing(null)} />
     </>
   );
 }

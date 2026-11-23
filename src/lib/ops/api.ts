@@ -215,6 +215,18 @@ export async function setDeliveryStatus(d: Row, status: "in_transit" | "delivere
   if (status === "failed") await setOrderStatus(d.order_id, "processing");
 }
 
+/** Change a scheduled delivery's date, or reschedule a failed one (`date` is YYYY-MM-DD). */
+export async function changeDeliveryDate(d: Row, date: string) {
+  if (IS_API) return be.changeDeliveryDate(d, date);
+  await run(
+    db
+      .from("deliveries")
+      .update({ scheduled_for: new Date(`${date}T09:00:00`).toISOString(), ...(d.status === "failed" ? { status: "scheduled" } : {}) })
+      .eq("id", d.id),
+  );
+  if (d.status === "failed") await setOrderStatus(d.order_id, "out_for_delivery");
+}
+
 /* --------------------------------- suppliers -------------------------------- */
 
 export const listSuppliers = () => IS_API ? be.listSuppliers() : rows(db.from("suppliers").select("*").order("name"));
