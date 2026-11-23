@@ -16,6 +16,11 @@ const API_BASE_URL: string =
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+/** Give up on a request after this long, so a stalled server shows an error
+ * instead of a spinner that never ends. Generous because a sleeping Render
+ * instance can take most of a minute to wake. */
+const REQUEST_TIMEOUT_MS = 60_000;
+
 export class ApiError extends Error {
   status: number;
   /** Backend machine code, e.g. "invalid_credentials", "client_not_allowed". */
@@ -90,7 +95,7 @@ function errorFrom(status: number, body: unknown): ApiError {
 }
 
 async function request<T>(path: string, options: RequestOptions, withCsrf: boolean): Promise<T> {
-  const { body, headers, method = "GET", ...rest } = options;
+  const { body, headers, method = "GET", signal, ...rest } = options;
   const finalHeaders = new Headers(headers);
   finalHeaders.set("Accept", "application/json");
   if (body !== undefined && !finalHeaders.has("Content-Type")) {
@@ -108,8 +113,18 @@ async function request<T>(path: string, options: RequestOptions, withCsrf: boole
       headers: finalHeaders,
       credentials: "include",
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "TimeoutError") {
+      throw new ApiError(
+        0,
+        UNSAFE_METHODS.has(method.toUpperCase())
+          ? "The server took too long to respond. Reload the page to check whether your change was saved before trying again."
+          : "The server took too long to respond. Reload the page and try again.",
+        "timeout",
+      );
+    }
     throw new ApiError(
       0,
       "Can't reach the server. Check your connection and try again.",
