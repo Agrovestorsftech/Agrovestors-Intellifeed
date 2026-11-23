@@ -9,6 +9,7 @@ import { confirmOrder } from "@/lib/ops/backend";
 import {
   BAG_KG,
   createBatch,
+  listDeliveries,
   listOrders,
   listProduction,
   listProducts,
@@ -70,8 +71,11 @@ export function ScheduleDeliveryDialog({
 }) {
   const refresh = useRefresh();
   const orders = useQuery({ queryKey: ["ops-orders"], queryFn: listOrders });
+  const deliveries = useQuery({ queryKey: ["ops-deliveries"], queryFn: listDeliveries });
   const warehouseOptions = useWarehouseOptions();
-  const ready = (orders.data ?? []).filter((o) => o.status === "processing" || o.id === presetOrderId);
+  // An order gets one delivery; once it has one, change it on the Deliveries page.
+  const scheduled = new Set((deliveries.data ?? []).map((d) => d.order?.id).filter(Boolean));
+  const ready = (orders.data ?? []).filter((o) => (o.status === "processing" || o.id === presetOrderId) && !scheduled.has(o.id));
   const tomorrow = new Date(Date.now() + 86_400_000);
   tomorrow.setHours(9, 0, 0, 0);
   const local = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
@@ -81,7 +85,11 @@ export function ScheduleDeliveryDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Schedule delivery"
-      description={ready.length ? "Assign a driver and vehicle to a confirmed order." : "No confirmed orders are waiting. Confirm an order first."}
+      description={
+        ready.length
+          ? "Assign a driver and vehicle to a confirmed order."
+          : "Every confirmed order already has a delivery. Confirm a new order first, or manage existing ones on the Deliveries page."
+      }
       submitLabel="Schedule delivery"
       successMessage="Delivery scheduled"
       initialValues={{ order_id: presetOrderId ?? ready[0]?.id ?? "", scheduled_for: local, driver: DRIVERS[0]!, vehicle: VEHICLES[0]! }}

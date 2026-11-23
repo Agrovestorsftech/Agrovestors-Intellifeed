@@ -9,7 +9,7 @@ import { StatusBadge } from "@/components/data/StatusBadge";
 import { useAction } from "@/components/data/useAction";
 import { Button } from "@/components/ui/button";
 import { downloadCsv } from "@/components/data/csv";
-import { dateTime, IS_API, listOrders, naira, setOrderStatus } from "@/lib/ops/api";
+import { dateTime, IS_API, listDeliveries, listOrders, naira, setOrderStatus } from "@/lib/ops/api";
 import { ConfirmOrderDialog, ScheduleDeliveryDialog } from "@/components/feedops/dialogs";
 
 export const Route = createFileRoute("/feedops/orders")({
@@ -31,6 +31,8 @@ const STATUS_LABEL: Record<string, string> = {
 function OrdersPage() {
   const act = useAction();
   const q = useQuery({ queryKey: ["ops-orders"], queryFn: listOrders });
+  const deliveries = useQuery({ queryKey: ["ops-deliveries"], queryFn: listDeliveries });
+  const hasDelivery = new Set((deliveries.data ?? []).map((d) => d.order?.id).filter(Boolean));
   const [delivering, setDelivering] = useState<Row | null>(null);
   const [confirming, setConfirming] = useState<Row | null>(null);
   const data = q.data ?? [];
@@ -119,7 +121,11 @@ function OrdersPage() {
             onSelect: () => (IS_API ? setConfirming(r) : act(() => setOrderStatus(r.id, "processing"), `${r.order_no} confirmed`)),
             disabled: !isNew(r),
           },
-          { label: "Schedule delivery", onSelect: () => setDelivering(r), disabled: r.status !== "processing" },
+          {
+            label: hasDelivery.has(r.id) ? "Delivery scheduled" : "Schedule delivery",
+            onSelect: () => setDelivering(r),
+            disabled: r.status !== "processing" || hasDelivery.has(r.id),
+          },
           { label: "Mark delivered", onSelect: () => act(() => setOrderStatus(r.id, "delivered"), `${r.order_no} delivered`), disabled: r.status !== "out_for_delivery" },
           {
             label: "Cancel order",

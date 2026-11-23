@@ -2,15 +2,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 /**
- * Run a mutation, toast the outcome and refresh every query (the mock store is
- * cheap to re-read, so a blanket refresh keeps dashboards and lists in sync).
+ * Run a mutation, toast the outcome and refresh every query, which keeps
+ * dashboards and lists in sync. The refresh runs in the background: against
+ * the API it re-reads several lists and can take seconds, and the change is
+ * already saved, so nothing should wait on it.
  */
 export function useAction() {
   const qc = useQueryClient();
   return async function act(fn: () => Promise<unknown>, success?: string) {
     try {
       await fn();
-      await qc.invalidateQueries();
+      void qc.invalidateQueries();
       if (success) toast.success(success);
       return true;
     } catch (e) {
@@ -20,8 +22,11 @@ export function useAction() {
   };
 }
 
-/** For FormDialog onSubmit: same refresh, but lets the dialog show the error and stay open. */
+/** For FormDialog onSubmit: the same background refresh. The dialog closes as
+ * soon as the save succeeds, and shows the error and stays open if it fails. */
 export function useRefresh() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries();
+  return async () => {
+    void qc.invalidateQueries();
+  };
 }
