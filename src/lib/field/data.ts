@@ -9,8 +9,9 @@
 // - GET /farms/visits/ returns only that agent's visits. A visit has a date,
 //   type and summary but no review status, so api rows are "upcoming" or
 //   "completed" by date.
-// - There is no farmers list endpoint yet (backend requirements R4), so the
-//   Farmers page lists assigned farms; the farmer's own name isn't available.
+// - GET /farmers/ (the farmer directory) returns the owners of the agent's
+//   assigned farms, with phone and email. The Farmers page stays one card per
+//   farm and takes the owner's name and contacts from it.
 
 import { AUTH_MODE } from "@/lib/auth/AuthContext";
 import { API_BASE_URL, api, type Page } from "@/lib/api/client";
@@ -68,6 +69,7 @@ export interface FarmerRow {
   farm_name: string | null;
   region: string | null;
   phone: string | null;
+  email?: string | null;
   livestock_type: string | null;
   status: string;
   avatar_url: string | null;
@@ -392,28 +394,66 @@ export async function fetchFarmerRows(currentUserId?: string): Promise<FarmerRow
     return (data ?? []) as FarmerRow[];
   }
 
-  const farms = await fetchMyFarms();
-  return farms.map((f) => ({
-    id: f.id,
-    // No farmer name in the farm list yet (backend R4): show the farm.
-    name: f.name,
-    farm_name: f.name,
-    region: regionOf(f),
-    phone: null,
-    livestock_type: f.primary_species?.name ?? f.primary_category?.name ?? null,
-    status: f.is_active ? "active" : "inactive",
-    avatar_url: null,
-    notes: null,
-    // The backend only returns farms assigned to this agent.
-    assigned_agent_id: currentUserId ?? null,
-  }));
+  // The directory only adds names and contacts, so if it fails the page still
+  // lists the farms (under the farm name) rather than showing nothing.
+  const [farms, farmers] = await Promise.all([
+    fetchMyFarms(),
+    listAll<ApiFarmer>("/farmers/").catch(() => [] as ApiFarmer[]),
+  ]);
+  const ownerOf = new Map<string, ApiFarmer>();
+  for (const farmer of farmers) {
+    for (const farm of farmer.farms) ownerOf.set(farm.id, farmer);
+  }
+  return farms.map((f) => {
+    const owner = ownerOf.get(f.id);
+    return {
+      id: f.id,
+      name: owner ? farmerName(owner) : f.name,
+      farm_name: f.name,
+      region: regionOf(f),
+      phone: owner?.phone ?? null,
+      email: owner?.email ?? null,
+      livestock_type: f.primary_species?.name ?? f.primary_category?.name ?? null,
+      status: f.is_active ? "active" : "inactive",
+      avatar_url: owner?.avatar_url ?? null,
+      notes: null,
+      // The backend only returns farms assigned to this agent.
+      assigned_agent_id: currentUserId ?? null,
+    };
+  });
+}
+
+/** apps/accounts/farmers.py — only the fields used here. */
+interface ApiFarmer {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  full_name: string | null;
+  phone: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  farms: { id: string }[];
+}
+
+function farmerName(f: ApiFarmer): string {
+  return (
+    f.full_name?.trim() ||
+    [f.first_name, f.last_name].filter(Boolean).join(" ").trim() ||
+    f.email ||
+    "Farmer"
+  );
 }
 
 // --- Feed orders --------------------------------------------------------------
-// GET /products/orders/ returns orders on the agent's assigned farms. The list
-// has no line items, so details are fetched for the most recent orders shown.
-// Agents can't place orders yet: the backend gives them view/fulfil rights
-// only (see the dashboard backend requirements).
+// GET /products/orders/ returns orders on the agent's assigned farms, with
+// their line items. Agents place orders (POST /products/orders/) for assigned
+// farms: products and bags only. FeedOps prices, confirms, dispatches and
+// delivers them; agents can't do any of that.
+
+type ApiOrderItem = {
+  product: { name: string; bag_size_kg: string } | null;
+  quantity_bags: number;
+};
 
 interface ApiOrderListItem {
   id: string;
@@ -423,10 +463,58 @@ interface ApiOrderListItem {
   order_date: string;
   total_ngn: string;
   created_at: string;
+  // In the list since the backend's FeedOps work; older deployments omit it.
+  items?: ApiOrderItem[];
 }
 
 interface ApiOrderDetail extends ApiOrderListItem {
-  items: { product: { name: string; bag_size_kg: string } | null; quantity_bags: number }[];
+  items: ApiOrderItem[];
+}
+
+/** apps/products FeedProductSerializer — only the fields used here. */
+export interface FeedProductOption {
+  id: string;
+  product_code: string;
+  name: string;
+  bag_size_kg: string | null;
+}
+
+/** Products that can be ordered now. */
+export function fetchOrderableProducts(): Promise<FeedProductOption[]> {
+  return listAll<FeedProductOption>("/products/feed/?is_available=true");
+}
+
+/** apps/batches BatchListSerializer — only the fields used here. */
+export interface BatchOption {
+  id: string;
+  batch_code: string;
+  species: Named | null;
+  current_stock: number | null;
+}
+
+/** A farm's active batches. Every order is for a batch: the backend's API
+ * marks the batch optional, but its database requires one. */
+export function fetchActiveBatches(farmId: string): Promise<BatchOption[]> {
+  return listAll<BatchOption>(`/batches/?farm=${encodeURIComponent(farmId)}&status=active`);
+}
+
+export interface NewOrder {
+  farmId: string;
+  batchId: string;
+  productId: string;
+  bags: number;
+  notes: string;
+}
+
+/** Place an order for a batch on an assigned farm. The backend sets the price
+ * when FeedOps confirms it. */
+export function placeOrder(o: NewOrder) {
+  return api.post("/products/orders/", {
+    farm_id: o.farmId,
+    batch_id: o.batchId,
+    items: [{ product_id: o.productId, quantity_bags: o.bags }],
+    notes: o.notes.trim(),
+  });
 }
 
 export interface OrderRow {
@@ -468,8 +556,13 @@ export async function fetchMyOrderRows(userId: string): Promise<OrderRow[]> {
   const page = await api.get<Page<ApiOrderListItem>>(
     `/products/orders/?page_size=${MAX_ORDER_DETAILS}`,
   );
+  // Only an older backend without items in the list needs a call per order.
   const details = await Promise.all(
-    page.results.map((o) => api.get<ApiOrderDetail>(`/products/orders/${o.id}/`).catch(() => null)),
+    page.results.map((o) =>
+      o.items
+        ? ({ ...o, items: o.items } as ApiOrderDetail)
+        : api.get<ApiOrderDetail>(`/products/orders/${o.id}/`).catch(() => null),
+    ),
   );
   return page.results.map((o, i) => {
     const items = details[i]?.items ?? [];

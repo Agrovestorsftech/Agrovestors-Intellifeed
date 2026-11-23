@@ -14,7 +14,11 @@ import {
 } from "@/components/ui/select";
 import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { IS_API, VISIT_TYPE_LABEL, createVisit, fetchMyFarms, type VisitType } from "@/lib/field/data";
+import {
+  IS_API, VISIT_TYPE_LABEL, createVisit, fetchActiveBatches, fetchFarmerRows, fetchMyFarms, fetchOrderableProducts,
+  placeOrder,
+  type VisitType,
+} from "@/lib/field/data";
 
 /* ------------------------------------------------------------------ */
 /*  Add Farmer                                                         */
@@ -302,6 +306,151 @@ function DemoReportDialog({ trigger, presetFarmerId }: { trigger: ReactNode; pre
 /* ------------------------------------------------------------------ */
 
 export function CreateOrderDialog({ trigger }: { trigger: ReactNode }) {
+  return IS_API ? <PlaceOrderDialog trigger={trigger} /> : <DemoOrderDialog trigger={trigger} />;
+}
+
+const MAX_BAGS = 5000; // the backend's limit per line
+
+/** Order feed for an assigned farm. Products and bags only: FeedOps sets the
+ * price and delivery date when it confirms the order. */
+function PlaceOrderDialog({ trigger }: { trigger: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  const farms = useQuery({
+    queryKey: ["farmers", session?.user.id],
+    queryFn: () => fetchFarmerRows(session?.user.id),
+    enabled: open && !!session?.user.id,
+  });
+  const products = useQuery({ queryKey: ["orderable-products"], queryFn: fetchOrderableProducts, enabled: open });
+  const empty = { farmId: "", batchId: "", productId: "", bags: "10", notes: "" };
+  const [form, setForm] = useState(empty);
+  const batches = useQuery({
+    queryKey: ["active-batches", form.farmId],
+    queryFn: () => fetchActiveBatches(form.farmId),
+    enabled: open && !!form.farmId,
+  });
+  // One active batch is the common case: pick it so the agent doesn't have to.
+  const onlyBatch = batches.data?.length === 1 ? batches.data[0].id : "";
+  const batchId = form.batchId || onlyBatch;
+  const bags = Number(form.bags);
+  const bagsValid = Number.isInteger(bags) && bags >= 1 && bags <= MAX_BAGS;
+  const ready = !!form.farmId && !!batchId && !!form.productId && bagsValid;
+
+  const m = useMutation({
+    mutationFn: () => placeOrder({ farmId: form.farmId, batchId, productId: form.productId, bags, notes: form.notes }),
+    onSuccess: () => {
+      toast.success("Order placed. FeedOps will confirm the price and delivery date.");
+      qc.invalidateQueries({ queryKey: ["my-orders"] });
+      setForm(empty);
+      setOpen(false);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Couldn't place the order"),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Place feed order</DialogTitle>
+          <DialogDescription>
+            Order feed for one of your assigned farms. FeedOps confirms the price and delivery date.
+          </DialogDescription>
+        </DialogHeader>
+        <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (ready) m.mutate(); }}>
+          <div>
+            <Label htmlFor="order-farm">Farm *</Label>
+            <Select value={form.farmId} onValueChange={(v) => setForm({ ...form, farmId: v, batchId: "" })}>
+              <SelectTrigger id="order-farm">
+                <SelectValue placeholder={farms.isLoading ? "Loading your farms…" : "Choose a farm"} />
+              </SelectTrigger>
+              <SelectContent>
+                {(farms.data ?? []).map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.name === f.farm_name ? f.farm_name : `${f.farm_name} — ${f.name}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {farms.isSuccess && farms.data.length === 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">No farms are assigned to you yet. Ask an administrator to assign one.</p>
+            )}
+            {farms.isError && <p className="mt-1 text-xs text-destructive">Couldn't load your farms. Close this and try again.</p>}
+          </div>
+          {form.farmId && (
+            <div>
+              <Label htmlFor="order-batch">Batch *</Label>
+              <Select value={batchId} onValueChange={(v) => setForm({ ...form, batchId: v })}>
+                <SelectTrigger id="order-batch">
+                  <SelectValue placeholder={batches.isLoading ? "Loading batches…" : "Choose a batch"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(batches.data ?? []).map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {[b.batch_code, b.species?.name, b.current_stock != null ? `${b.current_stock.toLocaleString()} head` : null]
+                        .filter(Boolean).join(" · ")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {batches.isSuccess && batches.data.length === 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">This farm has no active batch. Feed is ordered for a batch, so the farmer needs to start one in the app first.</p>
+              )}
+              {batches.isError && <p className="mt-1 text-xs text-destructive">Couldn't load this farm's batches. Choose the farm again.</p>}
+            </div>
+          )}
+          <div>
+            <Label htmlFor="order-product">Product *</Label>
+            <Select value={form.productId} onValueChange={(v) => setForm({ ...form, productId: v })}>
+              <SelectTrigger id="order-product">
+                <SelectValue placeholder={products.isLoading ? "Loading products…" : "Choose a product"} />
+              </SelectTrigger>
+              <SelectContent>
+                {(products.data ?? []).map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}{p.bag_size_kg ? ` (${Number(p.bag_size_kg)} kg bag)` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {products.isSuccess && products.data.length === 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">No feed products are available to order right now.</p>
+            )}
+            {products.isError && <p className="mt-1 text-xs text-destructive">Couldn't load products. Close this and try again.</p>}
+          </div>
+          <div>
+            <Label htmlFor="order-bags">Bags *</Label>
+            <Input
+              id="order-bags" type="number" inputMode="numeric" min={1} max={MAX_BAGS} step={1} required
+              value={form.bags} onChange={(e) => setForm({ ...form, bags: e.target.value })}
+              aria-invalid={!bagsValid}
+            />
+            {!bagsValid && form.bags !== "" && (
+              <p className="mt-1 text-xs text-destructive">Enter a whole number of bags from 1 to {MAX_BAGS.toLocaleString()}.</p>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="order-notes">Notes</Label>
+            <Textarea
+              id="order-notes" rows={3} maxLength={1000} value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              placeholder="Delivery instructions, urgency…"
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={m.isPending || !ready}>
+              {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Place order
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DemoOrderDialog({ trigger }: { trigger: ReactNode }) {
   const [open, setOpen] = useState(false);
   const { session } = useAuth();
   const qc = useQueryClient();

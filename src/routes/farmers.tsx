@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Phone, MapPin, UserPlus } from "lucide-react";
+import { Search, Phone, Mail, MapPin, UserPlus } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { AddFarmerDialog, AddReportDialog } from "@/components/field/dialogs";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,7 @@ function FarmersPage() {
 
   return (
     <>
-      <DashboardHeader title="Farmers" subtitle={IS_API ? "The farms assigned to you." : "Manage the farmers in your territory."} />
+      <DashboardHeader title="Farmers" subtitle={IS_API ? "The farmers whose farms are assigned to you." : "Manage the farmers in your territory."} />
       <section className="rounded-2xl bg-card border border-border p-4 shadow-sm mb-4 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -89,6 +89,7 @@ function FarmersPage() {
             <dl className="mt-4 space-y-1.5 text-xs text-muted-foreground">
               {f.region && <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /><span>{f.region}</span></div>}
               {f.phone && <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /><span>{f.phone}</span></div>}
+              {f.email && <div className="flex items-center gap-2 min-w-0"><Mail className="h-3.5 w-3.5 shrink-0" /><span className="truncate select-all">{f.email}</span></div>}
               <p className="pt-1 line-clamp-2 text-foreground/80">{f.livestock_type ?? "—"}</p>
             </dl>
             <div className="mt-4 flex gap-2">
