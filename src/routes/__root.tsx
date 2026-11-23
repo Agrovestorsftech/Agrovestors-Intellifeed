@@ -17,6 +17,7 @@ import { FeedOpsSidebar } from "@/components/dashboard/FeedOpsSidebar";
 import { AgentSidebar } from "@/components/dashboard/AgentSidebar";
 import { MobileTopbar } from "@/components/dashboard/MobileTopbar";
 import { AuthProvider } from "@/lib/auth/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { isPublicPath } from "@/lib/auth/route-policy";
 
@@ -174,6 +175,8 @@ function RootComponent() {
           )}
         </RouteGuard>
       </AuthProvider>
+      {/* Shows every toast.success / toast.error in the app; without it they're silent. */}
+      <Toaster position="top-right" richColors closeButton />
     </QueryClientProvider>
   );
 }

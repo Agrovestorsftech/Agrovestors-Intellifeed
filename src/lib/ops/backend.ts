@@ -7,7 +7,7 @@
 // Stock is counted in bags; production rows also expose `quantity` in kg
 // (bags x the product's bag size) because the pages show kg and tonnes.
 
-import { api, fetchAllPages } from "@/lib/api/client";
+import { ApiError, api, fetchAllPages } from "@/lib/api/client";
 
 type Row = Record<string, any>;
 
@@ -316,15 +316,33 @@ export async function scheduleDelivery(v: {
 
 export async function setDeliveryStatus(d: Row, status: "in_transit" | "delivered" | "failed") {
   const action = { in_transit: "dispatch", delivered: "delivered", failed: "failed" }[status];
-  await api.post(`/feedops/deliveries/${d.id}/${action}/`, {});
+  try {
+    await api.post(`/feedops/deliveries/${d.id}/${action}/`, {});
+  } catch (err) {
+    // Dispatch takes the bags out of the depot's stock, so a short depot can't send it.
+    if (err instanceof ApiError && err.code === "insufficient_stock") {
+      throw new Error(
+        `${d.warehouse ?? "The depot"} can't send ${d.order?.order_no ?? "this order"}. ${err.message} ` +
+          "Use Edit delivery to send it from another depot, or transfer stock there first.",
+      );
+    }
+    throw err;
+  }
 }
 
-/** Move a delivery to another day (`date` is YYYY-MM-DD). A scheduled one is
- * edited in place; a failed one is rescheduled, which puts it back to
- * scheduled. Once a delivery is on the road its date is fixed. */
-export async function changeDeliveryDate(d: Row, date: string) {
-  if (d.status === "failed") await api.post(`/feedops/deliveries/${d.id}/reschedule/`, { scheduled_for: date });
-  else await api.patch(`/feedops/deliveries/${d.id}/`, { scheduled_for: date });
+/** Edit a scheduled delivery's date and depot, or reschedule a failed one
+ * (date only; it goes back to scheduled). `date` is YYYY-MM-DD. Once a
+ * delivery is on the road its date and depot are fixed. */
+export async function updateDelivery(d: Row, v: { date: string; warehouse?: string }) {
+  if (d.status === "failed") {
+    await api.post(`/feedops/deliveries/${d.id}/reschedule/`, { scheduled_for: v.date });
+    return;
+  }
+  const moved = v.warehouse && v.warehouse !== d.warehouse;
+  await api.patch(`/feedops/deliveries/${d.id}/`, {
+    scheduled_for: v.date,
+    ...(moved ? { warehouse_id: await warehouseId(v.warehouse!) } : {}),
+  });
 }
 
 /** "Mark delivered" from the orders page: completes the order's delivery. */
