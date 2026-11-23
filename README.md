@@ -4,18 +4,22 @@ A TanStack Start (React) frontend for IntelliFeed360 — field agent, admin
 agent (nutrition/vet), feed operations, and system admin dashboards for an
 agri-feed business.
 
-## ⚠️ Demo mode
+## Modes
 
-The app currently runs **entirely on local dummy data**. There are no calls
-to Supabase or the IntelliFeed360 API:
+`VITE_AUTH_MODE` picks where the data comes from:
 
-- **Login:** any well-formed email + any password of 6+ characters. The role
-  comes from the portal you sign in on (`/login/admin`, `/login/agent`,
-  `/login/feedops`; the agent portal lets you pick Field Agent or Admin Agent).
-- **Data:** every screen reads from an in-memory store seeded in
-  `src/lib/mock/`. Creating records works but resets on page reload.
-
-Reconnecting the real backend is tracked in [MIGRATION_PLAN.md](./MIGRATION_PLAN.md).
+- **`api`** (set it in `.env.local`): the IntelliFeed360 Django API. You sign in
+  with a real staff account, and a new browser is confirmed with an emailed
+  code (test accounts get the code filled in). All four dashboards read and
+  write the backend. In development, Vite proxies `/api` to
+  `VITE_API_PROXY_TARGET` (default: the testing API).
+- **`demo`** (the default): local dummy data, no backend.
+  - **Login:** any well-formed email + any password of 6+ characters. The
+    role comes from the portal you sign in on (`/login/admin`, `/login/agent`,
+    `/login/feedops`; the agent portal lets you pick Field Agent or Admin
+    Agent).
+  - **Data:** every screen reads from an in-memory store seeded in
+    `src/lib/mock/`. Creating records works but resets on page reload.
 
 ## Setup
 
