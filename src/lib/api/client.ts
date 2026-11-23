@@ -1,157 +1,154 @@
-// IntelliFeed360 API client.
+// IntelliFeed360 API client for the web dashboards.
 //
-// Replaces direct Supabase table access. All data now flows through the
-// Django REST backend at IntelliFeed360_API. See MIGRATION_PLAN.md for the
-// full endpoint map and phase checklist.
+// Dashboards authenticate with a Django session cookie, not bearer tokens:
+// the browser sends the cookie automatically (`credentials: "include"`), and
+// every write carries an `X-CSRFToken` header from GET /auth/csrf.
+//
+// Base URL:
+// - Dev: "/api/v1", which the Vite dev server proxies to the backend so the
+//   cookie is first-party (see vite.config.ts).
+// - Deployed: VITE_API_BASE_URL. It must be on the same site as the dashboard
+//   (e.g. api.<domain> beside agents.<domain>), because the session cookie is
+//   SameSite=Lax and browsers don't send it to another site.
 
-const API_BASE_URL =
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) ||
-  (typeof process !== "undefined" && process.env?.VITE_API_BASE_URL) ||
-  "https://api-testing-intellifeed360.onrender.com/api/v1";
+const API_BASE_URL: string =
+  import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "/api/v1" : "");
 
-const ACCESS_TOKEN_KEY = "if360_access_token";
-const REFRESH_TOKEN_KEY = "if360_refresh_token";
-
-function hasWindow(): boolean {
-  return typeof window !== "undefined";
-}
-
-// --- Token storage -----------------------------------------------------
-// Kept in localStorage (mirrors the previous Supabase auth storage choice).
-// SSR-safe: no-ops on the server, hydrated on the client.
-
-export const tokenStore = {
-  getAccess(): string | null {
-    if (!hasWindow()) return null;
-    return window.localStorage.getItem(ACCESS_TOKEN_KEY);
-  },
-  getRefresh(): string | null {
-    if (!hasWindow()) return null;
-    return window.localStorage.getItem(REFRESH_TOKEN_KEY);
-  },
-  set(access: string, refresh: string): void {
-    if (!hasWindow()) return;
-    window.localStorage.setItem(ACCESS_TOKEN_KEY, access);
-    window.localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
-  },
-  setAccess(access: string): void {
-    if (!hasWindow()) return;
-    window.localStorage.setItem(ACCESS_TOKEN_KEY, access);
-  },
-  clear(): void {
-    if (!hasWindow()) return;
-    window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
-  },
-};
+const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export class ApiError extends Error {
   status: number;
+  /** Backend machine code, e.g. "invalid_credentials", "client_not_allowed". */
+  code: string | null;
   body: unknown;
-  constructor(status: number, message: string, body?: unknown) {
+  constructor(status: number, message: string, code: string | null, body?: unknown) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
     this.body = body;
   }
 }
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
-  // Skip attaching Authorization header (only used for otp/send, otp/verify, token/refresh)
-  skipAuth?: boolean;
-  // Skip the auto-refresh-and-retry-on-401 behavior (used by the refresh call itself)
-  skipRefresh?: boolean;
 }
 
-let refreshInFlight: Promise<boolean> | null = null;
+// --- CSRF ---------------------------------------------------------------
+// Django rotates the CSRF token on login and logout, so the cached token is
+// dropped then (`resetCsrfToken`) and fetched again on the next write.
 
-async function refreshAccessToken(): Promise<boolean> {
-  const refresh = tokenStore.getRefresh();
-  if (!refresh) return false;
+let csrfToken: string | null = null;
+let csrfInFlight: Promise<string> | null = null;
 
-  // De-dupe concurrent 401s during the same refresh.
-  if (!refreshInFlight) {
-    refreshInFlight = (async () => {
+export function resetCsrfToken(): void {
+  csrfToken = null;
+}
+
+async function getCsrfToken(): Promise<string> {
+  if (csrfToken) return csrfToken;
+  if (!csrfInFlight) {
+    csrfInFlight = (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/auth/token/refresh`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh }),
-        });
-        if (!res.ok) {
-          tokenStore.clear();
-          return false;
-        }
-        const data = await res.json().catch(() => null);
-        // NOTE: field name assumed as `access` per standard SimpleJWT convention.
-        // Confirm against the live server response and adjust if different.
-        if (data?.access) {
-          tokenStore.setAccess(data.access);
-          return true;
-        }
-        tokenStore.clear();
-        return false;
-      } catch {
-        tokenStore.clear();
-        return false;
+        const data = await request<{ csrf_token?: string }>("/auth/csrf", { method: "GET" }, false);
+        if (!data?.csrf_token)
+          throw new ApiError(500, "The server didn't return a security token.", "csrf_missing");
+        csrfToken = data.csrf_token;
+        return csrfToken;
       } finally {
-        refreshInFlight = null;
+        csrfInFlight = null;
       }
     })();
   }
-  return refreshInFlight;
+  return csrfInFlight;
 }
 
-export async function apiFetch<T = unknown>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, skipAuth, skipRefresh, headers, ...rest } = options;
+// --- Response envelope --------------------------------------------------
+// The backend has used two shapes: flat `{ message, ...fields }` (current
+// repo) and `{ status, message, data, errors, code }` (deployed staging).
+// `unwrap` returns the payload for either.
 
-  const doFetch = async (): Promise<Response> => {
-    const finalHeaders = new Headers(headers);
-    if (body !== undefined && !finalHeaders.has("Content-Type")) {
-      finalHeaders.set("Content-Type", "application/json");
-    }
-    if (!skipAuth) {
-      const access = tokenStore.getAccess();
-      if (access) finalHeaders.set("Authorization", `Bearer ${access}`);
-    }
-    return fetch(`${API_BASE_URL}${path}`, {
+type Envelope = {
+  status?: string;
+  message?: string;
+  data?: unknown;
+  code?: string;
+  errors?: unknown;
+};
+
+function unwrap<T>(body: unknown): T {
+  if (body && typeof body === "object" && "data" in body && "status" in body) {
+    return (body as Envelope).data as T;
+  }
+  return body as T;
+}
+
+function errorFrom(status: number, body: unknown): ApiError {
+  const env = (body && typeof body === "object" ? body : {}) as Envelope & { detail?: string };
+  const message = env.message || env.detail || `Request failed with status ${status}`;
+  return new ApiError(status, message, env.code ?? null, body);
+}
+
+async function request<T>(path: string, options: RequestOptions, withCsrf: boolean): Promise<T> {
+  const { body, headers, method = "GET", ...rest } = options;
+  const finalHeaders = new Headers(headers);
+  finalHeaders.set("Accept", "application/json");
+  if (body !== undefined && !finalHeaders.has("Content-Type")) {
+    finalHeaders.set("Content-Type", "application/json");
+  }
+  if (withCsrf && UNSAFE_METHODS.has(method.toUpperCase())) {
+    finalHeaders.set("X-CSRFToken", await getCsrfToken());
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
       ...rest,
+      method,
       headers: finalHeaders,
+      credentials: "include",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-  };
-
-  let res = await doFetch();
-
-  if (res.status === 401 && !skipAuth && !skipRefresh) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      res = await doFetch();
-    }
+  } catch {
+    throw new ApiError(
+      0,
+      "Can't reach the server. Check your connection and try again.",
+      "network",
+    );
   }
 
-  if (!res.ok) {
-    let parsedBody: unknown = null;
+  const text = res.status === 204 ? "" : await res.text();
+  let parsed: unknown = null;
+  if (text) {
     try {
-      parsedBody = await res.json();
+      parsed = JSON.parse(text);
     } catch {
-      // no JSON body
+      parsed = null;
     }
-    const message =
-      (parsedBody as { detail?: string; message?: string } | null)?.detail ??
-      (parsedBody as { detail?: string; message?: string } | null)?.message ??
-      `Request failed with status ${res.status}`;
-    throw new ApiError(res.status, message, parsedBody);
   }
+  if (!res.ok) throw errorFrom(res.status, parsed);
+  return unwrap<T>(parsed);
+}
 
-  if (res.status === 204) return undefined as T;
-
-  return (await res.json()) as T;
+export async function apiFetch<T = unknown>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  try {
+    return await request<T>(path, options, true);
+  } catch (err) {
+    // A stale CSRF token (rotated server-side) fails with 403; refresh once.
+    if (err instanceof ApiError && err.status === 403 && /csrf/i.test(err.message) && csrfToken) {
+      resetCsrfToken();
+      return request<T>(path, options, true);
+    }
+    throw err;
+  }
 }
 
 export const api = {
-  get: <T = unknown>(path: string, options?: RequestOptions) => apiFetch<T>(path, { ...options, method: "GET" }),
+  get: <T = unknown>(path: string, options?: RequestOptions) =>
+    apiFetch<T>(path, { ...options, method: "GET" }),
   post: <T = unknown>(path: string, body?: unknown, options?: RequestOptions) =>
     apiFetch<T>(path, { ...options, method: "POST", body }),
   put: <T = unknown>(path: string, body?: unknown, options?: RequestOptions) =>
@@ -164,9 +161,8 @@ export const api = {
 
 export { API_BASE_URL };
 
-// --- Pagination helper --------------------------------------------------
-// Every list endpoint on this API uses DRF's standard pagination envelope
-// (apps.common.pagination.StandardPagination): { count, next, previous, results }.
+// --- Pagination ----------------------------------------------------------
+// List endpoints use DRF's envelope: { count, next, previous, results }.
 
 export interface Page<T> {
   count: number;
@@ -176,8 +172,13 @@ export interface Page<T> {
 }
 
 export function unwrapPage<T>(payload: Page<T> | T[]): T[] {
-  if (payload && typeof payload === "object" && "results" in payload && Array.isArray((payload as Page<T>).results)) {
-    return (payload as Page<T>).results;
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "results" in payload &&
+    Array.isArray(payload.results)
+  ) {
+    return payload.results;
   }
   return payload as T[];
 }

@@ -1,44 +1,35 @@
-export type UserRole =
-  | "system_admin"
-  | "field_agent"
-  | "admin_agent"
-  | "feedops";
+import type { BackendRole, DashboardClient } from "@/lib/api/auth";
 
-// IntelliFeed360 API's role enum (Role430Enum). Kept distinct from UserRole
-// because the two models don't line up 1:1 — see the mapping + gaps below.
-export type ApiRole = "farmer" | "agent" | "nutritionist" | "admin" | "investor";
+export type UserRole = "system_admin" | "field_agent" | "admin_agent" | "feedops";
 
 /**
- * Best-guess mapping from the API's role model to this app's existing
- * portal/role model. NOT confirmed against product requirements:
- *  - "admin"        -> system_admin   (straightforward)
- *  - "agent"        -> field_agent    (straightforward)
- *  - "nutritionist" -> admin_agent    (closest match to "Nutrition & Vet")
- *  - "farmer"       -> no portal exists in this app yet. Falls back to
- *                      field_agent so the app doesn't crash, but a farmer
- *                      logging in will land on the wrong dashboard. Needs a
- *                      product decision + likely a new portal.
- *  - "investor"     -> no portal exists in this app yet. Same fallback and
- *                      same caveat as "farmer".
- *  - "feedops" (this app's role) has NO equivalent in the API's role enum
- *    at all. Nothing currently maps to it — the Feed Operations portal will
- *    be unreachable for any real API user until this is resolved.
- * Flagged in MIGRATION_PLAN.md Phase 2 gaps. Fix in this one spot once the
- * product decision is made.
+ * Backend platform roles (apps/iam/roles.py) that open each dashboard.
+ * farmer, researcher and investor have no dashboard. `feedops` does not exist
+ * in the backend yet (backend requirements R1).
  */
-export function mapApiRoleToUserRole(role: ApiRole): UserRole {
-  switch (role) {
-    case "admin":
-      return "system_admin";
-    case "agent":
-      return "field_agent";
-    case "nutritionist":
-      return "admin_agent";
-    case "farmer":
-    case "investor":
-    default:
-      return "field_agent";
-  }
+export const BACKEND_ROLES_FOR: Record<UserRole, readonly BackendRole[]> = {
+  system_admin: ["admin", "super_admin"],
+  field_agent: ["agent"],
+  admin_agent: ["nutritionist", "veterinarian"],
+  feedops: ["feedops"],
+};
+
+/**
+ * Login clients to try for each dashboard, in order. Admin Agents try the
+ * nutritionist client, then the vet one, because the backend still has one
+ * client per role. Once backend requirement R2 merges them into
+ * `agent_dashboard`, this becomes a single entry per dashboard.
+ */
+export const DASHBOARD_CLIENTS: Record<UserRole, readonly DashboardClient[]> = {
+  system_admin: ["admin_dashboard"],
+  field_agent: ["agent_dashboard"],
+  admin_agent: ["nutritionist_dashboard", "vet_dashboard"],
+  feedops: ["feedops_dashboard"],
+};
+
+/** True when the backend roles allow this dashboard. */
+export function canUseDashboard(roles: readonly string[], role: UserRole): boolean {
+  return BACKEND_ROLES_FOR[role].some((r) => roles.includes(r));
 }
 
 export type PortalId = "admin" | "agent" | "feedops" | "field";
