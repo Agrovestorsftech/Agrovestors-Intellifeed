@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { confirmOrder } from "@/lib/ops/backend";
 import {
   BAG_KG,
+  changeDeliveryDate,
   createBatch,
   listDeliveries,
   listOrders,
@@ -117,6 +118,46 @@ export function ScheduleDeliveryDialog({
   );
 }
 
+
+/** YYYY-MM-DD in the viewer's time zone. */
+const localDate = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+
+/** Change a scheduled delivery's date, or reschedule a failed one. */
+export function ChangeDeliveryDateDialog({
+  delivery,
+  onOpenChange,
+}: {
+  delivery: Parameters<typeof changeDeliveryDate>[0] | null;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const refresh = useRefresh();
+  const failed = delivery?.status === "failed";
+  const current = delivery ? localDate(new Date(delivery.scheduled_for)) : "";
+  const orderNo = delivery?.order?.order_no ?? "this order";
+  return (
+    <FormDialog
+      open={!!delivery}
+      onOpenChange={onOpenChange}
+      title={failed ? "Reschedule delivery" : "Change delivery date"}
+      description={
+        failed
+          ? `Pick a new day to try ${orderNo} again. The delivery goes back to Scheduled.`
+          : `Move ${orderNo} to another day. The driver, vehicle and depot stay the same.`
+      }
+      submitLabel={failed ? "Reschedule" : "Save date"}
+      successMessage={failed ? "Delivery rescheduled" : "Delivery date changed"}
+      initialValues={{ date: failed ? "" : current }}
+      fields={[{ name: "date", label: "Delivery date", type: "date", required: true, full: true }]}
+      validate={(v) => ({
+        date: v.date && v.date < localDate(new Date()) ? "Pick today or a later day." : undefined,
+      })}
+      onSubmit={async (v) => {
+        await changeDeliveryDate(delivery!, v.date!);
+        await refresh();
+      }}
+    />
+  );
+}
 
 const RESULT_FIELDS: FieldDef[] = [
   { name: "moisture", label: "Moisture (%)", type: "number", step: 0.1, min: 0, max: 30, required: true, hint: `Pass ≤ ${QC_LIMITS.moisture}%` },

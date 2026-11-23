@@ -319,6 +319,14 @@ export async function setDeliveryStatus(d: Row, status: "in_transit" | "delivere
   await api.post(`/feedops/deliveries/${d.id}/${action}/`, {});
 }
 
+/** Move a delivery to another day (`date` is YYYY-MM-DD). A scheduled one is
+ * edited in place; a failed one is rescheduled, which puts it back to
+ * scheduled. Once a delivery is on the road its date is fixed. */
+export async function changeDeliveryDate(d: Row, date: string) {
+  if (d.status === "failed") await api.post(`/feedops/deliveries/${d.id}/reschedule/`, { scheduled_for: date });
+  else await api.patch(`/feedops/deliveries/${d.id}/`, { scheduled_for: date });
+}
+
 /** "Mark delivered" from the orders page: completes the order's delivery. */
 export async function deliverOrder(orderId: string) {
   const deliveries = await fetchAllPages<Row>("/feedops/deliveries/?status=in_transit");
