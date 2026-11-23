@@ -49,6 +49,8 @@ interface LoginResult {
   error?: string;
   /** api mode: the backend emailed a code; call verifyDevice with it. */
   stepUp?: boolean;
+  /** The code itself, for test accounts only (see dashboardLogin). */
+  devCode?: string;
 }
 
 interface AuthContextValue {
@@ -240,7 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const res = await dashboardLogin({ email: email.trim(), password, client, deviceId });
           if (res.kind === "step_up") {
             pending.current = { email: email.trim(), role, client };
-            return { ok: false, stepUp: true };
+            return { ok: false, stepUp: true, devCode: res.devCode };
           }
           return completeApiLogin(res.user, role);
         } catch (err) {

@@ -28,6 +28,9 @@ export function LoginCard({ role }: { role: UserRole }) {
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<"credentials" | "code">("credentials");
   const [code, setCode] = useState("");
+  // Test accounts (e.g. @demo.com) can't receive email, so the backend
+  // returns their code; it's filled in and said so. Never set for real ones.
+  const [testCode, setTestCode] = useState(false);
 
   const emailError =
     touched && !isValidEmail(email)
@@ -58,6 +61,8 @@ export function LoginCard({ role }: { role: UserRole }) {
     if (result.stepUp) {
       setSubmitting(false);
       setPassword("");
+      setCode(result.devCode ?? "");
+      setTestCode(!!result.devCode);
       setStep("code");
       return;
     }
@@ -91,6 +96,7 @@ export function LoginCard({ role }: { role: UserRole }) {
   const backToCredentials = () => {
     setStep("credentials");
     setCode("");
+    setTestCode(false);
     setFormError(null);
   };
 
@@ -114,6 +120,12 @@ export function LoginCard({ role }: { role: UserRole }) {
               This is a new device, so we emailed a sign-in code to{" "}
               <span className="font-medium text-foreground">{email.trim()}</span>. Enter it below.
             </p>
+            {testCode && (
+              <p className="mt-3 rounded-lg border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                Test account: the server returned the code, so it's filled in below. Real accounts
+                always get it by email.
+              </p>
+            )}
             <form onSubmit={handleVerify} className="mt-8 space-y-5" noValidate>
               <Field id="code" label="Sign-in code" error={null}>
                 <input
