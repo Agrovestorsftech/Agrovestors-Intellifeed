@@ -7,7 +7,7 @@ import { AddKnowledgeArticleDialog } from "@/components/agent/dialogs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 
 export const Route = createFileRoute("/agent/knowledge-base")({ component: KnowledgeBasePage });
 
@@ -17,7 +17,7 @@ function KnowledgeBasePage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["knowledge-articles-full"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("knowledge_articles")
         .select("id, title, body, category, tags, published, created_at")
         .order("created_at", { ascending: false })

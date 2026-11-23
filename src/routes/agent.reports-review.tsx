@@ -11,7 +11,7 @@ import { FilterHeaderSkeleton, TableRowSkeleton, LoadingContainer } from "@/comp
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { relativeTime } from "@/lib/dashboard/queries";
 
@@ -34,7 +34,7 @@ function ReportsReviewPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["reports-review"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("visit_reports")
         .select("id, species, priority, status, summary, submitted_at, reviewed_at, farmers(name, farm_name)")
         .order("submitted_at", { ascending: false })
@@ -46,7 +46,7 @@ function ReportsReviewPage() {
 
   const review = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: "approved" | "rejected" }) => {
-      const { error } = await supabase
+      const { error } = await db
         .from("visit_reports")
         .update({ status, reviewed_by: session?.user.id ?? null, reviewed_at: new Date().toISOString() })
         .eq("id", id);

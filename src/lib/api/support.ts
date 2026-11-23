@@ -1,9 +1,8 @@
-// Support tickets — replaces the old Supabase `support_tickets` table.
-// Backend: /api/v1/support/tickets/ (list/detail/create/update).
-// See backend-additions/apps/support/ for the server-side implementation
-// this client assumes.
+// Support tickets. DEMO MODE: backed by the in-memory mock store (src/lib/mock).
+// Swap the bodies back to `api.*` calls once the backend exposes a support
+// endpoint; the exported types/signatures are the contract.
 
-import { api, unwrapPage } from "./client";
+import { mockDb as db } from "@/lib/mock/db";
 
 export type TicketPriority = "low" | "normal" | "high" | "urgent";
 export type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
@@ -31,30 +30,31 @@ export interface CreateTicketInput {
 }
 
 export async function listSupportTickets(params: { status?: TicketStatus; page_size?: number } = {}): Promise<SupportTicketListItem[]> {
-  const query = new URLSearchParams();
-  if (params.status) query.set("status", params.status);
-  query.set("page_size", String(params.page_size ?? 50));
-  const page = await api.get<any>(`/support/tickets/?${query}`);
-  return unwrapPage(page);
+  let q = db.from("support_tickets").select("id, subject, priority, status, created_at, assigned_to");
+  if (params.status) q = q.eq("status", params.status);
+  const { data, error } = await q.order("created_at", { ascending: false }).limit(params.page_size ?? 50);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as SupportTicketListItem[];
 }
 
-// Uses the pagination envelope's `count` rather than fetching+unwrapping
-// full pages, for KPI tiles that only need a number.
 export async function countOpenSupportTickets(): Promise<number> {
-  const page = await api.get<{ count: number }>(`/support/tickets/?status=open&page_size=1`);
-  const inProgress = await api.get<{ count: number }>(`/support/tickets/?status=in_progress&page_size=1`);
-  return (page.count ?? 0) + (inProgress.count ?? 0);
+  const { count } = await db
+    .from("support_tickets")
+    .select("*", { count: "exact", head: true })
+    .in("status", ["open", "in_progress"]);
+  return count ?? 0;
 }
 
 export async function getSupportTicket(id: string): Promise<SupportTicketDetail> {
-  return api.get<SupportTicketDetail>(`/support/tickets/${id}/`);
+  const { data, error } = await db.from("support_tickets").select("*").eq("id", id).single();
+  if (error || !data) throw new Error(error?.message ?? "Ticket not found");
+  return { ...data, user: data.opened_by ?? "—", submitted_by: data.opened_by } as unknown as SupportTicketDetail;
 }
 
-export async function createSupportTicket(input: CreateTicketInput): Promise<SupportTicketDetail> {
-  return api.post<SupportTicketDetail>("/support/tickets/", input);
-}
-
-// Staff-only (agent/admin) — enforced server-side, not just here.
-export async function updateSupportTicketStatus(id: string, patch: { status?: TicketStatus; assigned_to?: string | null }): Promise<SupportTicketDetail> {
-  return api.patch<SupportTicketDetail>(`/support/tickets/${id}/`, patch);
+export async function updateSupportTicketStatus(
+  id: string,
+  patch: { status?: TicketStatus; assigned_to?: string | null },
+): Promise<SupportTicketDetail> {
+  await db.from("support_tickets").update(patch).eq("id", id);
+  return getSupportTicket(id);
 }

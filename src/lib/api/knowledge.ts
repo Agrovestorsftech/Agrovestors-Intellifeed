@@ -1,11 +1,8 @@
-// Knowledge articles — replaces the old Supabase `knowledge_articles` table.
-// Backend: /api/v1/knowledge/articles/?category=&search=
-// See backend-additions/apps/knowledge/ for the server-side implementation
-// this client assumes — NOTE that app may already partially exist server-
-// side (apps.knowledge is in INSTALLED_APPS), so field names here may need
-// a one-line adjustment once confirmed against the live server.
+// Knowledge articles. DEMO MODE: backed by the in-memory mock store (src/lib/mock).
+// Swap the bodies back to `api.*` calls once the backend exposes a knowledge
+// endpoint; the exported types/signatures are the contract.
 
-import { api, unwrapPage } from "./client";
+import { mockDb as db } from "@/lib/mock/db";
 
 export interface KnowledgeArticleListItem {
   id: string;
@@ -21,15 +18,33 @@ export interface KnowledgeArticleDetail extends KnowledgeArticleListItem {
   created_at: string;
 }
 
+function toItem(a: Record<string, any>): KnowledgeArticleDetail {
+  return {
+    id: a.id,
+    title: a.title,
+    category: a.category ?? "General",
+    tags: a.tags ?? [],
+    updated_at: a.updated_at ?? a.created_at,
+    is_published: !!a.published,
+    body: a.body,
+    created_at: a.created_at,
+  };
+}
+
 export async function listArticles(params: { limit?: number; category?: string; search?: string } = {}): Promise<KnowledgeArticleListItem[]> {
-  const query = new URLSearchParams();
-  query.set("page_size", String(params.limit ?? 100));
-  if (params.category) query.set("category", params.category);
-  if (params.search) query.set("search", params.search);
-  const page = await api.get<any>(`/knowledge/articles/?${query}`);
-  return unwrapPage(page);
+  let q = db.from("knowledge_articles").select("*");
+  if (params.category) q = q.eq("category", params.category);
+  const { data, error } = await q.order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  const s = params.search?.toLowerCase();
+  return (data ?? [])
+    .filter((a) => !s || `${a.title} ${a.body} ${(a.tags ?? []).join(" ")}`.toLowerCase().includes(s))
+    .slice(0, params.limit ?? 100)
+    .map(toItem);
 }
 
 export async function getArticle(id: string): Promise<KnowledgeArticleDetail> {
-  return api.get<KnowledgeArticleDetail>(`/knowledge/articles/${id}/`);
+  const { data, error } = await db.from("knowledge_articles").select("*").eq("id", id).single();
+  if (error || !data) throw new Error(error?.message ?? "Article not found");
+  return toItem(data);
 }

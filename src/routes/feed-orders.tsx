@@ -4,7 +4,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { CreateOrderDialog } from "@/components/field/dialogs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { formatOrderStatus, relativeTime } from "@/lib/dashboard/queries";
 
@@ -23,7 +23,7 @@ function FeedOrdersPage() {
     queryKey: ["my-orders", session?.user.id],
     enabled: !!session?.user.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("feed_orders")
         .select("id, order_no, quantity, status, placed_at, farmers(name, farm_name), feed_products(name, unit)")
         .eq("agent_id", session!.user.id)

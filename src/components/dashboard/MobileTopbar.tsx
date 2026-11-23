@@ -1,5 +1,6 @@
+import { Logo } from "@/components/brand/Logo";
 import { useState, type ReactNode } from "react";
-import { Menu, Sprout } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { AppSidebarInner } from "./AppSidebar";
@@ -50,15 +51,7 @@ export function MobileTopbar({ portal }: { portal: Portal }): ReactNode {
           <InnerFor portal={portal} onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
-      <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/30">
-          <Sprout className="h-4 w-4 text-primary" />
-        </div>
-        <div className="flex items-baseline">
-          <span className="text-sm font-semibold text-foreground tracking-tight">IntelliFeed</span>
-          <span className="text-sm font-semibold text-primary tracking-tight">360</span>
-        </div>
-      </div>
+      <Logo size="sm" />
       <div className="w-10" />
     </div>
   );

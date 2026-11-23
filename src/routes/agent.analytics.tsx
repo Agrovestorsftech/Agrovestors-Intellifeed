@@ -7,7 +7,7 @@ import { HeartPulse, Salad, ClipboardList, CheckSquare } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { FeedOpsKpiCard as KpiCard } from "@/components/dashboard/FeedOpsKpiCard";
 import { useAgentKpis } from "@/hooks/useDashboard";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 
 export const Route = createFileRoute("/agent/analytics")({ component: AnalyticsPage });
 
@@ -20,8 +20,8 @@ function useLast30DaysSeries() {
       since.setHours(0, 0, 0, 0);
 
       const [{ data: reports, error: e1 }, { data: cases, error: e2 }] = await Promise.all([
-        supabase.from("visit_reports").select("submitted_at").gte("submitted_at", since.toISOString()),
-        supabase.from("health_cases").select("created_at").gte("created_at", since.toISOString()),
+        db.from("visit_reports").select("submitted_at").gte("submitted_at", since.toISOString()),
+        db.from("health_cases").select("created_at").gte("created_at", since.toISOString()),
       ]);
       if (e1) throw e1;
       if (e2) throw e2;

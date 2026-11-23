@@ -22,7 +22,6 @@ import { Route as MyVisitsRouteImport } from './routes/my-visits'
 import { Route as OfflineSyncRouteImport } from './routes/offline-sync'
 import { Route as PerformanceRouteImport } from './routes/performance'
 import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -59,9 +58,13 @@ import { Route as FeedopsReportsRouteImport } from './routes/feedops.reports'
 import { Route as FeedopsSettingsRouteImport } from './routes/feedops.settings'
 import { Route as FeedopsStockTransfersRouteImport } from './routes/feedops.stock-transfers'
 import { Route as FeedopsSuppliersRouteImport } from './routes/feedops.suppliers'
+import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as LoginAdminRouteImport } from './routes/login.admin'
 import { Route as LoginAgentRouteImport } from './routes/login.agent'
 import { Route as LoginFeedopsRouteImport } from './routes/login.feedops'
+import { Route as SignupIndexRouteImport } from './routes/signup.index'
+import { Route as SignupAgentRouteImport } from './routes/signup.agent'
+import { Route as SignupFeedopsRouteImport } from './routes/signup.feedops'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -126,11 +129,6 @@ const PerformanceRoute = PerformanceRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SupportRoute = SupportRouteImport.update({
@@ -313,6 +311,11 @@ const FeedopsSuppliersRoute = FeedopsSuppliersRouteImport.update({
   path: '/suppliers',
   getParentRoute: () => FeedopsRoute,
 } as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginAdminRoute = LoginAdminRouteImport.update({
   id: '/login/admin',
   path: '/login/admin',
@@ -326,6 +329,21 @@ const LoginAgentRoute = LoginAgentRouteImport.update({
 const LoginFeedopsRoute = LoginFeedopsRouteImport.update({
   id: '/login/feedops',
   path: '/login/feedops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupIndexRoute = SignupIndexRouteImport.update({
+  id: '/signup/',
+  path: '/signup/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupAgentRoute = SignupAgentRouteImport.update({
+  id: '/signup/agent',
+  path: '/signup/agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupFeedopsRoute = SignupFeedopsRouteImport.update({
+  id: '/signup/feedops',
+  path: '/signup/feedops',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -343,7 +361,6 @@ export interface FileRoutesByFullPath {
   '/offline-sync': typeof OfflineSyncRoute
   '/performance': typeof PerformanceRoute
   '/reports': typeof ReportsRoute
-  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
   '/admin/agents': typeof AdminAgentsRoute
@@ -380,9 +397,13 @@ export interface FileRoutesByFullPath {
   '/login/admin': typeof LoginAdminRoute
   '/login/agent': typeof LoginAgentRoute
   '/login/feedops': typeof LoginFeedopsRoute
+  '/signup/agent': typeof SignupAgentRoute
+  '/signup/feedops': typeof SignupFeedopsRoute
   '/admin/': typeof AdminIndexRoute
   '/agent/': typeof AgentIndexRoute
   '/feedops/': typeof FeedopsIndexRoute
+  '/login/': typeof LoginIndexRoute
+  '/signup/': typeof SignupIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -395,7 +416,6 @@ export interface FileRoutesByTo {
   '/offline-sync': typeof OfflineSyncRoute
   '/performance': typeof PerformanceRoute
   '/reports': typeof ReportsRoute
-  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
   '/admin/agents': typeof AdminAgentsRoute
@@ -432,9 +452,13 @@ export interface FileRoutesByTo {
   '/login/admin': typeof LoginAdminRoute
   '/login/agent': typeof LoginAgentRoute
   '/login/feedops': typeof LoginFeedopsRoute
+  '/signup/agent': typeof SignupAgentRoute
+  '/signup/feedops': typeof SignupFeedopsRoute
   '/admin': typeof AdminIndexRoute
   '/agent': typeof AgentIndexRoute
   '/feedops': typeof FeedopsIndexRoute
+  '/login': typeof LoginIndexRoute
+  '/signup': typeof SignupIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -451,7 +475,6 @@ export interface FileRoutesById {
   '/offline-sync': typeof OfflineSyncRoute
   '/performance': typeof PerformanceRoute
   '/reports': typeof ReportsRoute
-  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/tasks': typeof TasksRoute
   '/admin/agents': typeof AdminAgentsRoute
@@ -488,9 +511,13 @@ export interface FileRoutesById {
   '/login/admin': typeof LoginAdminRoute
   '/login/agent': typeof LoginAgentRoute
   '/login/feedops': typeof LoginFeedopsRoute
+  '/signup/agent': typeof SignupAgentRoute
+  '/signup/feedops': typeof SignupFeedopsRoute
   '/admin/': typeof AdminIndexRoute
   '/agent/': typeof AgentIndexRoute
   '/feedops/': typeof FeedopsIndexRoute
+  '/login/': typeof LoginIndexRoute
+  '/signup/': typeof SignupIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -508,7 +535,6 @@ export interface FileRouteTypes {
     | '/offline-sync'
     | '/performance'
     | '/reports'
-    | '/signup'
     | '/support'
     | '/tasks'
     | '/admin/agents'
@@ -545,9 +571,13 @@ export interface FileRouteTypes {
     | '/login/admin'
     | '/login/agent'
     | '/login/feedops'
+    | '/signup/agent'
+    | '/signup/feedops'
     | '/admin/'
     | '/agent/'
     | '/feedops/'
+    | '/login/'
+    | '/signup/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -560,7 +590,6 @@ export interface FileRouteTypes {
     | '/offline-sync'
     | '/performance'
     | '/reports'
-    | '/signup'
     | '/support'
     | '/tasks'
     | '/admin/agents'
@@ -597,9 +626,13 @@ export interface FileRouteTypes {
     | '/login/admin'
     | '/login/agent'
     | '/login/feedops'
+    | '/signup/agent'
+    | '/signup/feedops'
     | '/admin'
     | '/agent'
     | '/feedops'
+    | '/login'
+    | '/signup'
   id:
     | '__root__'
     | '/'
@@ -615,7 +648,6 @@ export interface FileRouteTypes {
     | '/offline-sync'
     | '/performance'
     | '/reports'
-    | '/signup'
     | '/support'
     | '/tasks'
     | '/admin/agents'
@@ -652,9 +684,13 @@ export interface FileRouteTypes {
     | '/login/admin'
     | '/login/agent'
     | '/login/feedops'
+    | '/signup/agent'
+    | '/signup/feedops'
     | '/admin/'
     | '/agent/'
     | '/feedops/'
+    | '/login/'
+    | '/signup/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -671,12 +707,15 @@ export interface RootRouteChildren {
   OfflineSyncRoute: typeof OfflineSyncRoute
   PerformanceRoute: typeof PerformanceRoute
   ReportsRoute: typeof ReportsRoute
-  SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
   TasksRoute: typeof TasksRoute
   LoginAdminRoute: typeof LoginAdminRoute
   LoginAgentRoute: typeof LoginAgentRoute
   LoginFeedopsRoute: typeof LoginFeedopsRoute
+  SignupAgentRoute: typeof SignupAgentRoute
+  SignupFeedopsRoute: typeof SignupFeedopsRoute
+  LoginIndexRoute: typeof LoginIndexRoute
+  SignupIndexRoute: typeof SignupIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -770,13 +809,6 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/support': {
@@ -1031,6 +1063,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeedopsSuppliersRouteImport
       parentRoute: typeof FeedopsRoute
     }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login/admin': {
       id: '/login/admin'
       path: '/login/admin'
@@ -1050,6 +1089,27 @@ declare module '@tanstack/react-router' {
       path: '/login/feedops'
       fullPath: '/login/feedops'
       preLoaderRoute: typeof LoginFeedopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/': {
+      id: '/signup/'
+      path: '/signup'
+      fullPath: '/signup/'
+      preLoaderRoute: typeof SignupIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/agent': {
+      id: '/signup/agent'
+      path: '/signup/agent'
+      fullPath: '/signup/agent'
+      preLoaderRoute: typeof SignupAgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/feedops': {
+      id: '/signup/feedops'
+      path: '/signup/feedops'
+      fullPath: '/signup/feedops'
+      preLoaderRoute: typeof SignupFeedopsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -1162,12 +1222,15 @@ const rootRouteChildren: RootRouteChildren = {
   OfflineSyncRoute: OfflineSyncRoute,
   PerformanceRoute: PerformanceRoute,
   ReportsRoute: ReportsRoute,
-  SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
   TasksRoute: TasksRoute,
   LoginAdminRoute: LoginAdminRoute,
   LoginAgentRoute: LoginAgentRoute,
   LoginFeedopsRoute: LoginFeedopsRoute,
+  SignupAgentRoute: SignupAgentRoute,
+  SignupFeedopsRoute: SignupFeedopsRoute,
+  LoginIndexRoute: LoginIndexRoute,
+  SignupIndexRoute: SignupIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

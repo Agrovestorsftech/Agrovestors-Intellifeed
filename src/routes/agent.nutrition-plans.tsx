@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { relativeTime } from "@/lib/dashboard/queries";
 
 export const Route = createFileRoute("/agent/nutrition-plans")({ component: NutritionPlansPage });
@@ -30,7 +30,7 @@ function NutritionPlansPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["nutrition-plans"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("nutrition_plans")
         .select("id, species, status, effective_from, created_at, plan, farmers(name, farm_name)")
         .order("created_at", { ascending: false })
@@ -42,7 +42,7 @@ function NutritionPlansPage() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("nutrition_plans").update({ status }).eq("id", id);
+      const { error } = await db.from("nutrition_plans").update({ status }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["nutrition-plans"] }); toast.success("Plan updated"); },

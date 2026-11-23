@@ -8,7 +8,7 @@ import { AddFarmerDialog, AddReportDialog } from "@/components/field/dialogs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb as db } from "@/lib/mock/db";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 export const Route = createFileRoute("/farmers")({ component: FarmersPage });
@@ -25,7 +25,7 @@ function FarmersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["farmers"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("farmers")
         .select("id, name, farm_name, region, phone, livestock_type, status, avatar_url, notes, assigned_agent_id")
         .order("created_at", { ascending: false });
@@ -37,7 +37,7 @@ function FarmersPage() {
 
   const claim = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("farmers").update({ assigned_agent_id: session?.user.id }).eq("id", id);
+      const { error } = await db.from("farmers").update({ assigned_agent_id: session?.user.id }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["farmers"] }); toast.success("Farmer assigned to you"); },
