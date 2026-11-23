@@ -113,6 +113,8 @@ export function useAllNotifications() {
     queryKey: ["notifications-all", role],
     queryFn: () => Q.fetchAllNotifications(role),
     enabled: !!role,
+    // Same cadence as the unread count, so a new notification's badge and row arrive together.
+    refetchInterval: 30_000,
   });
 }
 

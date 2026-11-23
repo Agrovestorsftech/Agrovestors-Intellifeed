@@ -29,12 +29,13 @@ export function useOpenNotification() {
   const router = useRouter();
   const qc = useQueryClient();
   return async (n: NotificationRow) => {
+    // Open the page first; marking read is a server round trip the user needn't wait for.
+    if (n.link) router.navigate({ href: n.link });
     if (!n.read_at) {
-      await markNotificationRead(n.id);
+      await markNotificationRead(n.id).catch(() => undefined);
       qc.invalidateQueries({ queryKey: ["notifications-unread"] });
       qc.invalidateQueries({ queryKey: ["notifications-all"] });
     }
-    if (n.link) router.navigate({ href: n.link });
   };
 }
 

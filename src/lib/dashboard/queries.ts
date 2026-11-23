@@ -1,4 +1,5 @@
 import { mockDb as db } from "@/lib/mock/db";
+import { api } from "@/lib/api/client";
 import * as knowledgeApi from "@/lib/api/knowledge";
 import * as supportApi from "@/lib/api/support";
 import * as farmersApi from "@/lib/api/farmers";
@@ -516,7 +517,58 @@ export async function fetchActivities(limit = 20) {
 
 const NOTIFICATION_COLS = "id, title, body, type, link, read_at, created_at";
 
+// api mode: the signed-in user's inbox (GET /notifications/). The backend sends
+// staff notifications for dashboard work: new orders (FeedOps), order updates
+// and farm assignments (agents), reports and rescues (nutritionists, vets),
+// support tickets (admins). Their `data.screen` is the dashboard page to open.
+
+/** Backend notification type → the icon group NotificationIcon draws. */
+const NOTIFICATION_ICON: Record<string, string> = {
+  ops_order_placed: "order",
+  ops_order_cancelled: "order",
+  agent_order_update: "order",
+  order_update: "order",
+  feed_running_low: "inventory",
+  agent_farm_assigned: "task",
+  staff_report_submitted: "report",
+  report_reviewed: "report",
+  report_due: "report",
+  staff_rescue_activated: "rescue",
+  rescue_activated: "rescue",
+  sensor_danger: "alert",
+  weather_emergency: "alert",
+  support_ticket_opened: "support",
+};
+
+type ApiNotification = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  data?: { screen?: string } | null;
+  category?: string;
+  read_at: string | null;
+  created_at: string;
+};
+
+const notificationRow = (n: ApiNotification) => ({
+  id: n.id,
+  title: n.title,
+  body: n.body || null,
+  type: NOTIFICATION_ICON[n.type] ?? n.type,
+  // Only staff notifications point at dashboard pages; farm ones point at app screens.
+  link: n.category === "staff_work" ? (n.data?.screen ?? null) : null,
+  read_at: n.read_at,
+  created_at: n.created_at,
+});
+
+async function fetchApiNotifications(query: string) {
+  const page = await api.get<{ results?: ApiNotification[] } | ApiNotification[]>(`/notifications/?${query}`);
+  return (Array.isArray(page) ? page : (page?.results ?? [])).map(notificationRow);
+}
+
 export async function fetchUnreadNotifications(role?: string) {
+  if (fieldApi.IS_API) return fetchApiNotifications("is_read=false&page_size=100");
   let q = db.from("notifications").select(NOTIFICATION_COLS).is("read_at", null);
   if (role) q = q.contains("roles", [role]);
   const { data, error } = await q.order("created_at", { ascending: false }).limit(20);
@@ -525,6 +577,7 @@ export async function fetchUnreadNotifications(role?: string) {
 }
 
 export async function fetchAllNotifications(role?: string, limit = 30) {
+  if (fieldApi.IS_API) return fetchApiNotifications(`page_size=${limit}`);
   let q = db.from("notifications").select(NOTIFICATION_COLS);
   if (role) q = q.contains("roles", [role]);
   const { data, error } = await q.order("created_at", { ascending: false }).limit(limit);
@@ -533,6 +586,10 @@ export async function fetchAllNotifications(role?: string, limit = 30) {
 }
 
 export async function markNotificationRead(id: string) {
+  if (fieldApi.IS_API) {
+    await api.patch(`/notifications/${id}/mark-read/`);
+    return;
+  }
   const { error } = await db
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
@@ -541,6 +598,10 @@ export async function markNotificationRead(id: string) {
 }
 
 export async function markAllNotificationsRead(role?: string) {
+  if (fieldApi.IS_API) {
+    await api.post("/notifications/mark-all-read/");
+    return;
+  }
   let q = db.from("notifications").update({ read_at: new Date().toISOString() }).is("read_at", null);
   if (role) q = q.contains("roles", [role]);
   const { error } = await q;
