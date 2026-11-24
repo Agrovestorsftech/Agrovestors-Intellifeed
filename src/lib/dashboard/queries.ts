@@ -609,8 +609,7 @@ export async function markAllNotificationsRead(role?: string) {
 }
 
 export async function fetchSupportTickets(limit = 6) {
-  const tickets = await supportApi.listSupportTickets({ page_size: limit });
-  return tickets.filter((ticket) => !["resolved", "closed"].includes(ticket.status));
+  return supportApi.listActiveSupportTickets(limit);
 }
 
 export async function fetchSystemLogs(limit = 8) {

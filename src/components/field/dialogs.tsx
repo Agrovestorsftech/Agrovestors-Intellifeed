@@ -13,6 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { mockDb as db } from "@/lib/mock/db";
+import { createSupportTicket, type TicketPriority } from "@/lib/api/support";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
   IS_API, VISIT_TYPE_LABEL, createVisit, fetchActiveBatches, fetchFarmerRows, fetchMyFarms, fetchOrderableProducts,
@@ -536,23 +537,15 @@ export function OpenTicketDialog({ trigger }: { trigger: ReactNode }) {
   const [open, setOpen] = useState(false);
   const { session } = useAuth();
   const qc = useQueryClient();
-  const [form, setForm] = useState({ subject: "", priority: "normal" });
+  const blank = { subject: "", description: "", priority: "normal" as TicketPriority };
+  const [form, setForm] = useState(blank);
 
   const m = useMutation({
-    mutationFn: async () => {
-      const { error } = await db.from("support_tickets").insert({
-        opened_by: session?.user.id,
-        subject: form.subject.trim(),
-        priority: form.priority,
-        status: "open",
-        portal: "agent",
-      });
-      if (error) throw error;
-    },
+    mutationFn: () => createSupportTicket(form, session?.user.id),
     onSuccess: () => {
       toast.success("Support ticket opened");
-      qc.invalidateQueries({ queryKey: ["my-tickets"] });
-      setForm({ subject: "", priority: "normal" });
+      void qc.invalidateQueries({ queryKey: ["my-tickets"] });
+      setForm(blank);
       setOpen(false);
     },
     onError: (e: any) => toast.error(e.message ?? "Couldn't open ticket"),
@@ -564,18 +557,26 @@ export function OpenTicketDialog({ trigger }: { trigger: ReactNode }) {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Contact support</DialogTitle>
-          <DialogDescription>We'll reply to you in-app and by email.</DialogDescription>
+          <DialogDescription>The support desk picks it up and replies here.</DialogDescription>
         </DialogHeader>
         <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (form.subject.trim()) m.mutate(); }}>
-          <div><Label>Subject *</Label><Textarea rows={4} required value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="Describe the issue you're seeing…" /></div>
+          <div>
+            <Label htmlFor="ticket-subject">Subject *</Label>
+            <Input id="ticket-subject" required maxLength={200} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="e.g. A farm is missing from my list" />
+          </div>
+          <div>
+            <Label htmlFor="ticket-details">Details</Label>
+            <Textarea id="ticket-details" rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What happened, and what you expected…" />
+          </div>
           <div>
             <Label>Priority</Label>
-            <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
+            <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v as TicketPriority })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
                 <SelectItem value="normal">Normal</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="high">High</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
               </SelectContent>
             </Select>
           </div>
