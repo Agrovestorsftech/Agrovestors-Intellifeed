@@ -10,6 +10,7 @@
 // staff role; `roles` lists all of them.
 
 import { api, fetchAllPages } from "@/lib/api/client";
+import { fetchHealthSignals } from "@/lib/agent/data";
 
 type Row = Record<string, any>;
 
@@ -40,7 +41,7 @@ export const API_ROLES: Row[] = [
   { key: "investor", name: "Investor", description: "Portfolio view (no dashboard yet)." },
   { key: "researcher", name: "Researcher", description: "Research mode in the farmer app." },
   { key: "farmer", name: "Farmer", description: "Uses the farmer app." },
-].map((r) => ({ ...r, permissions: [], system: true }));
+].map((r) => ({ ...r, id: r.key, permissions: [], system: true }));
 
 /** Order decides which role is shown as a user's main role. */
 const ROLE_PRIORITY = [
@@ -269,22 +270,24 @@ export async function deleteRow(table: string, id: string) {
 // --- Admin home KPIs ------------------------------------------------------------
 
 /** Same shape as the demo fetchAdminKpis. Figures the backend doesn't have
- * yet (nutrition plans, health cases, visit reports) are null. */
+ * yet (nutrition plans, visit reports) are null. */
 export async function fetchAdminKpis() {
-  const [users, farmers, open, inProgress, orders, stock] = await Promise.all([
+  const [users, farmers, open, inProgress, orders, stock, health] = await Promise.all([
     listUsers(),
     listFarmers(),
     fetchAllPages<Row>("/support/tickets/?status=open"),
     fetchAllPages<Row>("/support/tickets/?status=in_progress"),
     fetchAllPages<Row>("/products/orders/"),
     fetchAllPages<Row>("/feedops/stock/").catch(() => []),
+    // Same source as the vets' Health Assessments page: health signals not dismissed.
+    fetchHealthSignals().catch(() => null),
   ]);
   return {
     totalFarmers: farmers.length,
     activeFarmers: farmers.filter((f) => f.status === "active").length,
     totalUsers: users.length,
     activePlans: null,
-    openCases: null,
+    openCases: health ? health.filter((h) => h.status === "open").length : null,
     pendingReports: null,
     pendingOrders: orders.filter((o) => ["placed", "confirmed", "dispatched"].includes(o.status))
       .length,

@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useFarmerHealth } from "@/hooks/useDashboard";
 
 type Risk = "Low" | "Medium" | "High";
@@ -23,7 +24,7 @@ export function FarmerHealthMonitoring() {
         <h2 className="text-base font-semibold text-foreground">Farmer Health Monitoring</h2>
         <span className="text-xs text-muted-foreground">Farms needing attention</span>
       </div>
-      <div className="flex-1 -mx-6 sm:mx-0 overflow-x-auto">
+      <div className="flex-1 overflow-x-auto">
         {error ? (
           <p className="p-6 text-sm text-destructive">Couldn't load farms.</p>
         ) : isLoading ? (
@@ -31,37 +32,46 @@ export function FarmerHealthMonitoring() {
         ) : rows.length === 0 ? (
           <p className="p-6 text-sm text-muted-foreground text-center">No farms to display.</p>
         ) : (
-        <table className="w-full min-w-[640px] text-sm px-6 sm:px-0">
+        <table className="w-full text-sm sm:min-w-[640px]">
           <thead>
             <tr className="text-xs text-muted-foreground">
               <th className="text-left font-medium pb-3">Farm</th>
-              <th className="text-left font-medium pb-3">Species</th>
+              <th className="hidden sm:table-cell text-left font-medium pb-3">Species</th>
               <th className="text-left font-medium pb-3">Health Score</th>
               <th className="text-left font-medium pb-3">Risk Level</th>
-              <th className="text-left font-medium pb-3">Last Review</th>
+              <th className="hidden sm:table-cell text-left font-medium pb-3">Last Review</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-border">
-                <td className="py-3 text-foreground font-medium">{r.farm}</td>
-                <td className="py-3 text-muted-foreground">{r.species}</td>
+                <td className="py-3 pr-3 text-foreground font-medium">
+                  {r.farm}
+                  {/* Phones: the hidden columns, in one line. */}
+                  <span className="block text-xs font-normal text-muted-foreground sm:hidden">
+                    {[r.species, r.lastReview].filter(Boolean).join(" · ")}
+                  </span>
+                </td>
+                <td className="hidden sm:table-cell py-3 text-muted-foreground">{r.species}</td>
                 <td className={`py-3 font-semibold ${scoreColor(r.score)}`}>{r.score}%</td>
                 <td className="py-3">
                   <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${riskStyles[r.risk as Risk]}`}>
                     {r.risk}
                   </span>
                 </td>
-                <td className="py-3 text-muted-foreground">{r.lastReview}</td>
+                <td className="hidden sm:table-cell py-3 text-muted-foreground">{r.lastReview}</td>
               </tr>
             ))}
           </tbody>
         </table>
         )}
       </div>
-      <button className="mt-6 w-full rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+      <Link
+        to="/agent/farmer-reviews"
+        className="mt-6 block w-full rounded-xl border border-border px-3 py-2.5 text-center text-sm font-medium text-foreground hover:bg-muted transition-colors"
+      >
         View All Assigned Farms
-      </button>
+      </Link>
     </section>
   );
 }

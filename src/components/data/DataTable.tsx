@@ -117,6 +117,39 @@ export function DataTable<T>({
     setSort((s) => (s?.key !== key ? { key, dir: "asc" } : s.dir === "asc" ? { key, dir: "desc" } : undefined));
 
   const colCount = columns.length + (rowActions ? 1 : 0);
+  // Phones get one card per row (every column, labelled) instead of a table
+  // whose status and amount columns start off-screen.
+  const showCards = !error && !loading && visible.length > 0;
+  const [lead, ...rest] = columns;
+
+  const actionsMenu = (r: T) =>
+    rowActions && (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label={`Actions${rowLabel ? ` for ${rowLabel(r)}` : ""}`}
+            className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-muted"
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-44 rounded-xl">
+          {rowActions(r).map((a) => (
+            <span key={a.label}>
+              {a.separatorBefore && <DropdownMenuSeparator />}
+              <DropdownMenuItem
+                disabled={a.disabled}
+                onSelect={a.onSelect}
+                className={a.destructive ? "text-destructive focus:text-destructive" : ""}
+              >
+                {a.label}
+              </DropdownMenuItem>
+            </span>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -163,7 +196,30 @@ export function DataTable<T>({
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      {showCards && lead && (
+        <ul className="divide-y divide-border sm:hidden">
+          {visible.map((r) => (
+            <li key={getId(r)} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1 text-sm">{lead.cell(r)}</div>
+                {rowActions && <div className="-mr-2 -mt-1 shrink-0">{actionsMenu(r)}</div>}
+              </div>
+              {rest.length > 0 && (
+                <dl className="mt-2 grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm">
+                  {rest.map((c) => (
+                    <div key={c.key} className="contents">
+                      <dt className="text-xs leading-5 text-muted-foreground">{c.header}</dt>
+                      <dd className="min-w-0 break-words">{c.cell(r)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className={showCards ? "hidden overflow-x-auto sm:block" : "overflow-x-auto"}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-left">
@@ -260,31 +316,7 @@ export function DataTable<T>({
                   ))}
                   {rowActions && (
                     <td className="px-2 py-2 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            aria-label={`Actions${rowLabel ? ` for ${rowLabel(r)}` : ""}`}
-                            className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-muted"
-                          >
-                            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="min-w-44 rounded-xl">
-                          {rowActions(r).map((a) => (
-                            <span key={a.label}>
-                              {a.separatorBefore && <DropdownMenuSeparator />}
-                              <DropdownMenuItem
-                                disabled={a.disabled}
-                                onSelect={a.onSelect}
-                                className={a.destructive ? "text-destructive focus:text-destructive" : ""}
-                              >
-                                {a.label}
-                              </DropdownMenuItem>
-                            </span>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {actionsMenu(r)}
                     </td>
                   )}
                 </tr>
