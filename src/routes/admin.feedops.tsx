@@ -14,7 +14,7 @@ import {
   naira,
   shortDate,
   stockStatus,
-  WAREHOUSES,
+  useWarehouses,
 } from "@/lib/ops/api";
 import { relativeTime } from "@/lib/dashboard/queries";
 
@@ -27,6 +27,7 @@ type Row = Record<string, any>;
 const OPEN_ORDER = ["placed", "pending", "processing"];
 
 function AdminFeedOpsPage() {
+  const WAREHOUSES = useWarehouses();
   const inv = useQuery({ queryKey: ["ops-inventory"], queryFn: listInventory });
   const orders = useQuery({ queryKey: ["ops-orders"], queryFn: listOrders });
   const prod = useQuery({ queryKey: ["ops-production"], queryFn: listProduction });
@@ -42,11 +43,13 @@ function AdminFeedOpsPage() {
   const enRoute = (dl.data ?? []).filter(
     (d) => d.status === "scheduled" || d.status === "in_transit",
   );
+  // The backend has no list prices yet; with none set, chart bags instead of ₦0.
+  const priced = (inv.data ?? []).some((r) => Number(r.feed_products?.price_per_unit ?? 0) > 0);
   const stockValue = WAREHOUSES.map((w) => ({
     name: w,
     value: (inv.data ?? [])
       .filter((r) => r.warehouse === w)
-      .reduce((s, r) => s + Number(r.quantity) * Number(r.feed_products?.price_per_unit ?? 0), 0),
+      .reduce((s, r) => s + Number(r.quantity) * (priced ? Number(r.feed_products?.price_per_unit ?? 0) : 1), 0),
   }));
   const orderValue = openOrders.reduce(
     (s, o) => s + Number(o.quantity) * Number(o.feed_products?.price_per_unit ?? 0),
@@ -108,11 +111,11 @@ function AdminFeedOpsPage() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ChartCard title="Stock value by warehouse">
+        <ChartCard title={priced ? "Stock value by warehouse" : "Stock by warehouse"} subtitle={priced ? undefined : "Bags on hand"}>
           {loading ? (
             <ChartSkeleton height={200} />
           ) : (
-            <Donut data={stockValue} format={naira} height={200} />
+            <Donut data={stockValue} format={priced ? naira : (v) => `${v.toLocaleString()} bags`} height={200} />
           )}
         </ChartCard>
         <ChartCard title="Stock needing reorder" subtitle="Bags on hand, lowest first">

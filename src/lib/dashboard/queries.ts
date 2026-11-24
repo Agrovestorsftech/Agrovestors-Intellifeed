@@ -58,7 +58,26 @@ export async function fetchAdminKpis() {
   };
 }
 
+// Backend role -> the dashboard group the User Distribution donut shows.
+const ROLE_GROUP: Record<string, string> = {
+  agent: "field_agent",
+  nutritionist: "admin_agent",
+  veterinarian: "admin_agent",
+  feedops: "feedops",
+  admin: "system_admin",
+  super_admin: "system_admin",
+};
+
 export async function fetchUserDistribution() {
+  if (fieldApi.IS_API) {
+    // Same list as the Platform Users card, so the donut total matches it.
+    const counts: Record<string, number> = {};
+    for (const u of await adminBe.listUsers()) {
+      const k = ROLE_GROUP[u.role] ?? u.role;
+      counts[k] = (counts[k] ?? 0) + 1;
+    }
+    return counts;
+  }
   const { data, error } = await db.from("user_roles").select("role");
   if (error) throw error;
   const counts: Record<string, number> = {};
@@ -73,11 +92,22 @@ export async function fetchPlatformSeries(days = 7) {
   const since = new Date();
   since.setDate(since.getDate() - (days - 1));
   since.setHours(0, 0, 0, 0);
-  const [{ data: farmers, error: e1 }, { data: orders, error: e2 }] = await Promise.all([
-    db.from("farmers").select("created_at").gte("created_at", since.toISOString()),
-    db.from("feed_orders").select("placed_at").gte("placed_at", since.toISOString()),
-  ]);
-  if (e1 ?? e2) throw e1 ?? e2;
+  let farmers: { created_at: string }[];
+  let orders: { placed_at: string }[];
+  if (fieldApi.IS_API) {
+    // Accounts created (every role) and orders placed per day.
+    const [users, allOrders] = await Promise.all([adminBe.listUsers(), opsBe.listOrders()]);
+    farmers = users.filter((u) => u.created_at).map((u) => ({ created_at: u.created_at as string }));
+    orders = allOrders.filter((o) => o.placed_at).map((o) => ({ placed_at: o.placed_at as string }));
+  } else {
+    const [r1, r2] = await Promise.all([
+      db.from("farmers").select("created_at").gte("created_at", since.toISOString()),
+      db.from("feed_orders").select("placed_at").gte("placed_at", since.toISOString()),
+    ]);
+    if (r1.error ?? r2.error) throw r1.error ?? r2.error;
+    farmers = (r1.data ?? []) as { created_at: string }[];
+    orders = (r2.data ?? []) as { placed_at: string }[];
+  }
   const out: { day: string; users: number; orders: number }[] = [];
   for (let i = 0; i < days; i++) {
     const d = new Date(since);
@@ -428,6 +458,47 @@ export async function fetchCalendarEvents(
         tone: v.status === "Completed" ? "success" : v.status === "Missed" ? "destructive" : "primary",
       });
     }
+  } else if (fieldApi.IS_API && role === "admin_agent") {
+    // Farmers' cycle reports by the day they arrived (no health cases on the backend yet).
+    for (const r of await agentApi.fetchReviewReports()) {
+      if (r.submitted_at < f || r.submitted_at >= t) continue;
+      events.push({
+        id: r.id,
+        at: r.submitted_at,
+        title: `Cycle report · ${r.farmers?.farm_name ?? "—"}`,
+        subtitle: `${r.species ?? "General"} · ${String(r.backend_status ?? r.status)}`,
+        href: "/agent/reports-review",
+        tone: r.backend_status === "flagged" ? "destructive" : "primary",
+      });
+    }
+  } else if (fieldApi.IS_API && role === "feedops") {
+    // Orders by the day placed, deliveries by the day they're due.
+    const [orders, deliveries] = await Promise.all([opsBe.listOrders(), opsBe.listDeliveries()]);
+    for (const o of orders) {
+      if (!o.placed_at || o.placed_at < f || o.placed_at >= t) continue;
+      events.push({
+        id: `o-${o.id}`,
+        at: o.placed_at,
+        title: `${o.order_no} · ${o.feed_products?.name ?? "Feed"}`,
+        subtitle: `${o.quantity} bags · ${formatOrderStatus(o.status)} · ${o.farmers?.farm_name ?? "—"}`,
+        href: "/feedops/orders",
+        tone: "info",
+      });
+    }
+    for (const d of deliveries) {
+      if (!d.scheduled_for) continue;
+      // A bare date is a calendar day: noon keeps it on that day in any zone.
+      const at = String(d.scheduled_for).length === 10 ? new Date(`${d.scheduled_for}T12:00:00`).toISOString() : String(d.scheduled_for);
+      if (at < f || at >= t) continue;
+      events.push({
+        id: `d-${d.id}`,
+        at,
+        title: `Delivery ${d.order?.order_no ?? ""} · ${d.order?.farmers?.farm_name ?? "—"}`,
+        subtitle: `${d.driver ?? "No driver"} · ${String(d.status).replace("_", " ")}`,
+        href: "/feedops/deliveries",
+        tone: d.status === "failed" ? "destructive" : d.status === "delivered" ? "success" : "warning",
+      });
+    }
   } else if (role === "admin_agent") {
     const [cases, reports] = await Promise.all([
       db.from("health_cases").select("id, diagnosis, severity, created_at, farmers(farm_name)").gte("created_at", f).lt("created_at", t),
@@ -481,6 +552,7 @@ export async function fetchCalendarEvents(
 /* --------------------------------- Shared --------------------------------- */
 
 export async function fetchActivities(limit = 20) {
+  if (fieldApi.IS_API) return fetchApiFieldActivities(limit);
   const [visits, cases, plans] = await Promise.all([
     db.from("visit_reports").select("id, species, summary, submitted_at, farmers(farm_name)").order("submitted_at", { ascending: false }).limit(limit),
     db.from("health_cases").select("id, diagnosis, created_at, farmers(farm_name)").order("created_at", { ascending: false }).limit(limit),
@@ -613,6 +685,15 @@ export async function fetchSupportTickets(limit = 6) {
 }
 
 export async function fetchSystemLogs(limit = 8) {
+  if (fieldApi.IS_API) {
+    // The audit trail: who changed what (the backend keeps no other system log).
+    return (await adminBe.listAuditLogs(limit)).map((l) => ({
+      id: l.id,
+      action: `${l.actor_name}: ${String(l.raw_action).replace(/[._]/g, " ")}`,
+      entity: l.target,
+      created_at: l.created_at,
+    }));
+  }
   const { data, error } = await db
     .from("system_logs")
     .select("id, action, entity, meta, created_at")
@@ -620,6 +701,45 @@ export async function fetchSystemLogs(limit = 8) {
     .limit(limit);
   if (error) throw error;
   return data ?? [];
+}
+
+/** Field agent home, api mode: visits they logged, cycle reports from their
+ * farms and orders they placed, newest first. Each source is best effort. */
+async function fetchApiFieldActivities(limit: number) {
+  const [visits, reports, orders] = await Promise.all([
+    fieldApi.fetchMyVisitRows("", limit).catch(() => []),
+    agentApi.fetchReviewReports().catch(() => []),
+    fieldApi.fetchMyOrderRows("").catch(() => []),
+  ]);
+  const now = new Date().toISOString();
+  return [
+    ...visits
+      .filter((v) => v.status !== "upcoming" && v.submitted_at <= now)
+      .map((v) => ({
+        id: `v-${v.id}`,
+        activity_type: "visit_logged",
+        description: null,
+        metadata: { farm_name: v.farmers?.farm_name },
+        created_at: v.submitted_at,
+      })),
+    ...reports.map((r) => ({
+      id: `r-${r.id}`,
+      activity_type: "report_submitted",
+      description: null,
+      metadata: { farm_name: r.farmers?.farm_name },
+      created_at: r.submitted_at as string,
+    })),
+    ...orders.map((o) => ({
+      id: `o-${o.id}`,
+      // Dated by when it was placed (the list has no delivery time).
+      activity_type: "order_placed",
+      description: null,
+      metadata: { farm_name: o.farmers?.farm_name },
+      created_at: o.placed_at,
+    })),
+  ]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, limit);
 }
 
 /* --------------------------------- helpers --------------------------------- */

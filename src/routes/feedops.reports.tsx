@@ -63,9 +63,13 @@ function FeedOpsReportsPage() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 6);
 
+  // The backend has no list prices yet; with none set, chart bags instead of ₦0.
+  const priced = (inv.data ?? []).some((r) => Number(r.feed_products?.price_per_unit ?? 0) > 0);
   const valueByWarehouse = WAREHOUSES.map((w) => ({
     name: w,
-    value: (inv.data ?? []).filter((r) => r.warehouse === w).reduce((s, r) => s + Number(r.quantity) * Number(r.feed_products?.price_per_unit ?? 0), 0),
+    value: (inv.data ?? [])
+      .filter((r) => r.warehouse === w)
+      .reduce((s, r) => s + Number(r.quantity) * (priced ? Number(r.feed_products?.price_per_unit ?? 0) : 1), 0),
   }));
 
   const exportMenu = (
@@ -103,7 +107,7 @@ function FeedOpsReportsPage() {
 
   return (
     <>
-      <PageHeader title="Reports & Analytics" subtitle="Output, demand and stock value at a glance." actions={exportMenu} />
+      <PageHeader title="Reports & Analytics" subtitle="Output, demand and stock at a glance." actions={exportMenu} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <ChartCard
           className="xl:col-span-2"
@@ -141,8 +145,12 @@ function FeedOpsReportsPage() {
         <ChartCard title="Most ordered products" subtitle="Bags ordered, all time" className="xl:col-span-2">
           {loading ? <ChartSkeleton height={200} /> : <RankBars rows={topProducts} format={(v) => `${v.toLocaleString()} bags`} />}
         </ChartCard>
-        <ChartCard title="Stock value by warehouse" subtitle="At list price">
-          {loading ? <ChartSkeleton height={220} /> : <Donut data={valueByWarehouse} height={180} format={naira} />}
+        <ChartCard title={priced ? "Stock value by warehouse" : "Stock by warehouse"} subtitle={priced ? "At list price" : "Bags on hand"}>
+          {loading ? (
+            <ChartSkeleton height={220} />
+          ) : (
+            <Donut data={valueByWarehouse} height={180} format={priced ? naira : (v) => `${v.toLocaleString()} bags`} />
+          )}
         </ChartCard>
       </div>
     </>

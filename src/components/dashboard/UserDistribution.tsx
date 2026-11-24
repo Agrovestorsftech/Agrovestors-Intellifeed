@@ -8,6 +8,10 @@ const ROLE_META: Record<string, { name: string; color: string }> = {
   admin_agent: { name: "Admin Agents", color: "oklch(0.55 0.22 295)" },
   feedops: { name: "FeedOps", color: "var(--warning)" },
   system_admin: { name: "System Admins", color: "var(--primary)" },
+  // App users (api mode lists every account, not just staff).
+  farmer: { name: "Farmers", color: "var(--success)" },
+  investor: { name: "Investors", color: "oklch(0.65 0.15 200)" },
+  researcher: { name: "Researchers", color: "oklch(0.6 0.12 140)" },
 };
 
 export function UserDistribution() {

@@ -9,7 +9,7 @@ import { StatusBadge, humanize } from "@/components/data/StatusBadge";
 import { Person } from "@/components/data/Person";
 import { downloadCsv } from "@/components/data/csv";
 import { Button } from "@/components/ui/button";
-import { dateTime, listAuditEvents } from "@/lib/ops/api";
+import { IS_API, dateTime, listAuditEvents } from "@/lib/ops/api";
 
 export const Route = createFileRoute("/admin/audit-trail")({
   head: () => ({ meta: [{ title: "Audit Trail — IntelliFeed360" }] }),
@@ -116,7 +116,7 @@ function AuditTrailPage() {
 
   return (
     <>
-      <SampleDataNotice what="an audit trail feed" />
+      {!IS_API && <SampleDataNotice what="an audit trail feed" />}
       <PageHeader
         title="Audit Trail"
         subtitle="Who changed what, and when. Every admin action is recorded here."
