@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { usePendingReports } from "@/hooks/useDashboard";
 import { formatPriority, formatReportStatus } from "@/lib/dashboard/queries";
 
@@ -28,7 +29,7 @@ export function ReportsAwaitingReview() {
         </div>
         <span className="text-xs font-medium text-primary bg-primary-soft px-3 py-1 rounded-full">{rows.length} pending</span>
       </div>
-      <div className="flex-1 -mx-5 sm:mx-0 overflow-x-auto">
+      <div className="flex-1 overflow-x-auto">
         {error ? (
           <p className="p-6 text-sm text-destructive">Couldn't load reports.</p>
         ) : isLoading ? (
@@ -36,13 +37,13 @@ export function ReportsAwaitingReview() {
         ) : rows.length === 0 ? (
           <p className="p-6 text-sm text-muted-foreground text-center">No reports awaiting review.</p>
         ) : (
-        <table className="w-full min-w-[640px] text-sm px-5 sm:px-0">
+        <table className="w-full text-sm sm:min-w-[640px]">
           <thead>
             <tr className="text-xs text-muted-foreground">
               <th className="text-left font-medium pb-3">Farmer</th>
-              <th className="text-left font-medium pb-3">Farm</th>
-              <th className="text-left font-medium pb-3">Species</th>
-              <th className="text-left font-medium pb-3">Submitted</th>
+              <th className="hidden sm:table-cell text-left font-medium pb-3">Farm</th>
+              <th className="hidden sm:table-cell text-left font-medium pb-3">Species</th>
+              <th className="hidden sm:table-cell text-left font-medium pb-3">Submitted</th>
               <th className="text-left font-medium pb-3">Priority</th>
               <th className="text-left font-medium pb-3">Status</th>
             </tr>
@@ -53,10 +54,16 @@ export function ReportsAwaitingReview() {
               const s = formatReportStatus(r.status);
               return (
               <tr key={r.id} className="border-t border-border">
-                <td className="py-3 text-foreground font-medium">{r.farmer}</td>
-                <td className="py-3 text-foreground">{r.farm}</td>
-                <td className="py-3 text-muted-foreground">{r.species ?? "—"}</td>
-                <td className="py-3 text-muted-foreground">{r.submitted}</td>
+                <td className="py-3 pr-3 text-foreground font-medium">
+                  {r.farmer}
+                  {/* Phones: the hidden columns, in one line. */}
+                  <span className="block text-xs font-normal text-muted-foreground sm:hidden">
+                    {[r.farm, r.species, r.submitted].filter(Boolean).join(" · ")}
+                  </span>
+                </td>
+                <td className="hidden sm:table-cell py-3 text-foreground">{r.farm}</td>
+                <td className="hidden sm:table-cell py-3 text-muted-foreground">{r.species ?? "—"}</td>
+                <td className="hidden sm:table-cell py-3 text-muted-foreground">{r.submitted}</td>
                 <td className="py-3">
                   <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${priorityStyles[p]}`}>
                     {p}
@@ -73,9 +80,12 @@ export function ReportsAwaitingReview() {
         </table>
         )}
       </div>
-      <button className="mt-6 w-full rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+      <Link
+        to="/agent/reports-review"
+        className="mt-6 block w-full rounded-xl border border-border px-3 py-2.5 text-center text-sm font-medium text-foreground hover:bg-muted transition-colors"
+      >
         Review All Reports
-      </button>
+      </Link>
     </section>
   );
 }

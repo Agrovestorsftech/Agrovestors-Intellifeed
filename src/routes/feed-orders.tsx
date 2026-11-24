@@ -37,6 +37,28 @@ function FeedOrdersPage() {
         ) : isLoading ? <div className="p-6 animate-pulse h-40" /> : (data?.length ?? 0) === 0 ? (
           <p className="p-10 text-center text-sm text-muted-foreground">No orders yet.</p>
         ) : (
+          <>
+          {/* Phones: one card per order, so status and quantity stay on screen. */}
+          <ul className="divide-y divide-border sm:hidden">
+            {(data ?? []).map((o: any) => {
+              const s = formatOrderStatus(o.status);
+              return (
+                <li key={o.id} className="px-4 py-3 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium">{o.order_no}</p>
+                      <p className="truncate text-muted-foreground">{o.farmers?.farm_name ?? "—"}</p>
+                    </div>
+                    <Badge className={`shrink-0 ${statusStyle[s] ?? "bg-muted"}`}>{s}</Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {o.quantity} {o.feed_products?.unit ?? ""} · {o.feed_products?.name ?? "—"} · {relativeTime(o.placed_at)}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden overflow-x-auto sm:block">
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr>
@@ -64,6 +86,8 @@ function FeedOrdersPage() {
               })}
             </tbody>
           </table>
+          </div>
+          </>
         )}
       </section>
     </>

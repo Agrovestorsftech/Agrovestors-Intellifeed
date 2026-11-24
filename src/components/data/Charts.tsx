@@ -68,8 +68,11 @@ export function SimpleBars({
 export function Donut({ data, height = 220, format }: { data: { name: string; value: number }[]; height?: number; format?: (v: number) => string }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row">
-      <div style={{ height, width: height }} className="shrink-0">
+    // Side by side only when the card itself is wide enough (not the screen),
+    // so the legend never gets squeezed in a narrow column.
+    <div className="@container">
+    <div className="flex flex-col items-center gap-4 @md:flex-row">
+      <div style={{ height, width: height }} className="max-w-full shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie data={data} dataKey="value" nameKey="name" innerRadius="60%" outerRadius="95%" paddingAngle={2} stroke="none">
@@ -85,14 +88,15 @@ export function Donut({ data, height = 220, format }: { data: { name: string; va
         {data.map((d, i) => (
           <li key={d.name} className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} aria-hidden="true" />
-            <span className="flex-1 text-foreground">{d.name}</span>
-            <span className="tabular-nums text-muted-foreground">
+            <span className="min-w-0 flex-1 truncate text-foreground" title={d.name}>{d.name}</span>
+            <span className="shrink-0 tabular-nums text-muted-foreground">
               {format ? format(d.value) : d.value}
               {total > 0 && <span className="ml-1 text-xs">({Math.round((d.value / total) * 100)}%)</span>}
             </span>
           </li>
         ))}
       </ul>
+    </div>
     </div>
   );
 }
