@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { LifeBuoy } from "lucide-react";
 import { useSupportTickets } from "@/hooks/useDashboard";
 
@@ -12,10 +13,11 @@ const priorityStyles: Record<Priority, string> = {
 export function SupportTickets() {
   const { data, isLoading, error } = useSupportTickets();
   const tickets = data ?? [];
+  // Tone only; the badge shows the ticket's own priority (low, normal, high, urgent).
   function normPriority(p: string): Priority {
     const k = p.toLowerCase();
-    if (k === "high" || k === "critical") return "High";
-    if (k === "medium") return "Medium";
+    if (k === "high" || k === "urgent" || k === "critical") return "High";
+    if (k === "medium" || k === "normal") return "Medium";
     return "Low";
   }
   return (
@@ -40,16 +42,19 @@ export function SupportTickets() {
               <span
                 className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${priorityStyles[p]}`}
               >
-                {p}
+                {t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}
               </span>
             </li>
           );
         })}
       </ul>
       )}
-      <button className="mt-6 w-full rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+      <Link
+        to="/admin/support-tickets"
+        className="mt-6 block w-full rounded-xl border border-border px-3 py-2.5 text-center text-sm font-medium text-foreground hover:bg-muted transition-colors"
+      >
         View All Tickets
-      </button>
+      </Link>
     </section>
   );
 }
