@@ -29,8 +29,10 @@ export function UserDistribution() {
       {total === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-10">No user data yet.</p>
       ) : (
-      <div className="flex items-center gap-6">
-        <div className="relative h-[220px] w-[220px] shrink-0">
+      // Side by side only when the card is wide enough; otherwise stack.
+      <div className="@container">
+      <div className="flex flex-col items-center gap-6 @md:flex-row">
+        <div className="relative h-[220px] w-[220px] max-w-full shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -55,7 +57,7 @@ export function UserDistribution() {
           </div>
         </div>
 
-        <ul className="flex-1 space-y-4">
+        <ul className="grid w-full min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-3 @md:grid-cols-1">
           {slices.map((s) => {
             const pct = ((s.value / total) * 100).toFixed(1);
             return (
@@ -74,6 +76,7 @@ export function UserDistribution() {
             );
           })}
         </ul>
+      </div>
       </div>
       )}
     </section>
