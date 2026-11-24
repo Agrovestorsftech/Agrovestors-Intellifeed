@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Activity } from "lucide-react";
 import { useSystemLogs } from "@/hooks/useDashboard";
 import { relativeTime } from "@/lib/dashboard/queries";
@@ -27,9 +28,12 @@ export function SystemLogs() {
           ))}
       </ul>
       )}
-      <button className="mt-6 w-full rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+      <Link
+        to="/admin/audit-trail"
+        className="mt-6 block w-full rounded-xl border border-border px-3 py-2.5 text-center text-sm font-medium text-foreground hover:bg-muted transition-colors"
+      >
         View All Logs
-      </button>
+      </Link>
     </section>
   );
 }

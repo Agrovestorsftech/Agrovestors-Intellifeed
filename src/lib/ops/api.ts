@@ -369,7 +369,7 @@ export const listInvoices = () =>
 export const listSystemLogs = () =>
   rows(db.from("system_logs").select("*").order("created_at", { ascending: false }));
 export const listAuditEvents = () =>
-  rows(db.from("audit_events").select("*").order("created_at", { ascending: false }));
+  IS_API ? adminBe.listAuditLogs() : rows(db.from("audit_events").select("*").order("created_at", { ascending: false }));
 export const listTickets = () =>
   IS_API ? adminBe.listTickets() : rows(db.from("support_tickets").select("*").order("created_at", { ascending: false }));
 

@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import {
   FileCheck2,
   UserPlus,
@@ -7,6 +8,7 @@ import {
   ArrowRight,
   Salad,
   PackageCheck,
+  MapPin,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useActivities } from "@/hooks/useDashboard";
@@ -24,6 +26,7 @@ const toneStyles: Record<Tone, string> = {
 
 const META: Record<string, { icon: LucideIcon; tone: Tone; title: (m: any) => string }> = {
   report_submitted: { icon: FileCheck2, tone: "primary", title: (m) => `Report submitted for ${m?.farm_name ?? "farm"}` },
+  visit_logged: { icon: MapPin, tone: "info", title: (m) => `Visit logged at ${m?.farm_name ?? "farm"}` },
   farmer_onboarded: { icon: UserPlus, tone: "info", title: (m) => `New farmer onboarded: ${m?.name ?? "farmer"}` },
   health_case_opened: { icon: AlertTriangle, tone: "destructive", title: (m) => `Health issue reported at ${m?.farm_name ?? "farm"}` },
   order_placed: { icon: ShoppingCart, tone: "warning", title: (m) => `Feed order placed for ${m?.farm_name ?? "farm"}` },
@@ -69,10 +72,10 @@ export function RecentActivities() {
       </ul>
       )}
 
-      <button className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:gap-2.5 transition-all">
+      <Link to="/my-visits" className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:gap-2.5 transition-all">
         View All
         <ArrowRight className="h-4 w-4" />
-      </button>
+      </Link>
     </section>
   );
 }

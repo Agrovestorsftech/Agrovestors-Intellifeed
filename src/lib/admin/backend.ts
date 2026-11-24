@@ -292,3 +292,44 @@ export async function fetchAdminKpis() {
     supportTickets: open.length + inProgress.length,
   };
 }
+
+// --- Audit trail ----------------------------------------------------------------
+
+/** "report.reviewed" -> "reviewed"; the page tones created/updated/deleted. */
+function auditVerb(action: string): string {
+  const verb = action.split(".").pop() ?? action;
+  if (/creat|add|invit|register|placed/.test(verb)) return "created";
+  if (/delet|remov|revok|deactivat|cancel/.test(verb)) return "deleted";
+  return verb.replace(/_/g, " ");
+}
+
+const RECORD_LABEL_KEYS = ["name", "full_name", "title", "subject", "batch_code", "order_code", "email"];
+
+/** GET /notifications/audit-logs/ (admins), in the Audit Trail page's row shape. */
+export async function listAuditLogs(limit?: number): Promise<Row[]> {
+  const rows = limit
+    ? (await api.get<{ results: Row[] }>(`/notifications/audit-logs/?page_size=${limit}`)).results
+    : await fetchAllPages<Row>("/notifications/audit-logs/");
+  return rows.map((r) => {
+    const next: Row = r.new_values ?? {};
+    const prev: Row = r.old_values ?? {};
+    const labelKey = RECORD_LABEL_KEYS.find((k) => next[k] ?? prev[k]);
+    // The first value that changed (or was set), for the Change column.
+    const field = Object.keys(next).find((k) => k !== labelKey && String(next[k]) !== String(prev[k] ?? ""));
+    return {
+      id: r.id,
+      created_at: r.created_at,
+      actor_name: r.actor_name ?? "System",
+      ip: r.ip_address ?? null,
+      action: auditVerb(String(r.action ?? "")),
+      raw_action: r.action,
+      entity: String(r.entity_type ?? "record")
+        .replace(/([a-z])([A-Z])/g, "$1_$2")
+        .toLowerCase(),
+      target: labelKey ? String(next[labelKey] ?? prev[labelKey]) : `#${String(r.entity_id).slice(0, 8)}`,
+      field: field ?? null,
+      from: field && prev[field] != null ? String(prev[field]) : null,
+      to: field && next[field] != null ? String(next[field]) : null,
+    };
+  });
+}
